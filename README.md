@@ -70,9 +70,9 @@ main branch와 하위 각 팀원별 branch 이용
 ## 코드 컨벤션
 
 코드 작성하면서 이름을 지정해야 하는 것들에 대한 규칙
-- PascalCase(파스칼 케이스): 함수, 클래스
-- camelCase(카멜 케이스): 변수
-- UPPER_CASE(어퍼 케이스): 상수
+- 함수, 클래스, 인터페이스: PascalCase(파스칼 케이스) ex) HomeFragment
+- 변수: camelCase(카멜 케이스) ex) val homeRVAdapter
+- 상수: UPPER_CASE(어퍼 케이스) ex) val USER_NAME_FIELD = "UserName"
 
 ---
 
