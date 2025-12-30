@@ -1,4 +1,9 @@
+<img width="773" height="430" alt="image" src="https://github.com/user-attachments/assets/a32e07e3-cdca-4004-ba55-049a2d04f5cd" />
+
 # MY4CUT-FE
+
+---
+
 # Front-end 팀원
 
 1. 예나경
