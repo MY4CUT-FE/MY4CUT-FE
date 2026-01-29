@@ -1,0 +1,35 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.MY4CUT" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+
+    <style name="Theme.MY4CUT" parent="Base.Theme.MY4CUT" />
+
+    <style name="MyPopupMenuStyle" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+        <item name="android:popupElevation">4dp</item>
+    </style>
+
+    <style name="FilterMenuTheme" parent="ThemeOverlay.AppCompat.Light">
+        <item name="popupMenuStyle">@style/MyPopupMenuStyle</item>
+        <item name="android:popupMenuStyle">@style/MyPopupMenuStyle</item>
+
+        <item name="android:textColor">#1A1A1A</item>
+    </style>
+
+    <style name="BottomNavTextStyle">
+        <item name="android:fontFamily">@font/suit_medium</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:textColor">@color/selector_nav_item_color</item>
+
+        <item name="android:maxLines">2</item>
+        <item name="android:singleLine">false</item>
+
+        <item name="android:lineSpacingExtra">-3dp</item>
+
+        <item name="android:includeFontPadding">false</item>
+    </style>
+</resources>
