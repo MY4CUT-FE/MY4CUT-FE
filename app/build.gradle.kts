@@ -1,0 +1,65 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+}
+
+android {
+    namespace = "com.umc.mobile.my4cut"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "com.umc.mobile.my4cut"
+        minSdk = 24
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+
+        isCoreLibraryDesugaringEnabled = true
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+
+    buildFeatures {
+        viewBinding = true
+    }
+}
+
+dependencies {
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+
+    implementation("com.google.android.material:material:1.11.0")
+
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.constraintlayout)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+
+    // 캘린더 라이브러리
+    implementation("com.kizitonwose.calendar:view:2.5.0")
+    // 원형 이미지 뷰 (CircleImageView)
+    implementation("de.hdodenhof:circleimageview:3.1.0")
+
+    // 이미지 로딩 라이브러리 (Glide)
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+}
