@@ -1,9 +1,9 @@
-package com.example.my4cut
+package com.umc.mobile.my4cut.ui.photo
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.my4cut.databinding.ItemCommentBinding
+import com.umc.mobile.my4cut.databinding.ItemCommentBinding
 
 class ChatRVAdapter(private val chatList: List<ChatData>) : RecyclerView.Adapter<ChatRVAdapter.ViewHolder>() {
     var onItemClickListener: ((ChatData) -> Unit)? = null

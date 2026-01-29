@@ -1,4 +1,4 @@
-package com.example.my4cut.fragment
+package com.umc.mobile.my4cut.ui.space
 
 import FriendsAdapter
 import android.graphics.Color
@@ -13,10 +13,10 @@ import android.view.ViewGroup
 import android.widget.PopupWindow
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.my4cut.Friend
-import com.example.my4cut.R
-import com.example.my4cut.databinding.DialogCreateSpaceBinding
-import com.example.my4cut.databinding.PopupFriendListBinding
+import com.umc.mobile.my4cut.ui.friend.Friend
+import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.databinding.DialogCreateSpaceBinding
+import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
 
 class EditSpaceDialogFragment : DialogFragment() {
 

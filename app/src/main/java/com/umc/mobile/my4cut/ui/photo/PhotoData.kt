@@ -1,4 +1,4 @@
-package com.example.my4cut
+package com.umc.mobile.my4cut.ui.photo
 
 data class PhotoData(
     val userImageRes: Int,  // 프로필 이미지 리소스 ID

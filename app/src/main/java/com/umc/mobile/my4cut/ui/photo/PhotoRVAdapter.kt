@@ -1,9 +1,9 @@
-package com.example.my4cut
+package com.umc.mobile.my4cut.ui.photo
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.my4cut.databinding.ItemPhotoBinding
+import com.umc.mobile.my4cut.databinding.ItemPhotoBinding
 
 class PhotoRVAdapter(private val photoList: List<PhotoData>) : RecyclerView.Adapter<PhotoRVAdapter.ViewHolder>() {
 

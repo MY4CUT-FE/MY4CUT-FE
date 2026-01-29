@@ -1,4 +1,4 @@
-package com.example.my4cut.fragment
+package com.umc.mobile.my4cut.ui.friend
 
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -8,11 +8,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
-import com.example.my4cut.databinding.DialogAddFriendBinding
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import com.umc.mobile.my4cut.databinding.DialogAddFriendBinding
 
 class AddFriendDialogFragment : DialogFragment() {
 

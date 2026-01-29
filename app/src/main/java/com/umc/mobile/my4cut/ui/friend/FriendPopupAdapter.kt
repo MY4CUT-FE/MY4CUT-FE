@@ -1,10 +1,10 @@
-package com.example.my4cut
+package com.umc.mobile.my4cut.ui.friend
 
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.my4cut.databinding.ItemFriendPopupBinding
+import com.umc.mobile.my4cut.databinding.ItemFriendPopupBinding
 
 class FriendPopupAdapter(
     private val friends: List<Friend>,

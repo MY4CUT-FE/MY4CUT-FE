@@ -1,22 +1,20 @@
-package com.example.my4cut.fragment
+package com.umc.mobile.my4cut.ui.space
 
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.my4cut.ChatData
-import com.example.my4cut.ChatRVAdapter
-import com.example.my4cut.PhotoData
-import com.example.my4cut.PhotoRVAdapter
-import com.example.my4cut.R
-import com.example.my4cut.databinding.DialogChangeSpaceBinding
-import com.example.my4cut.databinding.DialogExitBinding
-import com.example.my4cut.databinding.DialogPhotoBinding
-import com.example.my4cut.databinding.FragmentSpaceBinding
+import com.umc.mobile.my4cut.ui.photo.ChatData
+import com.umc.mobile.my4cut.ui.photo.ChatRVAdapter
+import com.umc.mobile.my4cut.ui.photo.PhotoData
+import com.umc.mobile.my4cut.ui.photo.PhotoRVAdapter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlin.text.clear
-
+import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.databinding.DialogChangeSpaceBinding
+import com.umc.mobile.my4cut.databinding.DialogExitBinding
+import com.umc.mobile.my4cut.databinding.DialogPhotoBinding
+import com.umc.mobile.my4cut.databinding.FragmentSpaceBinding
 
 class SpaceFragment : Fragment(R.layout.fragment_space) {
     private lateinit var binding: FragmentSpaceBinding

@@ -1,6 +1,4 @@
-package com.example.my4cut.fragment
-
-import com.example.my4cut.fragment.AddFriendDialogFragment
+package com.umc.mobile.my4cut.ui.friend
 
 import FriendUiItem
 import FriendsAdapter
@@ -16,9 +14,8 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.my4cut.Friend
-import com.example.my4cut.R
-import com.example.my4cut.databinding.FragmentFriendsBinding
+import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.databinding.FragmentFriendsBinding
 
 class FriendsFragment : Fragment(R.layout.fragment_friends) {
 

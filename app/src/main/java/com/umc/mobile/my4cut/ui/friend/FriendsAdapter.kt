@@ -3,10 +3,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.my4cut.Friend
-import com.example.my4cut.R
-import com.example.my4cut.databinding.ItemFriendBinding
-import com.example.my4cut.databinding.ItemFriendHeaderBinding
+import com.umc.mobile.my4cut.ui.friend.Friend
+import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.databinding.ItemFriendBinding
+import com.umc.mobile.my4cut.databinding.ItemFriendHeaderBinding
 
 class FriendsAdapter(
     private val getMode: () -> FriendsMode,

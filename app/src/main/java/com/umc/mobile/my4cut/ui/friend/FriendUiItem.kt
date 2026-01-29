@@ -1,4 +1,4 @@
-import com.example.my4cut.Friend
+import com.umc.mobile.my4cut.ui.friend.Friend
 
 sealed class FriendUiItem {
     data class Header(val title: String) : FriendUiItem()

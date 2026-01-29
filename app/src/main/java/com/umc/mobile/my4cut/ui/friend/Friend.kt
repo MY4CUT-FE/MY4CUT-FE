@@ -1,4 +1,4 @@
-package com.example.my4cut
+package com.umc.mobile.my4cut.ui.friend
 
 data class Friend(
     val id: Int,

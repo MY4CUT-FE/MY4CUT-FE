@@ -1,4 +1,4 @@
-package com.example.my4cut
+package com.umc.mobile.my4cut.ui.photo
 
 data class ChatData(
     val profileImg: Int,

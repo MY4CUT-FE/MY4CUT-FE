@@ -1,14 +1,17 @@
 package com.umc.mobile.my4cut
 
 import android.os.Bundle
+import android.view.Gravity
+import android.view.ViewGroup
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.umc.mobile.my4cut.databinding.ActivityMainBinding
 import com.umc.mobile.my4cut.ui.home.HomeFragment
+import com.umc.mobile.my4cut.ui.album.MyAlbumFragment
 import com.umc.mobile.my4cut.ui.mypage.MyPageFragment
 import com.umc.mobile.my4cut.ui.retouch.RetouchFragment
-import com.umc.mobile.my4cut.ui.album.MyAlbumFragment
-import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.ui.space.SpaceFragment
 
 class MainActivity : AppCompatActivity() {
 
@@ -19,41 +22,22 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        initBottomNavigation()
+        initBottomNavigation(savedInstanceState)
     }
 
-    private fun fixBottomNavText() {
-        val bottomNavigationMenuView = binding.bnvMain.getChildAt(0) as? android.view.ViewGroup ?: return
-
-        for (i in 0 until bottomNavigationMenuView.childCount) {
-            val item = bottomNavigationMenuView.getChildAt(i) as? android.view.ViewGroup ?: continue
-
-            // 내부의 텍스트 뷰들 찾는 로직
-            val smallLabel = item.findViewById<android.widget.TextView>(com.google.android.material.R.id.navigation_bar_item_small_label_view)
-            val largeLabel = item.findViewById<android.widget.TextView>(com.google.android.material.R.id.navigation_bar_item_large_label_view)
-
-            // 두 줄 허용
-            smallLabel?.setSingleLine(false)
-            smallLabel?.setLines(2)
-            // 중앙 정렬
-            smallLabel?.gravity = android.view.Gravity.CENTER
-
-            largeLabel?.setSingleLine(false)
-            largeLabel?.setLines(2)
-            largeLabel?.gravity = android.view.Gravity.CENTER
-        }
-    }
-    private fun initBottomNavigation() {
+    private fun initBottomNavigation(savedInstanceState: Bundle?) {
         binding.bnvMain.itemIconTintList = null
+
         binding.bnvMain.post {
             fixBottomNavText()
         }
 
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fcv_main, HomeFragment())
-            .commitAllowingStateLoss()
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fcv_main, HomeFragment())
+                .commit()
+        }
 
-        // 네비게이션 바
         binding.bnvMain.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.menu_home -> {
@@ -77,9 +61,42 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun fixBottomNavText() {
+        val menuView = binding.bnvMain.getChildAt(0) as? ViewGroup ?: return
+
+        for (i in 0 until menuView.childCount) {
+            val item = menuView.getChildAt(i) as? ViewGroup ?: continue
+
+            val smallLabel =
+                item.findViewById<TextView>(com.google.android.material.R.id.navigation_bar_item_small_label_view)
+            val largeLabel =
+                item.findViewById<TextView>(com.google.android.material.R.id.navigation_bar_item_large_label_view)
+
+            smallLabel?.apply {
+                setSingleLine(false)
+                maxLines = 2
+                gravity = Gravity.CENTER
+            }
+
+            largeLabel?.apply {
+                setSingleLine(false)
+                maxLines = 2
+                gravity = Gravity.CENTER
+            }
+        }
+    }
+
     private fun changeFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fcv_main, fragment)
-            .commitAllowingStateLoss()
+            .commit()
+    }
+
+    /** SpaceFragment 열기 (리터치 → 스페이스 이동용) */
+    fun openSpaceFragment() {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fcv_main, SpaceFragment())
+            .addToBackStack(null)
+            .commit()
     }
 }
