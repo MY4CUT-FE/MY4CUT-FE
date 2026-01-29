@@ -24,6 +24,8 @@ import com.example.my4cut.databinding.ItemPhotoSliderBinding
 import com.google.android.material.card.MaterialCardView
 import kotlin.math.abs
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import com.example.my4cut.MainActivity
 import com.example.my4cut.databinding.DialogExitBinding
 import com.example.my4cut.databinding.FragmentEntryDetailBinding
 import com.example.my4cut.ui.myalbum.CalendarData
@@ -99,7 +101,13 @@ class EntryDetailFragment : Fragment() {
     }
 
     private fun setupClickListeners() {
-        binding.btnBack.setOnClickListener { requireActivity().onBackPressedDispatcher.onBackPressed() }
+        binding.btnBack.setOnClickListener {
+            parentFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+
+            val mainFragment = CalendarMainFragment()
+
+            (requireActivity() as MainActivity).changeFragment(mainFragment)
+        }
 
         binding.btnEdit.setOnClickListener {
             setEditMode(true)
@@ -283,8 +291,14 @@ class EntryDetailFragment : Fragment() {
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             if (getItemViewType(position) == TYPE_PHOTO) {
-                val photoHolder = holder as EntryRegisterActivity.PhotoPagerAdapter.PhotoViewHolder
+                val photoHolder = holder as PhotoViewHolder
                 val currentUri = imageUris[position]
+
+                if (isEditMode) {
+                    photoHolder.binding.ivDelete.visibility = View.VISIBLE
+                } else {
+                    photoHolder.binding.ivDelete.visibility = View.GONE
+                }
 
                 if (typicalImageUri == null && position == 0) typicalImageUri = currentUri
                 val isTypical = currentUri == typicalImageUri
@@ -303,7 +317,7 @@ class EntryDetailFragment : Fragment() {
                     showExitDialog(holder.bindingAdapterPosition)
                 }
             } else {
-                val addHolder = holder as EntryRegisterActivity.PhotoPagerAdapter.AddViewHolder
+                val addHolder = holder as AddViewHolder
                 addHolder.itemView.setOnClickListener {
                     launchPhotoPicker()
                 }

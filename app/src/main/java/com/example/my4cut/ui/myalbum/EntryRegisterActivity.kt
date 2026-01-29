@@ -1,6 +1,7 @@
 package com.example.my4cut.ui.myalbum
 
 import android.animation.ArgbEvaluator
+import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -18,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
+import com.example.my4cut.MainActivity
 import com.example.my4cut.R
 import com.example.my4cut.databinding.ActivityEntryRegisterBinding
 import com.example.my4cut.databinding.ItemPhotoAddBinding
@@ -81,7 +83,6 @@ class EntryRegisterActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener { finish() }
-        binding.btnComplete.setOnClickListener { finish() }
         binding.btnComplete.setOnClickListener {
             val dateString = intent.getStringExtra("SELECTED_DATE")
             val calendarData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -91,17 +92,18 @@ class EntryRegisterActivity : AppCompatActivity() {
                 intent.getSerializableExtra("SELECTED_DATA") as? CalendarData
             }
 
-            val fragment = EntryDetailFragment().apply {
-                arguments = Bundle().apply {
-                    putString("selected_date", dateString)
-                    putSerializable("calendar_data", calendarData)
-                }
+            val intent = Intent(this, MainActivity::class.java).apply {
+                // MainActivity에게 프래그먼트 전환이 필요함을 알리는 신호
+                putExtra("TARGET_FRAGMENT", "ENTRY_DETAIL")
+                putExtra("selected_date", dateString)
+                putExtra("calendar_data", calendarData)
+
+                // 중요: MainActivity가 새로 생성되는 게 아니라 기존 것을 재사용하도록 설정
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             }
 
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, fragment)
-                .addToBackStack(null)
-                .commit()
+            startActivity(intent)
+            finish()
         }
     }
 

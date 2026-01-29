@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.example.my4cut.MainActivity
 import com.example.my4cut.ui.myalbum.CalendarData
 import com.example.my4cut.R
 import com.example.my4cut.databinding.FragmentCalendarChildBinding
@@ -65,10 +66,7 @@ class CalendarChildFragment : Fragment() {
                 }
             }
 
-            requireActivity().supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, entryDetailFragment)
-                .addToBackStack(null)
-                .commit()
+            (requireActivity() as? MainActivity)?.changeFragment(entryDetailFragment)
         }
     }
 }

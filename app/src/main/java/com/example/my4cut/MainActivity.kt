@@ -1,10 +1,13 @@
 package com.example.my4cut
 
+import android.content.Intent
 import android.os.Bundle
 import com.example.my4cut.databinding.ActivityMainBinding
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import com.example.my4cut.ui.myalbum.CalendarData
 import com.example.my4cut.ui.myalbum.CalendarMainFragment
+import com.example.my4cut.ui.myalbum.EntryDetailFragment
 import com.example.my4cut.ui.myalbum.HomeFragment
 import com.example.my4cut.ui.myalbum.MyPageFragment
 import com.example.my4cut.ui.myalbum.RetouchFragment
@@ -19,12 +22,29 @@ class MainActivity : AppCompatActivity() {
 
         initBottomNavigation()
 
-        if (savedInstanceState == null) {
-            val calendarFragment = CalendarMainFragment()
+        checkIntent(intent)
+    }
 
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, calendarFragment)
-                .commit()
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // 액티비티가 이미 켜져 있는 상태에서 신호를 받았을 때
+        checkIntent(intent)
+    }
+
+    private fun checkIntent(intent: Intent?) {
+        val target = intent?.getStringExtra("TARGET_FRAGMENT")
+        if (target == "ENTRY_DETAIL") {
+            val dateString = intent.getStringExtra("selected_date")
+            val calendarData = intent.getSerializableExtra("calendar_data") as? CalendarData
+
+            val fragment = EntryDetailFragment().apply {
+                arguments = Bundle().apply {
+                    putString("selected_date", dateString)
+                    putSerializable("calendar_data", calendarData)
+                }
+            }
+
+            changeFragment(fragment)
         }
     }
 
@@ -84,7 +104,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun changeFragment(fragment: Fragment) {
+    fun changeFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .commitAllowingStateLoss()
