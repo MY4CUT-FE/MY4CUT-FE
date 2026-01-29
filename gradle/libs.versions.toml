@@ -16,6 +16,7 @@ navigationFragmentKtx = "2.9.4"
 navigationUiKtx = "2.9.4"
 googleGmsGoogleServices = "4.4.4"
 firebaseDatabase = "22.0.1"
+calendar-view = "2.6.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,6 +40,7 @@ androidx-constraintlayout = { group = "androidx.constraintlayout", name = "const
 androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
 androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
 firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
+calendar = { module = "com.kizitonwose.calendar:view", version.ref = "calendar-view" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

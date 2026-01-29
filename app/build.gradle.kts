@@ -66,7 +66,12 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
+    implementation("com.github.bumptech.glide:glide:4.15.1")
+
     val nav_version = "2.9.4"
+
+    // CalendarView
+    implementation(libs.calendar)
 
     // GSON
     implementation("com.google.code.gson:gson:2.13.2")

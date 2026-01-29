@@ -1,124 +1,92 @@
 package com.example.my4cut
 
 import android.os.Bundle
-import android.content.Intent
 import com.example.my4cut.databinding.ActivityMainBinding
 import androidx.appcompat.app.AppCompatActivity
-import android.widget.*
-import android.app.Activity
-import androidx.fragment.app.*
-import androidx.activity.enableEdgeToEdge
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.my4cut.databinding.DialogChangeBinding
-import com.example.my4cut.databinding.DialogExitBinding
-import com.example.my4cut.databinding.DialogPhotoBinding
-import com.example.my4cut.ui.theme.MY4CUTTheme
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.fragment.app.Fragment
+import com.example.my4cut.ui.myalbum.CalendarMainFragment
+import com.example.my4cut.ui.myalbum.HomeFragment
+import com.example.my4cut.ui.myalbum.MyPageFragment
+import com.example.my4cut.ui.myalbum.RetouchFragment
 
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
-    private lateinit var photoAdapter: PhotoRVAdapter
-    private var photoDatas = ArrayList<PhotoData>()
-
-    private lateinit var chatAdapter: ChatRVAdapter
-    private var chatDatas = ArrayList<ChatData>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        photoAdapter = PhotoRVAdapter(photoDatas)
-        binding.rvPhotoList.adapter = photoAdapter
-        binding.rvPhotoList.layoutManager = LinearLayoutManager(this)
+        initBottomNavigation()
 
-        val chatBinding = DialogPhotoBinding.inflate(layoutInflater)
+        if (savedInstanceState == null) {
+            val calendarFragment = CalendarMainFragment()
 
-        chatAdapter = ChatRVAdapter(chatDatas)
-        chatBinding.rvChatList.adapter = chatAdapter
-        chatBinding.rvChatList.layoutManager = LinearLayoutManager(this)
-
-        photoAdapter.onItemClickListener = { photo ->
-            showPhotoDialog(photo)
-        }
-
-        chatAdapter.onItemClickListener = { chat ->
-            showExitDialog()  //tvTitle.text = 정말 삭제하시겠어요?, tvMessage.text = 삭제한 댓글은 다시 복구할 수 없어요.
-        }
-
-        binding.btnExitMenu.setOnClickListener {
-            showExitDialog()  //혼자일 때 -> tvMessage.text = 나가면 스페이스가 삭제되어 복구할 수 없어요.
-        }
-
-        chatBinding.ivClose.setOnClickListener {
-            showExitDialog()  //tvTitle.text = 정말 삭제하시겠어요?, tvMessage.text = 삭제한 사진은 다시 복구할 수 없어요.
-        }
-
-        binding.btnChange.setOnClickListener {
-            showChangeDialog()
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, calendarFragment)
+                .commit()
         }
     }
 
-    private fun showExitDialog() {
-        val dialogBinding = DialogExitBinding.inflate(layoutInflater)
-        val builder = MaterialAlertDialogBuilder(this)
-            .setView(dialogBinding.root)
-        val dialog = builder.create()
+    private fun fixBottomNavText() {
+        val bottomNavigationMenuView = binding.bnvMain.getChildAt(0) as? android.view.ViewGroup ?: return
 
-        dialog.setCanceledOnTouchOutside(true)
+        for (i in 0 until bottomNavigationMenuView.childCount) {
+            val item = bottomNavigationMenuView.getChildAt(i) as? android.view.ViewGroup ?: continue
 
-        dialogBinding.btnCancel.setOnClickListener {
-            dialog.dismiss()
+            // 내부의 텍스트 뷰들 찾는 로직
+            val smallLabel = item.findViewById<android.widget.TextView>(com.google.android.material.R.id.navigation_bar_item_small_label_view)
+            val largeLabel = item.findViewById<android.widget.TextView>(com.google.android.material.R.id.navigation_bar_item_large_label_view)
+
+            // 두 줄 허용
+            smallLabel?.setSingleLine(false)
+            smallLabel?.setLines(2)
+            // 중앙 정렬
+            smallLabel?.gravity = android.view.Gravity.CENTER
+
+            largeLabel?.setSingleLine(false)
+            largeLabel?.setLines(2)
+            largeLabel?.gravity = android.view.Gravity.CENTER
         }
-
-        dialogBinding.btnExit.setOnClickListener {
-            dialog.dismiss()
-        }
-
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-        dialog.show()
     }
 
-    private fun showPhotoDialog(photo: PhotoData) {
-        val dialogBinding = DialogPhotoBinding.inflate(layoutInflater)
-        val builder = MaterialAlertDialogBuilder(this)
-            .setView(dialogBinding.root)
-        val dialog = builder.create()
-
-        dialog.setCanceledOnTouchOutside(true)
-
-        dialogBinding.ivClose.setOnClickListener {
-            dialog.dismiss()
+    private fun initBottomNavigation() {
+        binding.bnvMain.itemIconTintList = null
+        binding.bnvMain.post {
+            fixBottomNavText()
         }
 
-        dialogBinding.mainText.setOnClickListener {
-            dialog.dismiss()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, HomeFragment())
+            .commitAllowingStateLoss()
+
+        // 네비게이션 바
+        binding.bnvMain.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.menu_home -> {
+                    changeFragment(HomeFragment())
+                    true
+                }
+                R.id.menu_retouch -> {
+                    changeFragment(RetouchFragment())
+                    true
+                }
+                R.id.menu_album -> {
+                    changeFragment(CalendarMainFragment())
+                    true
+                }
+                R.id.menu_mypage -> {
+                    changeFragment(MyPageFragment())
+                    true
+                }
+                else -> false
+            }
         }
-
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-        dialog.show()
     }
 
-    private fun showChangeDialog() {
-        val dialogBinding = DialogChangeBinding.inflate(layoutInflater)
-        val builder = MaterialAlertDialogBuilder(this)
-            .setView(dialogBinding.root)
-        val dialog = builder.create()
-
-        dialog.setCanceledOnTouchOutside(true)
-
-        dialogBinding.ivClose.setOnClickListener {
-            dialog.dismiss()
-        }
-
-        dialogBinding.mainText.setOnClickListener {
-            dialog.dismiss()
-        }
-
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-        dialog.show()
+    private fun changeFragment(fragment: Fragment) {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .commitAllowingStateLoss()
     }
 }

@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">MY4CUT</string>
+    <string name="nav_home">홈</string>
+    <string name="nav_retouch">리터치\n스페이스</string>
+    <string name="nav_album">MY\n앨범</string>
+    <string name="nav_mypage">마이\n페이지</string>
 </resources>

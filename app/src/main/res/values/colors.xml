@@ -1,10 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="coral_900">#FF7E67</color>
+    <color name="coral_800">#FE927F</color>
+    <color name="coral_700">#FFAD9D</color>
+    <color name="coral_600">#FFD5CD</color>
+    <color name="coral_500">#FFEDEA</color>
+    <color name="coral_400">#FFF6F4</color>
+
+    <color name="gray_900">#1A1A1A</color>
+    <color name="gray_700">#626262</color>
+    <color name="gray_600">#6A6A6A</color>
+    <color name="gray_500">#808080</color>
+    <color name="gray_300">#D1D1D1</color>
+    <color name="gray_100">#E6E6E6</color>
+    <color name="gray_50">#FFFCFC</color>
+    <color name="white">#FFFFFF</color>
+
+    <color name="action_blue">#4B7EFF</color>
+    <color name="success_green">#67DE55</color>
+
+    <color name="coral_disabled">#FFD7D1</color>
+
+    <color name="nav_selected">#391801</color>
+    <color name="nav_unselected">#FFF8F0</color>
+    <color name="nav_selected_bg">#3A1E0C</color>
+    <color name="nav_selected_text">#FFF8F0</color>
+    <color name="nav_unselected_text">#391801</color>
+    <color name="nav_bg">#FFF8F0</color>
 </resources>
