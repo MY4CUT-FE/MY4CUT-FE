@@ -1,19 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <font-family xmlns:android="http://schemas.android.com/apk/res/android">
     <font
-        android:fontStyle="normal"
         android:fontWeight="800"
-        android:font="@font/suit_extrabold" />
     <font
-        android:fontStyle="normal"
         android:fontWeight="700"
-        android:font="@font/suit_bold" />
     <font
-        android:fontStyle="normal"
         android:fontWeight="500"
-        android:font="@font/suit_medium" />
     <font
-        android:fontStyle="normal"
         android:fontWeight="400"
-        android:font="@font/suit_regular" />
 </font-family>
