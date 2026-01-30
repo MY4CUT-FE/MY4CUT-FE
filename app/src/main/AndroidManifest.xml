@@ -22,6 +22,10 @@
         </activity>
 
         <activity
+            android:name="com.umc.mobile.my4cut.MainActivity"
+            android:exported="false" />
+
+        <activity
             android:name="com.umc.mobile.my4cut.ui.myalbum.CalendarPickerActivity"
             android:exported="false" />
         <activity
