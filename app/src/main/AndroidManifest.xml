@@ -22,9 +22,11 @@
         </activity>
 
         <activity
-            android:name=".MainActivity"
-            android:exported="false">
-        </activity>
+            android:name="com.umc.mobile.my4cut.ui.myalbum.CalendarPickerActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.umc.mobile.my4cut.ui.myalbum.EntryRegisterActivity"
+            android:exported="false" />
 
         <activity android:name=".ui.login.LoginActivity"/>
         <activity android:name=".ui.signup.SignUpActivity" />

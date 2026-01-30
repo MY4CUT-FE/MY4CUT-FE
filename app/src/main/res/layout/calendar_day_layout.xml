@@ -22,6 +22,6 @@
         android:layout_width="4dp"
         android:layout_height="4dp"
         android:layout_marginTop="20dp"
-        android:background="@drawable/shape_dot"
+        android:background="@drawable/shape_dot2"
         android:visibility="visible" />
 </LinearLayout>

@@ -14,6 +14,7 @@
     <color name="gray_300">#D1D1D1</color>
     <color name="gray_100">#E6E6E6</color>
     <color name="gray_50">#FFFCFC</color>
+    <color name="white">#FFFFFF</color>
 
     <color name="action_blue">#4B7EFF</color>
     <color name="success_green">#67DE55</color>
