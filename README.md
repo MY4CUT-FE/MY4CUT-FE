@@ -15,7 +15,7 @@
 ## 사용할 기술 스택
 
 - 개발 툴: Android Studio - Narwhal(2025.1.3) 
-- 사용 언어: Kotlin(앱 개발), XML(UI 설계)
+- 사용 언어: Kotlin(앱 개발), XML/compose(UI 설계)
 - Android SDK: 34
 - 작업물 저장 및 공유: GitHub
 
@@ -27,7 +27,7 @@
 -  Glide: 이미지 표시해주는 라이브러리로, 마이페이지 프로필 세팅에 사용
 -  MaterialCalendarView: 다양한 커스터마이징이 가능한 캘린더 라이브러리
 -  CompactCalendarView: 간단하고 가벼운 캘린더 뷰 제공, 이벤트 표시와 애니메이션 기능
-
+(개발 진행하면서 추가 될 예정)
 ---
 
 ## branch 전략
