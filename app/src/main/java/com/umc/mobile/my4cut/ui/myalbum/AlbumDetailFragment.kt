@@ -15,6 +15,7 @@ import com.umc.mobile.my4cut.databinding.FragmentAlbumDetailBinding
 import com.umc.mobile.my4cut.databinding.ItemAlbumAddBinding
 import com.umc.mobile.my4cut.databinding.ItemAlbumDetailBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.umc.mobile.my4cut.databinding.DialogExit2Binding
 
 class AlbumDetailFragment : Fragment() {
     private lateinit var binding: FragmentAlbumDetailBinding
@@ -96,7 +97,7 @@ class AlbumDetailFragment : Fragment() {
     }
 
     private fun showDeleteDialog() {
-        val dialogBinding = DialogExitBinding.inflate(layoutInflater)
+        val dialogBinding = DialogExit2Binding.inflate(layoutInflater)
         val builder = MaterialAlertDialogBuilder(requireContext())
             .setView(dialogBinding.root)
         val dialog = builder.create()

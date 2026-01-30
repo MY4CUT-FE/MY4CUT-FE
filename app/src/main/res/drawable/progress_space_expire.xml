@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 회색 트랙 -->
+    <item android:id="@android:id/background">
+        <shape
+            android:shape="ring"
+            android:thickness="2dp"
+            android:useLevel="false">
+            <solid android:color="#CACACA"/>
+        </shape>
+    </item>
+
+    <!-- 진행도 -->
+    <item android:id="@android:id/progress">
+        <shape
+            android:shape="ring"
+            android:thickness="3dp"
+            android:useLevel="true">
+            <solid android:color="#FF7E67"/>
+        </shape>
+    </item>
+
+</layer-list>

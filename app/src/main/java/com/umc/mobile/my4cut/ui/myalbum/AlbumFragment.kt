@@ -66,7 +66,7 @@ class AlbumFragment : Fragment() {
             }
 
             requireActivity().supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, fragment)
+                .replace(R.id.fcv_main, fragment)
                 .addToBackStack(null)
                 .commit()
         }
@@ -129,7 +129,7 @@ class AlbumFragment : Fragment() {
         }
 
         requireActivity().supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment)
+            .replace(R.id.fcv_main, fragment)
             .addToBackStack(null)
             .commit()
     }

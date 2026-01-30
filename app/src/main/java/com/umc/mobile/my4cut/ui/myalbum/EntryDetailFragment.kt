@@ -27,6 +27,8 @@ import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.databinding.DialogExitBinding
 import com.umc.mobile.my4cut.databinding.FragmentEntryDetailBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.umc.mobile.my4cut.databinding.DialogExit2Binding
+import com.umc.mobile.my4cut.databinding.ItemPhotoSlider2Binding
 
 class EntryDetailFragment : Fragment() {
     private lateinit var binding: FragmentEntryDetailBinding
@@ -232,7 +234,7 @@ class EntryDetailFragment : Fragment() {
     }
 
     private fun showExitDialog(position: Int) {
-        val dialogBinding = DialogExitBinding.inflate(layoutInflater)
+        val dialogBinding = DialogExit2Binding.inflate(layoutInflater)
         val builder = MaterialAlertDialogBuilder(requireContext())
             .setView(dialogBinding.root)
         val dialog = builder.create()
@@ -272,14 +274,14 @@ class EntryDetailFragment : Fragment() {
         private val TYPE_PHOTO = 0
         private val TYPE_ADD = 1
 
-        inner class PhotoViewHolder(val binding: ItemPhotoSliderBinding) : RecyclerView.ViewHolder(binding.root)
+        inner class PhotoViewHolder(val binding: ItemPhotoSlider2Binding) : RecyclerView.ViewHolder(binding.root)
         inner class AddViewHolder(val binding: ItemPhotoAddBinding) : RecyclerView.ViewHolder(binding.root)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             val inflater = LayoutInflater.from(parent.context)
 
             return if (viewType == TYPE_PHOTO) {
-                PhotoViewHolder(ItemPhotoSliderBinding.inflate(inflater, parent, false))
+                PhotoViewHolder(ItemPhotoSlider2Binding.inflate(inflater, parent, false))
             } else {
                 AddViewHolder(ItemPhotoAddBinding.inflate(inflater, parent, false))
             }
