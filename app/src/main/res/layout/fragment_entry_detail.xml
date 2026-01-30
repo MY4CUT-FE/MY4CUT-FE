@@ -60,7 +60,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 tools:text="2026.01.08"
-                android:background="@drawable/bg_date_capsule"
+                android:background="@drawable/bg_date_capsule2"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
                 android:textSize="12sp"
