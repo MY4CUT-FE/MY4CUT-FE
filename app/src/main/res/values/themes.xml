@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Base application theme -->
+    <style name="Base.Theme.MY4CUT" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+
+    <!-- App Theme -->
+    <style name="Theme.MY4CUT" parent="Base.Theme.MY4CUT" />
+
+    <!-- Popup Menu -->
+    <style name="MyPopupMenuStyle" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+        <item name="android:popupElevation">4dp</item>
+    </style>
+
+    <style name="FilterMenuTheme" parent="ThemeOverlay.AppCompat.Light">
+        <item name="popupMenuStyle">@style/MyPopupMenuStyle</item>
+        <item name="android:popupMenuStyle">@style/MyPopupMenuStyle</item>
+        <item name="android:textColor">#1A1A1A</item>
+    </style>
+
+    <!-- Bottom Navigation Text -->
+    <style name="BottomNavTextStyle">
+        <item name="android:fontFamily">@font/suit_medium</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:textColor">@color/selector_nav_item_color</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:singleLine">false</item>
+        <item name="android:lineSpacingExtra">-3dp</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <!-- ShapeAppearance -->
+    <style name="ShapeAppearance">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">0dp</item>
+    </style>
+
+    <style name="ShapeAppearance.MySpaceSharp">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">0dp</item>
+    </style>
+
+    <!-- Scrollbar -->
+    <style name="FriendsRecyclerScrollbar">
+        <item name="android:scrollbarTrackVertical">@null</item>
+    </style>
+
+</resources>
