@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <!-- Friends Card -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cardFriends"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_friends_round"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp">
+
+            <!-- Header: Friends title -->
+            <TextView
+                android:id="@+id/tvFriendsTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="13dp"
+                android:fontFamily="@font/suit_bold"
+                android:text="Friends"
+                android:textColor="@color/black"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- Header actions: 추가 -->
+            <TextView
+                android:id="@+id/tvFriendsAdd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="15dp"
+                android:fontFamily="@font/suit_regular"
+                android:text="추가"
+                android:textColor="@color/black"
+                android:textSize="12sp"
+                app:layout_constraintBottom_toBottomOf="@id/tvFriendsTitle"
+                app:layout_constraintEnd_toStartOf="@id/tvFriendsEdit"
+                app:layout_constraintTop_toTopOf="@id/tvFriendsTitle" />
+
+            <!-- Header actions: 편집 -->
+            <TextView
+                android:id="@+id/tvFriendsEdit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/suit_regular"
+                android:text="편집"
+                android:textColor="@color/black"
+                android:textSize="12sp"
+                app:layout_constraintBottom_toBottomOf="@id/tvFriendsTitle"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tvFriendsTitle" />
+
+            <!-- EDIT MODE: 선택 해제 -->
+            <TextView
+                android:id="@+id/tvFriendsSelectClear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="14dp"
+                android:fontFamily="@font/suit_regular"
+                android:text="선택 해제"
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@id/tvFriendsTitle"
+                app:layout_constraintEnd_toStartOf="@id/tvFriendsDelete"
+                app:layout_constraintTop_toTopOf="@id/tvFriendsTitle" />
+
+            <!-- EDIT MODE: 삭제 -->
+            <TextView
+                android:id="@+id/tvFriendsDelete"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="35dp"
+                android:fontFamily="@font/suit_regular"
+                android:text="삭제"
+                android:textColor="#B0B0B0"
+                android:textSize="12sp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@id/tvFriendsTitle"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tvFriendsTitle" />
+
+            <!-- Friends RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvFriends"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginTop="8dp"
+                android:scrollbars="vertical"
+                android:overScrollMode="never"
+                app:layout_constraintTop_toBottomOf="@id/tvFriendsTitle"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- ㄱㄴㄷ 인덱스 스크롤러 -->
+            <LinearLayout
+                android:id="@+id/layoutIndexScroller"
+                android:layout_width="24dp"
+                android:layout_height="0dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingVertical="8dp"
+                android:background="@android:color/transparent"
+                app:layout_constraintTop_toTopOf="@id/rvFriends"
+                app:layout_constraintBottom_toBottomOf="@id/rvFriends"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <!-- 글자들은 코드에서 동적으로 추가 -->
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

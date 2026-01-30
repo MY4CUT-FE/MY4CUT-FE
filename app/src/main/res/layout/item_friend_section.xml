@@ -1,0 +1,11 @@
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tvSectionTitle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fontFamily="@font/suit_bold"
+    android:paddingStart="12dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="4dp"
+    android:text="즐겨찾기"
+    android:textColor="#8A8A8A"
+    android:textSize="12sp" />
