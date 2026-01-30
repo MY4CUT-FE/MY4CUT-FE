@@ -45,7 +45,6 @@
         android:clipChildren="false"
         android:clipToPadding="false"
         app:layout_constraintTop_toBottomOf="@id/line_top"
-        app:layout_constraintBottom_toTopOf="@id/btn_complete"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -203,7 +202,7 @@
 
                 <EditText
                     android:id="@+id/et_diary"
-                    android:layout_width="296dp"
+                    android:layout_width="0dp"
                     android:layout_height="120dp"
                     android:background="@drawable/bg_diary_input"
                     android:hint="오늘의 네컷을 기록해보세요."
@@ -213,7 +212,8 @@
                     android:padding="16dp"
                     android:gravity="top|start"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"/>
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/iv_mood_1"/>
 
                 <TextView
                     android:id="@+id/tv_text_count"
@@ -238,6 +238,7 @@
                     android:padding="5dp"
                     android:background="@drawable/bg_img_circle"
                     android:src="@drawable/img_mood_happy"
+                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@id/et_diary"
                     app:layout_constraintTop_toTopOf="@id/et_diary"/>
 

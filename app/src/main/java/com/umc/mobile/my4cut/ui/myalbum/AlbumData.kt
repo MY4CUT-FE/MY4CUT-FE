@@ -1,4 +1,4 @@
-package com.example.my4cut.ui.myalbum
+package com.umc.mobile.my4cut.ui.myalbum
 
 data class AlbumData(
     var title: String, // 제목

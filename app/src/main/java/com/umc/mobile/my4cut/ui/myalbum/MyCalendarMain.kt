@@ -1,4 +1,4 @@
-package com.example.my4cut.ui.myalbum
+package com.umc.mobile.my4cut.ui.myalbum
 
 import android.content.Context
 import android.graphics.Color
@@ -8,25 +8,18 @@ import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.ImageView
 import android.widget.TextView
-import androidx.cardview.widget.CardView
 import androidx.core.view.children
 import com.bumptech.glide.Glide
-import com.example.my4cut.ui.myalbum.CalendarData
-import com.example.my4cut.R
-import com.example.my4cut.databinding.CalendarDayLayoutBinding
-import com.example.my4cut.databinding.CalendarDayMainBinding
-import com.example.my4cut.databinding.ViewCustomCalendarBinding
+import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.databinding.ViewCustomCalendarMainBinding
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.daysOfWeek
 import com.kizitonwose.calendar.view.MonthDayBinder
 import com.kizitonwose.calendar.view.MonthHeaderFooterBinder
-import com.kizitonwose.calendar.view.ViewContainer
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -34,25 +27,24 @@ import java.time.format.TextStyle
 import java.util.Locale
 import android.view.MotionEvent
 
-class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
+class MyCalendarMain @JvmOverloads constructor( // 메인 캘린더
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
     private val TAG = this::class.simpleName
-    private val binding: ViewCustomCalendarBinding =
-        ViewCustomCalendarBinding.inflate(LayoutInflater.from(context), this, true)
+    private val binding: ViewCustomCalendarMainBinding =
+        ViewCustomCalendarMainBinding.inflate(LayoutInflater.from(context), this, true)
 
     private var selectedDate: LocalDate? = null
     private var currentMonth = YearMonth.now()
 
-    private var onDateSelectedListener: ((String) -> Unit)? = null
+    private var onDateSelectedListener: ((String, CalendarData?) -> Unit)? = null
 
-    // 데이터가 있는 날짜들을 저장할 세트 (중복 방지 및 빠른 검색을 위해 Set 권장)
     private var datesWithDataMap = mutableMapOf<LocalDate, CalendarData>()
 
-    private var currentDayLayoutRes = R.layout.calendar_day_layout
+    private var currentDayLayoutRes = R.layout.calendar_day_main
 
     // 외부(Fragment 등)에서 데이터를 설정할 수 있는 함수
     fun setDatesWithData(dataList: List<CalendarData>) {
@@ -78,7 +70,7 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
         }
     }
 
-    fun setOnDateSelectedListener(listener: (String) -> Unit) {
+    fun setOnDateSelectedListener(listener: (String, CalendarData?) -> Unit) {
         onDateSelectedListener = listener
     }
 
@@ -142,10 +134,11 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
 
             val today = LocalDate.now()
             selectedDate = today
+            val todayData = datesWithDataMap[today]
 
             binding.mcCustom.post {
                 binding.mcCustom.notifyDateChanged(today)
-                onDateSelectedListener?.invoke(getSelectedDateFormatted())
+                onDateSelectedListener?.invoke(getSelectedDateFormatted(), todayData)
             }
 
             // 오늘 날짜 이전, 이후 연월은 100개월 전까지 표시
@@ -293,7 +286,26 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
 
                                 // 새로 선택된 날짜 갱신 후 콜백에 전달
                                 mcCustom.notifyDateChanged(data.date)
-                                onDateSelectedListener?.invoke(getSelectedDateFormatted())
+                                onDateSelectedListener?.invoke(getSelectedDateFormatted(), dayData)
+                            }
+                        }
+                    }
+
+                    container.dayImage?.setOnClickListener {
+                        // 현재 월에 속한 과거 또는 오늘 날짜만 선택 가능
+                        if (data.position == DayPosition.MonthDate && !isFutureDate && dayData != null) {
+                            if (selectedDate != data.date) {
+                                val oldDate = selectedDate
+                                selectedDate = data.date
+
+                                // 이전 선택된 날짜 갱신
+                                oldDate?.let { date ->
+                                    mcCustom.notifyDateChanged(date)
+                                }
+
+                                // 새로 선택된 날짜 갱신 후 콜백에 전달
+                                mcCustom.notifyDateChanged(data.date)
+                                onDateSelectedListener?.invoke(getSelectedDateFormatted(), dayData)
                             }
                         }
                     }
@@ -305,32 +317,4 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
     private fun updateYearMonthText() {
         binding.tvYearMonth.text = "${currentMonth.monthValue}월"
     }
-}
-
-class DayViewContainer(view: View, layoutRes: Int) : ViewContainer(view) {
-    // binding을 먼저 선언해서 내부 뷰들을 가져옵니다.
-    val textView: TextView
-    val dayImage: ImageView?
-    val dataDot: View?
-    val cardImage: CardView?
-
-    init {
-        if (layoutRes == R.layout.calendar_day_main) {
-            val b = CalendarDayMainBinding.bind(view)
-            textView = b.calendarDayText
-            dayImage = b.dayImage
-            dataDot = null
-            cardImage = b.cardImage
-        } else {
-            val b = CalendarDayLayoutBinding.bind(view)
-            textView = b.calendarDayText
-            dayImage = null // 일반 레이아웃에는 이미지가 없을 경우
-            dataDot = b.viewDataDot
-            cardImage = null
-        }
-    }
-}
-
-class MonthViewContainer(view: View) : ViewContainer(view) {
-    val titlesContainer = view as ViewGroup
 }

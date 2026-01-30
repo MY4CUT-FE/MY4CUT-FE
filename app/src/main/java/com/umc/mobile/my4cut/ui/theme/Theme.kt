@@ -1,6 +1,5 @@
-package com.example.my4cut.ui.theme
+package com.umc.mobile.my4cut.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

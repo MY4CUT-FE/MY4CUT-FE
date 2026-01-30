@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.my4cut"
+    namespace = "com.umc.mobile.my4cut"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.my4cut"
+        applicationId = "com.umc.mobile.my4cut"
         minSdk = 34
         targetSdk = 34
         versionCode = 1

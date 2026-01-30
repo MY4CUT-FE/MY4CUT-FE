@@ -1,4 +1,4 @@
-package com.example.my4cut.ui.theme
+package com.umc.mobile.my4cut.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

@@ -1,16 +1,16 @@
-package com.example.my4cut
+package com.umc.mobile.my4cut
 
 import android.content.Intent
 import android.os.Bundle
-import com.example.my4cut.databinding.ActivityMainBinding
+import com.umc.mobile.my4cut.databinding.ActivityMainBinding
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import com.example.my4cut.ui.myalbum.CalendarData
-import com.example.my4cut.ui.myalbum.CalendarMainFragment
-import com.example.my4cut.ui.myalbum.EntryDetailFragment
-import com.example.my4cut.ui.myalbum.HomeFragment
-import com.example.my4cut.ui.myalbum.MyPageFragment
-import com.example.my4cut.ui.myalbum.RetouchFragment
+import com.umc.mobile.my4cut.ui.myalbum.CalendarData
+import com.umc.mobile.my4cut.ui.myalbum.CalendarMainFragment
+import com.umc.mobile.my4cut.ui.myalbum.EntryDetailFragment
+import com.umc.mobile.my4cut.ui.myalbum.HomeFragment
+import com.umc.mobile.my4cut.ui.myalbum.MyPageFragment
+import com.umc.mobile.my4cut.ui.myalbum.RetouchFragment
 
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding

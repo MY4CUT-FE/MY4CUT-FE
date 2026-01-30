@@ -1,14 +1,11 @@
-package com.example.my4cut.ui.myalbum
+package com.umc.mobile.my4cut.ui.myalbum
 
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.my4cut.ui.myalbum.CalendarData
-import com.example.my4cut.R
-import com.example.my4cut.databinding.ActivityCalendarPickerBinding
+import com.umc.mobile.my4cut.databinding.ActivityCalendarPickerBinding
 import java.time.LocalDate
 
 class CalendarPickerActivity : AppCompatActivity() {

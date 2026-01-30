@@ -1,4 +1,4 @@
-package com.example.my4cut.ui.myalbum
+package com.umc.mobile.my4cut.ui.myalbum
 
 import android.animation.ArgbEvaluator
 import android.content.Intent
@@ -8,7 +8,6 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,11 +18,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
-import com.example.my4cut.MainActivity
-import com.example.my4cut.R
-import com.example.my4cut.databinding.ActivityEntryRegisterBinding
-import com.example.my4cut.databinding.ItemPhotoAddBinding
-import com.example.my4cut.databinding.ItemPhotoSliderBinding
+import com.umc.mobile.my4cut.MainActivity
+import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.databinding.ActivityEntryRegisterBinding
+import com.umc.mobile.my4cut.databinding.ItemPhotoAddBinding
+import com.umc.mobile.my4cut.databinding.ItemPhotoSliderBinding
 import com.google.android.material.card.MaterialCardView
 import kotlin.math.abs
 

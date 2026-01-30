@@ -1,4 +1,4 @@
-package com.example.my4cut.ui.myalbum
+package com.umc.mobile.my4cut.ui.myalbum
 
 import android.net.Uri
 import android.os.Bundle
@@ -8,16 +8,12 @@ import android.view.ViewGroup
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.my4cut.R
-import com.example.my4cut.databinding.DialogChangeBinding
-import com.example.my4cut.databinding.DialogExitBinding
-import com.example.my4cut.databinding.FragmentAlbumBinding
-import com.example.my4cut.databinding.FragmentAlbumDetailBinding
-import com.example.my4cut.databinding.FragmentEntryDetailBinding
-import com.example.my4cut.databinding.ItemAlbumAddBinding
-import com.example.my4cut.databinding.ItemAlbumDetailBinding
+import com.umc.mobile.my4cut.databinding.DialogChangeBinding
+import com.umc.mobile.my4cut.databinding.DialogExitBinding
+import com.umc.mobile.my4cut.databinding.FragmentAlbumDetailBinding
+import com.umc.mobile.my4cut.databinding.ItemAlbumAddBinding
+import com.umc.mobile.my4cut.databinding.ItemAlbumDetailBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class AlbumDetailFragment : Fragment() {

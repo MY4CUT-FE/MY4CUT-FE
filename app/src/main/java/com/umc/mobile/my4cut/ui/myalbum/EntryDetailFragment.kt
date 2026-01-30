@@ -1,4 +1,4 @@
-package com.example.my4cut.ui.myalbum
+package com.umc.mobile.my4cut.ui.myalbum
 
 import android.animation.ArgbEvaluator
 import android.graphics.Color
@@ -7,30 +7,26 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
-import com.example.my4cut.R
-import com.example.my4cut.databinding.ItemPhotoAddBinding
-import com.example.my4cut.databinding.ItemPhotoSliderBinding
+import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.databinding.ItemPhotoAddBinding
+import com.umc.mobile.my4cut.databinding.ItemPhotoSliderBinding
 import com.google.android.material.card.MaterialCardView
 import kotlin.math.abs
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
-import com.example.my4cut.MainActivity
-import com.example.my4cut.databinding.DialogExitBinding
-import com.example.my4cut.databinding.FragmentEntryDetailBinding
-import com.example.my4cut.ui.myalbum.CalendarData
+import com.umc.mobile.my4cut.MainActivity
+import com.umc.mobile.my4cut.databinding.DialogExitBinding
+import com.umc.mobile.my4cut.databinding.FragmentEntryDetailBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import java.time.LocalDate
 
 class EntryDetailFragment : Fragment() {
     private lateinit var binding: FragmentEntryDetailBinding

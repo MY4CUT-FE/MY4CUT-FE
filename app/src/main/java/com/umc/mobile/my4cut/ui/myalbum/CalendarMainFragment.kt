@@ -1,4 +1,4 @@
-package com.example.my4cut.ui.myalbum
+package com.umc.mobile.my4cut.ui.myalbum
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -8,8 +8,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.example.my4cut.databinding.FragmentCalendarMainBinding
-import com.example.my4cut.databinding.ViewTabCustomBinding
+import com.umc.mobile.my4cut.databinding.FragmentCalendarMainBinding
+import com.umc.mobile.my4cut.databinding.ViewTabCustomBinding
 import com.google.android.material.tabs.TabLayoutMediator
 
 class CalendarMainFragment : Fragment() {

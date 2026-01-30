@@ -1,10 +1,9 @@
-package com.example.my4cut.ui.myalbum
+package com.umc.mobile.my4cut.ui.myalbum
 
 import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import com.example.my4cut.R
-import com.example.my4cut.databinding.ItemAlbumBinding
+import com.umc.mobile.my4cut.databinding.ItemAlbumBinding
 
 
 class AlbumRVAdapter (
