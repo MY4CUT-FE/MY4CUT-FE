@@ -44,6 +44,7 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
         updateHeaderUi()
         initFriends()
         setupIndexScroller()
+        setupAddFriendResultListener()
     }
 
     // 최초 친구 데이터 초기화(더미)
@@ -247,5 +248,33 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
         friend.isFavorite = !friend.isFavorite
         // 전체 리스트에서 다시 반영
         submitFriends()
+    }
+
+    private fun setupAddFriendResultListener() {
+        parentFragmentManager.setFragmentResultListener(
+            AddFriendDialogFragment.RESULT_ADD_FRIEND,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            val nickname =
+                bundle.getString(AddFriendDialogFragment.KEY_FRIEND_NICKNAME) ?: return@setFragmentResultListener
+
+            // 이미 존재하는 친구면 추가하지 않음
+            if (allFriends.any { it.nickname == nickname }) return@setFragmentResultListener
+
+            // 임시 id 생성 (더미 데이터 기준)
+            val newId = (allFriends.maxOfOrNull { it.id } ?: 0) + 1
+
+            allFriends.add(
+                Friend(
+                    id = newId,
+                    nickname = nickname,
+                    isFavorite = false
+                )
+            )
+
+            // 이름순 정렬 후 UI 반영
+            allFriends.sortBy { it.nickname }
+            submitFriends()
+        }
     }
 }

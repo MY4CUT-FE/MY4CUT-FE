@@ -16,6 +16,11 @@ import com.umc.mobile.my4cut.databinding.DialogAddFriendBinding
 
 class AddFriendDialogFragment : DialogFragment() {
 
+    companion object {
+        const val RESULT_ADD_FRIEND = "result_add_friend"
+        const val KEY_FRIEND_NICKNAME = "key_friend_nickname"
+    }
+
     private var _binding: DialogAddFriendBinding? = null
     private val binding get() = _binding!!
 
@@ -97,6 +102,11 @@ class AddFriendDialogFragment : DialogFragment() {
         binding.layoutResult.visibility = View.VISIBLE
         binding.tvResultName.text = nickname
         binding.btnAction.text = "추가"
+
+        // 검색 결과가 보일 때는 내 코드 영역 숨김
+        binding.tvMyCodeLabel.visibility = View.GONE
+        binding.tvMyCode.visibility = View.GONE
+
         isSearchResultVisible = true
     }
 
@@ -104,8 +114,14 @@ class AddFriendDialogFragment : DialogFragment() {
     private fun addFriend() {
         val nickname = binding.tvResultName.text.toString()
 
-        // TODO: 실제 친구 추가 API
-        // 현재는 로그 + 닫기
+        // 부모 Fragment에 친구 추가 결과 전달
+        parentFragmentManager.setFragmentResult(
+            RESULT_ADD_FRIEND,
+            Bundle().apply {
+                putString(KEY_FRIEND_NICKNAME, nickname)
+            }
+        )
+
         dismiss()
     }
 

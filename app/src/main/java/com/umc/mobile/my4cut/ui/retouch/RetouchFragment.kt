@@ -1,5 +1,7 @@
 package com.umc.mobile.my4cut.ui.retouch
 
+import android.content.Intent
+
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
@@ -7,6 +9,7 @@ import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.FragmentRetouchBinding
 import com.umc.mobile.my4cut.ui.friend.FriendsFragment
 import com.umc.mobile.my4cut.ui.space.MySpaceFragment
+import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 
 class RetouchFragment : Fragment(R.layout.fragment_retouch) {
 
@@ -19,7 +22,8 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
         _binding = FragmentRetouchBinding.bind(view)
 
         binding.ivNotification.setOnClickListener {
-            // TODO: 알림 화면/다이얼로그 연결
+            val intent = Intent(requireContext(), NotificationActivity::class.java)
+            startActivity(intent)
         }
 
         // 자식 Fragment 삽입 (MySpace / Friends)

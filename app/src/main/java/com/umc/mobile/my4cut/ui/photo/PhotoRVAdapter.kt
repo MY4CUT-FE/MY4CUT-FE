@@ -5,31 +5,41 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.umc.mobile.my4cut.databinding.ItemPhotoBinding
 
-class PhotoRVAdapter(private val photoList: List<PhotoData>) : RecyclerView.Adapter<PhotoRVAdapter.ViewHolder>() {
+class PhotoRVAdapter(
+    private val photoList: List<PhotoData>
+) : RecyclerView.Adapter<PhotoRVAdapter.PhotoViewHolder>() {
 
-    // 클릭 리스너를 담을 변수
     var onItemClickListener: ((PhotoData) -> Unit)? = null
 
-    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
-        val binding: ItemPhotoBinding = ItemPhotoBinding.inflate(LayoutInflater.from(viewGroup.context), viewGroup, false)
+    inner class PhotoViewHolder(
+        private val binding: ItemPhotoBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
 
-        return ViewHolder(binding)
+        fun bind(photo: PhotoData) {
+            binding.ivPhoto.setImageResource(photo.photoImageRes)
+            binding.ivUserIcon.setImageResource(photo.userImageRes)
+            binding.tvUserName.text = photo.userName
+            binding.tvDateTime.text = photo.dateTime
+            binding.tvCommentCount.text = photo.commentCount.toString()
+
+            binding.root.setOnClickListener {
+                onItemClickListener?.invoke(photo)
+            }
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
+        val binding = ItemPhotoBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return PhotoViewHolder(binding)
+    }
+
+    override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
+        holder.bind(photoList[position])
     }
 
     override fun getItemCount(): Int = photoList.size
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = photoList[position]
-        holder.bind(item)
-        holder.itemView.setOnClickListener {
-            onItemClickListener?.invoke(item) // 외부로 아이템 데이터 전달
-        }
-    }
-
-    inner class ViewHolder(val binding: ItemPhotoBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: PhotoData) {
-            binding.tvUserName.text = item.userName
-            binding.ivPhoto.setImageResource(item.photoImageRes)
-        }
-    }
 }

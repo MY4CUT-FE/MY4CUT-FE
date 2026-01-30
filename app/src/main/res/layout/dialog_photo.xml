@@ -58,6 +58,16 @@
         app:layout_constraintBottom_toBottomOf="@id/tvDate"/>
 
     <ImageView
+        android:id="@+id/ivDelete"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_marginEnd="8dp"
+        android:src="@drawable/ic_trash"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/ivSave"
+        app:layout_constraintBottom_toBottomOf="@id/tvDate" />
+
+    <ImageView
         android:id="@+id/ivMainPhoto"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -103,6 +113,7 @@
         app:layout_constraintTop_toTopOf="@id/ivChat" />
 
     <ImageView
+        android:id="@+id/ivToggleComment"
         android:layout_width="10dp"
         android:layout_height="9dp"
         android:src="@drawable/ic_down"

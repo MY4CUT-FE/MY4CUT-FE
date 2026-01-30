@@ -105,9 +105,9 @@ class FriendsAdapter(
             // 즐겨찾기 별
             binding.ivStar.setImageResource(
                 if (friend.isFavorite)
-                    R.drawable.ic_star_on
+                    R.drawable.ic_star_friend_on
                 else
-                    R.drawable.ic_star_off
+                    R.drawable.ic_star_friend_off
             )
 
             binding.ivStar.setOnClickListener {
