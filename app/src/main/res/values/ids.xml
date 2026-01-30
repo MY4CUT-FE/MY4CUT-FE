@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="ivProfile" type="id" />
+    <item name="tvNickname" type="id" />
+    <item name="ivFavorite" type="id" />
+    <item name="btnCreateCommonSpace" type="id" />
+    <item name="ivRightIcon" type="id" />
+    <item name="btnAction" type="id" />
+    <item name="dividerTop" type="id" />
+    <item name="tvInputLabel" type="id" />
+    <item name="etFriendCode" type="id" />
+    <item name="tvMyCodeLabel" type="id" />
+    <item name="tvMyCode" type="id" />
+    <item name="layoutResult" type="id" />
+    <item name="tvResultName" type="id" />
+    <item name="progressExpire" type="id" />
+</resources>
