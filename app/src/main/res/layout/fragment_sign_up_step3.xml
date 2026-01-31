@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <ImageView
+        android:id="@+id/btn_back"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="8dp"
+        android:src="@drawable/ic_arrow_back_24"
+        android:padding="12dp"
+        app:tint="@color/gray_900"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_step_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:background="@drawable/bg_circle_gray"
+        android:textColor="#808080"
+        android:text="1"
+        android:textSize="14sp"
+        android:fontFamily="@font/suit_bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_back" />
+
+    <TextView
+        android:id="@+id/tv_step_2"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/bg_circle_coral"
+        android:gravity="center"
+        android:text="2"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        android:fontFamily="@font/suit_bold"
+        app:layout_constraintStart_toEndOf="@id/tv_step_1"
+        app:layout_constraintTop_toTopOf="@id/tv_step_1"
+        app:layout_constraintBottom_toBottomOf="@id/tv_step_1"/>
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="닉네임을 입력해주세요."
+        android:textColor="@color/gray_900"
+        android:textSize="20sp"
+        android:fontFamily="@font/suit_bold"
+        app:layout_constraintStart_toStartOf="@id/tv_step_1"
+        app:layout_constraintTop_toBottomOf="@id/tv_step_1" />
+
+    <TextView
+        android:id="@+id/tv_label_nickname"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="닉네임"
+        android:textColor="@color/gray_900"
+        android:textSize="12sp"
+        android:fontFamily="@font/suit_medium"
+        app:layout_constraintStart_toStartOf="@id/tv_title"
+        app:layout_constraintTop_toBottomOf="@id/tv_title" />
+
+    <EditText
+        android:id="@+id/et_nickname"
+        android:layout_width="0dp"
+        android:layout_height="52dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/bg_edittext_rounded"
+        android:hint="닉네임 입력"
+        android:paddingHorizontal="16dp"
+        android:textSize="14sp"
+        android:fontFamily="@font/suit_regular"
+        android:textColor="@color/gray_900"
+        android:inputType="textPersonName"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/tv_label_nickname"
+        app:layout_constraintTop_toBottomOf="@id/tv_label_nickname" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btn_next"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="24dp"
+        android:text="다음"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:fontFamily="@font/suit_bold"
+        android:stateListAnimator="@null"
+        android:background="@drawable/selector_btn_next"
+        android:enabled="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -59,7 +59,7 @@ main branch와 하위 각 팀원별 branch 이용
 
 각 태그를 이용하여 어떤 내용이 변경되었는지를 나타내는 규칙
 - [Feat]: 새로운 기능 추가
-- [Fix]: 버그 수정
+- [Fix]: 버그 수정![스크린샷 2026-01-31 오후 1.24.08.png](../../../../../../var/folders/62/y8yyywz92yz7716hpjv394t00000gn/T/TemporaryItems/NSIRD_screencaptureui_zYLJv6/%EC%8A%A4%ED%81%AC%EB%A6%B0%EC%83%B7%202026-01-31%20%EC%98%A4%ED%9B%84%201.24.08.png)
 - [Docs]: 문서 수정
 - [Design]: UI 수정
 - [Rename]: 파일명, 폴더명 변경
