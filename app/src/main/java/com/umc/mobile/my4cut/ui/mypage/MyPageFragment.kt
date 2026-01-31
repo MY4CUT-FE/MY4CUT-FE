@@ -16,6 +16,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import com.bumptech.glide.Glide
 import com.umc.mobile.my4cut.databinding.FragmentMyPageBinding
 import com.umc.mobile.my4cut.ui.intro.IntroActivity
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
@@ -28,10 +29,21 @@ class MyPageFragment : Fragment() {
     // 프로필 수정 화면에서 돌아올 때 데이터를 받기 위한 런처
     private val editProfileLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
-            val newNickname = result.data?.getStringExtra("nickname")
-            // 받아온 닉네임으로 화면 갱신
+            val data = result.data
+
+            // 1. 닉네임 갱신
+            val newNickname = data?.getStringExtra("nickname")
             if (!newNickname.isNullOrEmpty()) {
                 binding.tvNickname.text = newNickname
+            }
+
+            // 2. 프로필 사진 갱신
+            val profileImageUri = data?.getStringExtra("profile_image")
+            if (!profileImageUri.isNullOrEmpty()) {
+                Glide.with(this)
+                    .load(profileImageUri)
+                    .circleCrop()
+                    .into(binding.ivProfile)
             }
         }
     }
@@ -44,26 +56,33 @@ class MyPageFragment : Fragment() {
         return binding.root
     }
 
+    // 뷰가 생성된 후 리스너와 초기 화면 설정을 실행
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        initClickListener()
-        setupUsageText() //  텍스트 색상 변경 함수 호출
+        initClickListener() // 클릭 리스너 연결
+        setupUsageText()    // 텍스트 설정
     }
 
-    // "이번 달 11장의..." 텍스트 중 숫자만 색상 변경하는 함수
+    override fun onResume() {
+        super.onResume()
+        // 저장된 닉네임 불러오기
+        val sharedPref = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+        val savedNickname = sharedPref.getString("nickname", "닉네임")
+
+        binding.tvNickname.text = savedNickname
+    }
+
     private fun setupUsageText() {
-        val count = 11 // 실제로는 서버나 DB에서 받아올 숫자
+        val count = 11
         val fullText = "이번 달 ${count}장의 네컷을\n찍었어요!"
 
         val spannable = SpannableStringBuilder(fullText)
-        val colorColor = Color.parseColor("#FF7E67") // 코랄색
+        val colorColor = Color.parseColor("#FF7E67")
 
-        // 숫자 부분("11")의 시작과 끝 인덱스 찾기
         val start = fullText.indexOf(count.toString())
         val end = start + count.toString().length
 
-        // 해당 부분에만 색상 적용
         spannable.setSpan(
             ForegroundColorSpan(colorColor),
             start,
@@ -79,13 +98,14 @@ class MyPageFragment : Fragment() {
             startActivity(Intent(requireContext(), NotificationActivity::class.java))
         }
 
-        // 프로필 수정 화면으로 이동할 때 런처 사용
+        // 프로필 수정 화면으로 이동
         val editProfileListener = View.OnClickListener {
             val intent = Intent(requireContext(), EditProfileActivity::class.java)
-            // 현재 닉네임을 넘겨주면 수정 화면 초기값으로 쓸 수 있음
             intent.putExtra("nickname", binding.tvNickname.text.toString())
             editProfileLauncher.launch(intent)
         }
+
+        // 아이콘과 이미지 모두에 리스너 적용
         binding.ivProfile.setOnClickListener(editProfileListener)
         binding.ivEditProfile.setOnClickListener(editProfileListener)
 
