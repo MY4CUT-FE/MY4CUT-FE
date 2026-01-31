@@ -15,6 +15,7 @@ import com.umc.mobile.my4cut.databinding.FragmentAlbumDetailBinding
 import com.umc.mobile.my4cut.databinding.ItemAlbumAddBinding
 import com.umc.mobile.my4cut.databinding.ItemAlbumDetailBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.DialogExit2Binding
 
 class AlbumDetailFragment : Fragment() {
@@ -44,6 +45,21 @@ class AlbumDetailFragment : Fragment() {
         if (albumTitle == "ALL") {
             binding.btnEdit.visibility = View.GONE
             binding.btnDelete.visibility = View.GONE
+        }
+
+        binding.btnBack.setOnClickListener {
+            val photoResIds = selectedImageUris.map { uri ->
+                uri.toString().toIntOrNull() ?: R.drawable.image1
+            }
+
+            val result = Bundle().apply {
+                putString("ALBUM_TITLE", binding.tvTitle.text.toString())
+                // Uri 리스트를 String 리스트로 변환하여 전달
+                putIntegerArrayList("SELECTED_IMAGES", ArrayList(photoResIds))
+            }
+
+            parentFragmentManager.setFragmentResult("album_complete", result)
+            parentFragmentManager.popBackStack()
         }
 
         binding.btnEdit.setOnClickListener { showChangeDialog() }
