@@ -1,5 +1,6 @@
 package com.umc.mobile.my4cut.ui.mypage
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.provider.MediaStore
@@ -9,14 +10,25 @@ import com.bumptech.glide.Glide
 import com.umc.mobile.my4cut.databinding.ActivityEditProfileBinding
 
 class EditProfileActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityEditProfileBinding
 
+    // 선택된 이미지 URI를 저장할 변수 선언
+    private var selectedImageUri: android.net.Uri? = null
+
     // 갤러리 런처
-    private val galleryLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    private val galleryLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
-            val imageUri = result.data?.data
-            imageUri?.let {
-                Glide.with(this).load(it).circleCrop().into(binding.ivProfile)
+            val uri = result.data?.data
+            if (uri != null) {
+                // 변수에 저장해두기
+                selectedImageUri = uri
+
+                // 화면에 즉시 반영 (선택한 사진 미리보기)
+                com.bumptech.glide.Glide.with(this)
+                    .load(uri)
+                    .circleCrop()
+                    .into(binding.ivProfile)
             }
         }
     }
@@ -26,7 +38,7 @@ class EditProfileActivity : AppCompatActivity() {
         binding = ActivityEditProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 마이페이지에서 받아온 기존 닉네임 표시
+        // 초기화: 넘어온 닉네임 등을 표시
         val currentNickname = intent.getStringExtra("nickname")
         binding.etNickname.setText(currentNickname)
 
@@ -36,21 +48,36 @@ class EditProfileActivity : AppCompatActivity() {
     private fun initClickListener() {
         binding.btnBack.setOnClickListener { finish() }
 
-        // 프로필 사진 변경
+        // 사진 변경 버튼
         val imageClickListener = {
-            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            val intent = android.content.Intent(android.content.Intent.ACTION_PICK)
+            intent.type = "image/*"
             galleryLauncher.launch(intent)
         }
         binding.ivProfile.setOnClickListener { imageClickListener() }
         binding.ivEditIcon.setOnClickListener { imageClickListener() }
 
-        // 확인 버튼: 변경된 닉네임을 결과로 담아서 종료
+        // 확인 버튼: 데이터 담아서 보내기
         binding.btnConfirm.setOnClickListener {
             val newNickname = binding.etNickname.text.toString()
+
+            // 1. 변경된 닉네임을 내부 저장소에 저장
+            val sharedPref = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+            with(sharedPref.edit()) {
+                putString("nickname", newNickname)
+                apply() // 저장 확정
+            }
+
+            // 2. 결과 인텐트 설정
             val resultIntent = Intent()
             resultIntent.putExtra("nickname", newNickname)
-            setResult(RESULT_OK, resultIntent) // 결과 설정
-            finish() // 액티비티 종료 -> 마이페이지로 복귀
+
+            if (selectedImageUri != null) {
+                resultIntent.putExtra("profile_image", selectedImageUri.toString())
+            }
+
+            setResult(RESULT_OK, resultIntent)
+            finish()
         }
     }
 }

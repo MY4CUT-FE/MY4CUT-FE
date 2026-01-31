@@ -34,12 +34,22 @@ class SignUpStep3Fragment : Fragment() {
     private fun initClickListener() {
         binding.btnBack.setOnClickListener { parentFragmentManager.popBackStack() }
 
-        // [완료] 버튼 클릭 시 -> 홈 화면(MainActivity)으로 이동
+        // [완료] 버튼 클릭 시
         binding.btnNext.setOnClickListener {
+            val inputNickname = binding.etNickname.text.toString()
+
+            // 1. 닉네임을 내부 저장소(SharedPreferences)에 저장
+            // "UserPrefs"라는 이름의 저장소에 "nickname"이란 키값으로 저장
+            val sharedPref = requireContext().getSharedPreferences("UserPrefs", android.content.Context.MODE_PRIVATE)
+            with(sharedPref.edit()) {
+                putString("nickname", inputNickname)
+                apply() // 저장 확정
+            }
+
+            // 2. 홈 화면으로 이동
             val intent = Intent(requireContext(), MainActivity::class.java)
             startActivity(intent)
 
-            // 회원가입 액티비티 종료 (뒤로가기 눌러도 다시 못 돌아오게)
             requireActivity().finish()
         }
     }
