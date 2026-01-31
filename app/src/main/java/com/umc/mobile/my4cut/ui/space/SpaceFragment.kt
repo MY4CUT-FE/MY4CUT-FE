@@ -18,6 +18,17 @@ import com.umc.mobile.my4cut.ui.photo.ChatRVAdapter
 import com.umc.mobile.my4cut.ui.home.HomeFragment
 
 class SpaceFragment : Fragment(R.layout.fragment_space) {
+    data class Space(
+        val id: Int,
+        val name: String,
+        val createdAt: Long,
+        val expiredAt: Long,
+        val maxMember: Int = 10,
+        val currentMember: Int
+    )
+
+    private val spaces = mutableListOf<Space>()
+
     private lateinit var binding: FragmentSpaceBinding
     private lateinit var photoAdapter: PhotoRVAdapter
     private var photoDatas = ArrayList<PhotoData>()
@@ -216,6 +227,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         }
 
         dialogBinding.mainText.setOnClickListener {
+            // SpaceFragment에서는 더 이상 생성하지 않음
             dialog.dismiss()
         }
 
@@ -321,5 +333,66 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
 
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         dialog.show()
+    }
+
+    // Space는 CreateSpaceDialogFragment 결과를 통해서만 생성됨
+    // - name: 모달에서 입력한 스페이스 이름
+    // - currentMember: 선택한 인원 수 (+ 본인)
+    // - maxMember: 항상 10
+    // 이 함수는 외부(Fragment/Dialog)에서 전달받은 값만 사용해야 함
+    private fun addNewSpace(
+        name: String,
+        currentMember: Int,
+        maxMember: Int = 10
+    ) {
+        val now = System.currentTimeMillis()
+        val sevenDays = 7L * 24 * 60 * 60 * 1000
+
+        val newSpace = Space(
+            id = spaces.size + 1,
+            name = name,
+            createdAt = now,
+            expiredAt = now + sevenDays,
+            maxMember = maxMember,
+            currentMember = currentMember
+        )
+
+        spaces.add(newSpace)
+
+        // TODO: SpaceCircleView / Adapter 반영
+        // spaceCircleView.setSpaces(spaces)
+    }
+
+    private fun showMaxSpaceDialog() {
+        val dialogBinding = DialogExitBinding.inflate(layoutInflater)
+
+        dialogBinding.tvTitle.text = "스페이스를 더 만들 수 없어요"
+        dialogBinding.tvMessage.text = "스페이스는 최대 4개까지 만들 수 있어요."
+        dialogBinding.btnExit.text = "확인"
+
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.visibility = View.GONE
+
+        dialogBinding.btnExit.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.show()
+    }
+
+    companion object {
+        private const val ARG_SPACE_ID = "space_id"
+
+        fun newInstance(spaceId: Int): SpaceFragment {
+            return SpaceFragment().apply {
+                arguments = Bundle().apply {
+                    putInt(ARG_SPACE_ID, spaceId)
+                }
+            }
+        }
     }
 }

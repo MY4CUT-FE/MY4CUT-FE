@@ -18,7 +18,7 @@ class ExpireCircleView @JvmOverloads constructor(
         setLayerType(LAYER_TYPE_SOFTWARE, null)
     }
 
-    var progress: Float = 0.6f   // 0f ~ 1f
+    var progress: Float = 0f   // 생성 직후 비어 있음 (0f ~ 1f)
         set(value) {
             field = value.coerceIn(0f, 1f)
             invalidate()
@@ -76,4 +76,19 @@ class ExpireCircleView @JvmOverloads constructor(
 
     private fun dpToPx(dp: Float): Float =
         dp * resources.displayMetrics.density
+
+    fun setExpireInfo(createdAt: Long, expiredAt: Long) {
+        val totalDuration = expiredAt - createdAt
+
+        if (totalDuration <= 0L) {
+            progress = 1f
+            return
+        }
+
+        val elapsed = (System.currentTimeMillis() - createdAt)
+            .coerceAtLeast(0L)
+
+        progress = (elapsed.toFloat() / totalDuration.toFloat())
+            .coerceIn(0f, 1f)
+    }
 }

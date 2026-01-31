@@ -1,18 +1,37 @@
 package com.umc.mobile.my4cut.ui.space
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.FragmentMySpaceBinding
 
 class MySpaceFragment : Fragment() {
 
+    private val spaces = mutableListOf<Space>()
+
     private var _binding: FragmentMySpaceBinding? = null
     private val binding get() = _binding!!
+
+    // Handler & Runnable for periodic expired space removal
+    private val expireHandler = Handler(Looper.getMainLooper())
+    private val expireCheckRunnable = object : Runnable {
+        override fun run() {
+            val beforeSize = spaces.size
+            removeExpiredSpaces()
+            if (spaces.size != beforeSize) {
+                updateSpaceUi()
+            }
+            // Check again after 1 minute (60,000 ms)
+            expireHandler.postDelayed(this, 60_000)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -27,7 +46,15 @@ class MySpaceFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.tvAddSpace.setOnClickListener {
+            if (spaces.size >= 4) return@setOnClickListener
+
             val dialog = CreateSpaceDialogFragment()
+            dialog.setOnConfirmListener { result ->
+                addNewSpace(
+                    name = result.spaceName,
+                    currentMember = result.currentMember
+                )
+            }
             dialog.show(parentFragmentManager, "CreateSpaceDialog")
         }
 
@@ -36,7 +63,7 @@ class MySpaceFragment : Fragment() {
             // ... 이동 로직
         }
 
-        setupSpaceCircles()
+        updateSpaceUi()
     }
 
     override fun onDestroyView() {
@@ -86,61 +113,103 @@ class MySpaceFragment : Fragment() {
     private fun dpToPx(dp: Int): Int =
         (dp * resources.displayMetrics.density).toInt()
 
-    private fun setupSpaceCircles() {
+    private fun updateSpaceUi() {
         val parent = binding.layoutSpaceItems as FrameLayout
         parent.removeAllViews()
 
-        // 테스트 데이터: 4개
-        val spaceCount = 4
+        removeExpiredSpaces()
 
-        // [수정 1] 원의 크기를 화면에 맞게 전체적으로 줄임 (겹침 방지)
-        // 기존: 150, 110... -> 수정: 120, 100, 90, 80
-        fun inflateCircle(sizeDp: Int): View {
-            return LayoutInflater.from(requireContext())
-                .inflate(R.layout.item_space_circle, parent, false).apply {
-                    val sizePx = dpToPx(sizeDp)
-                    layoutParams = FrameLayout.LayoutParams(sizePx, sizePx)
+        spaces.take(4).forEachIndexed { index, space ->
+            val view = inflateCircleByIndex(index, parent, space)
+            val (x, y) = getOffsetByIndex(index)
+            addSpaceCircle(parent, view, x, y)
+        }
+    }
+
+    private fun inflateCircleByIndex(index: Int, parent: FrameLayout, space: Space): View {
+        val sizeDp = listOf(120, 100, 90, 80)[index]
+
+        return LayoutInflater.from(requireContext())
+            .inflate(R.layout.item_space_circle, parent, false).apply {
+                val sizePx = dpToPx(sizeDp)
+                layoutParams = FrameLayout.LayoutParams(sizePx, sizePx)
+
+                // ----- 데이터 바인딩 -----
+                findViewById<TextView>(R.id.tvSpaceName)?.text = space.name
+                findViewById<TextView>(R.id.tvMemberCount)?.text =
+                    "${space.currentMember}/${space.maxMember}"
+
+                val remainDays =
+                    ((space.expiredAt - System.currentTimeMillis()) / (1000 * 60 * 60 * 24))
+                        .coerceAtLeast(0)
+
+                findViewById<TextView>(R.id.tvExpire)?.text = "만료까지 ${remainDays}일"
+
+                // ExpireCircleView에 생성/만료 정보 전달
+                findViewById<ExpireCircleView>(R.id.expireCircle)
+                    ?.setExpireInfo(space.createdAt, space.expiredAt)
+
+                // ===== 스페이스 클릭 → SpaceFragment 이동 =====
+                setOnClickListener {
+                    android.util.Log.d("MySpaceFragment", "Space clicked: ${space.id}")
+                    requireActivity()
+                        .supportFragmentManager
+                        .beginTransaction()
+                        .replace(
+                            R.id.fcv_main,
+                            SpaceFragment.newInstance(space.id)
+                        )
+                        .addToBackStack("SpaceFragment")
+                        .commit()
                 }
-        }
-
-        // 크기 정의
-        val view1 = inflateCircle(120) // 메인 (Top-Right)
-        val view2 = inflateCircle(100) // 서브 1 (Left)
-        val view3 = inflateCircle(90)  // 서브 2 (Bottom)
-        val view4 = inflateCircle(80)  // 서브 3 (Small filler)
-
-        // [수정 2] 좌표를 더 바깥으로 분산
-        when (spaceCount) {
-            1 -> {
-                // 정중앙
-                addSpaceCircle(parent, view1, 0f, 0f)
             }
-            2 -> {
-                // 양쪽 대각선으로 벌림
-                addSpaceCircle(parent, view1, -0.3f, -0.3f)
-                addSpaceCircle(parent, view2, 0.3f, 0.3f)
-            }
-            3 -> {
-                // 삼각형 구도
-                addSpaceCircle(parent, view1, 0.3f, -0.2f)   // 우측 상단 (메인)
-                addSpaceCircle(parent, view2, -0.4f, 0.1f)   // 좌측 중앙
-                addSpaceCircle(parent, view3, 0.2f, 0.45f)   // 우측 하단
-            }
-            4 -> {
-                // 4개 배치 (겹치지 않게 사방으로 분산)
+    }
 
-                // 1. 메인 (우측 상단)
-                addSpaceCircle(parent, view1, 0.3f, -0.3f)
+    private fun getOffsetByIndex(index: Int): Pair<Float, Float> =
+        listOf(
+            Pair(0.3f, -0.3f),    // 0: 우상
+            Pair(-0.45f, -0.1f),  // 1: 좌
+            Pair(-0.15f, 0.5f),   // 2: 하
+            Pair(0.5f, 0.35f)     // 3: 우하
+        )[index]
 
-                // 2. 서브 (좌측) - 약간 위로 올림
-                addSpaceCircle(parent, view2, -0.45f, -0.1f)
+    private fun addNewSpace(
+        name: String,
+        currentMember: Int
+    ) {
+        val now = System.currentTimeMillis()
+        val sevenDays = 7L * 24 * 60 * 60 * 1000
 
-                // 3. 서브 (하단 중앙) - 왼쪽으로 치우치게
-                addSpaceCircle(parent, view3, -0.15f, 0.5f)
+        val newSpace = Space(
+            id = spaces.size + 1,
+            name = name,
+            currentMember = currentMember,
+            maxMember = 10,
+            createdAt = now,
+            expiredAt = now + sevenDays
+        )
 
-                // 4. 서브 (우측 하단 구석) - 작게 채우기
-                addSpaceCircle(parent, view4, 0.5f, 0.35f)
+        spaces.add(newSpace)
+        updateSpaceUi()
+    }
+
+    private fun removeExpiredSpaces() {
+        val now = System.currentTimeMillis()
+        val iterator = spaces.iterator()
+        while (iterator.hasNext()) {
+            if (iterator.next().expiredAt <= now) {
+                iterator.remove()
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        expireHandler.post(expireCheckRunnable)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        expireHandler.removeCallbacks(expireCheckRunnable)
     }
 }

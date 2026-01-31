@@ -21,6 +21,12 @@ import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
 
 class CreateSpaceDialogFragment : DialogFragment() {
 
+    private var onConfirmListener: ((CreateSpaceResult) -> Unit)? = null
+
+    fun setOnConfirmListener(listener: (CreateSpaceResult) -> Unit) {
+        onConfirmListener = listener
+    }
+
     private var _binding: DialogCreateSpaceBinding? = null
     private val binding get() = _binding!!
 
@@ -86,7 +92,15 @@ class CreateSpaceDialogFragment : DialogFragment() {
 
         // 확인 버튼 → 선택된 친구로 스페이스 생성
         binding.mainText.setOnClickListener {
-            createSpaceWithSelectedFriends()
+            val spaceName = binding.etSpaceName.text.toString().trim()
+
+            onConfirmListener?.invoke(
+                CreateSpaceResult(
+                    spaceName = spaceName,
+                    currentMember = selectedFriends.size + 1,
+                    maxMember = 10
+                )
+            )
             dismiss()
         }
     }
@@ -201,6 +215,8 @@ class CreateSpaceDialogFragment : DialogFragment() {
         }
     }
 
+    // 더 이상 사용하지 않음. 외부에서 처리.
+    /*
     private fun createSpaceWithSelectedFriends() {
         // TODO: 실제 스페이스 생성 API/DB 연동
         // 현재는 선택 결과 로그/확인용
@@ -212,6 +228,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
             Log.d("CreateSpace", "member=${it.nickname}")
         }
     }
+    */
 
     override fun onDestroyView() {
         super.onDestroyView()
