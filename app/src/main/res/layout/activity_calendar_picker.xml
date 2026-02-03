@@ -1,67 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FFFFFF">
 
     <ImageView
         android:id="@+id/btnBack"
-        android:layout_width="9dp"
-        android:layout_height="17dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_marginStart="20dp"
-        android:src="@drawable/ic_back"
+        android:layout_marginTop="20dp"
+        android:src="@drawable/ic_calendar_left"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/tvDateTime"
-        app:layout_constraintBottom_toBottomOf="@id/tvDateTime"/>
+        app:layout_constraintTop_toTopOf="parent"/>
 
     <TextView
-        android:id="@+id/tvDateTime"
+        android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="날짜 선택"
         android:textColor="#000000"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:fontFamily="@font/suit_bold"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack"
+        app:layout_constraintTop_toTopOf="@id/btnBack"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="@id/line"/>
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <View
         android:id="@+id/line"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="#E9E9E9"
-        android:layout_marginTop="15dp"
-        app:layout_constraintTop_toBottomOf="@id/tvDateTime"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        android:layout_marginTop="20dp"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"/>
 
-    <com.umc.mobile.my4cut.ui.myalbum.MyCalendar
+    <com.umc.mobile.my4cut.ui.calendar.MyCalendar
         android:id="@+id/myCalendar"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
         app:layout_constraintTop_toBottomOf="@id/line"
         app:layout_constraintBottom_toTopOf="@id/btnNext"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <TextView
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnNext"
-        android:layout_width="353dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:text="다음"
-        android:background="@drawable/bg_label_deep_pink"
-        android:padding="15dp"
-        android:textSize="14sp"
-        android:textColor="#FFFFFF"
-        android:fontFamily="@font/suit_bold"
-        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginHorizontal="20dp"
         android:layout_marginBottom="30dp"
+        android:background="@drawable/bg_white_rounded_12dp"
+        android:backgroundTint="#FF7E67"
+        android:text="다음"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:fontFamily="@font/suit_bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>

@@ -24,11 +24,13 @@ import com.umc.mobile.my4cut.databinding.ActivityEntryRegisterBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoAddBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoSliderBinding
 import com.google.android.material.card.MaterialCardView
+import com.umc.mobile.my4cut.databinding.ActivityEntryRegister2Binding
+import com.umc.mobile.my4cut.databinding.ItemPhotoSlider2Binding
 import kotlin.math.abs
 
 class EntryRegisterActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityEntryRegisterBinding
+    private lateinit var binding: ActivityEntryRegister2Binding
 
     // 이미지 무한대 추가 리스트
     private var selectedImageUris = mutableListOf<Uri>()
@@ -46,7 +48,7 @@ class EntryRegisterActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityEntryRegisterBinding.inflate(layoutInflater)
+        binding = ActivityEntryRegister2Binding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setupDateData()
@@ -227,12 +229,12 @@ class EntryRegisterActivity : AppCompatActivity() {
         private val TYPE_PHOTO = 0
         private val TYPE_ADD = 1
 
-        inner class PhotoViewHolder(val binding: ItemPhotoSliderBinding) : RecyclerView.ViewHolder(binding.root)
+        inner class PhotoViewHolder(val binding: ItemPhotoSlider2Binding) : RecyclerView.ViewHolder(binding.root)
         inner class AddViewHolder(val binding: ItemPhotoAddBinding) : RecyclerView.ViewHolder(binding.root)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             return if (viewType == TYPE_PHOTO) {
-                val binding = ItemPhotoSliderBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                val binding = ItemPhotoSlider2Binding.inflate(LayoutInflater.from(parent.context), parent, false)
                 PhotoViewHolder(binding)
             } else {
                 val binding = ItemPhotoAddBinding.inflate(LayoutInflater.from(parent.context), parent, false)

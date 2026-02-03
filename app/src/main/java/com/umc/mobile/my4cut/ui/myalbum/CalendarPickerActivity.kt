@@ -5,18 +5,19 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.umc.mobile.my4cut.databinding.ActivityCalendarPicker2Binding
 import com.umc.mobile.my4cut.databinding.ActivityCalendarPickerBinding
 import java.time.LocalDate
 
 class CalendarPickerActivity : AppCompatActivity() {
-    lateinit var binding: ActivityCalendarPickerBinding
+    lateinit var binding: ActivityCalendarPicker2Binding
     private val TAG = this::class.simpleName
 
     private var dummyDates: ArrayList<CalendarData> = arrayListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityCalendarPickerBinding.inflate(layoutInflater)
+        binding = ActivityCalendarPicker2Binding.inflate(layoutInflater)
         setContentView(binding.root)
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
