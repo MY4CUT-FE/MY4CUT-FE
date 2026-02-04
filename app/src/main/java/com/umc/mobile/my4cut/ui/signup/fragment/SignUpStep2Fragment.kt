@@ -46,18 +46,21 @@ class SignUpStep2Fragment : Fragment() {
         val toggleListener = View.OnTouchListener { v, event ->
             if (event.action == MotionEvent.ACTION_UP) {
                 val editText = v as EditText
-                if (event.rawX >= (editText.right - editText.compoundDrawables[2].bounds.width())) {
-                    val selection = editText.selectionEnd
-                    if (editText.inputType == (InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
-                        editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_on, 0)
-                    } else {
-                        editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_off, 0)
+                // 오른쪽 아이콘(눈알) 영역 클릭 감지
+                if (editText.compoundDrawables[2] != null) {
+                    if (event.rawX >= (editText.right - editText.compoundDrawables[2].bounds.width())) {
+                        val selection = editText.selectionEnd
+                        if (editText.inputType == (InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+                            editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                            editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_on, 0)
+                        } else {
+                            editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                            editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_off, 0)
+                        }
+                        editText.compoundDrawables[2]?.setTint(ContextCompat.getColor(requireContext(), R.color.gray_500))
+                        editText.setSelection(selection)
+                        return@OnTouchListener true
                     }
-                    editText.compoundDrawables[2]?.setTint(ContextCompat.getColor(requireContext(), R.color.gray_500))
-                    editText.setSelection(selection)
-                    return@OnTouchListener true
                 }
             }
             false
@@ -67,9 +70,9 @@ class SignUpStep2Fragment : Fragment() {
     }
 
     private fun initClickListener() {
-        // 여기가 첫 화면이므로 액티비티를 종료해야 함
         binding.btnBack.setOnClickListener { requireActivity().finish() }
-        // 중복 확인 버튼
+
+        // 중복 확인 버튼 (API 명세서에 별도 중복확인 API가 없으므로 로컬 검증 처리)
         binding.btnCheckDuplicate.setOnClickListener {
             val email = binding.etEmail.text.toString()
 
@@ -78,51 +81,50 @@ class SignUpStep2Fragment : Fragment() {
                 return@setOnClickListener
             }
 
-            // [테스트용 가짜 로직]
-            // "test@gmail.com" 이면 중복된 이메일로 간주 (실패 케이스)
-            if (email == "test@gmail.com") {
-                isEmailVerified = false // 인증 실패 처리
-
-                binding.tvEmailStatus.visibility = View.VISIBLE
-                binding.tvEmailStatus.text = "이미 가입된 이메일입니다."
-
-                // 실패 스타일 (빨간색)
-                val color = Color.RED
-                binding.tvEmailStatus.setTextColor(color)
-
-                // 느낌표 아이콘 + 빨간 틴트
-                binding.tvEmailStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_error_circle, 0, 0, 0)
-                binding.tvEmailStatus.compoundDrawables[0].setTint(color)
-
-                // 에러 테두리 적용
-                binding.etEmail.setBackgroundResource(R.drawable.bg_edittext_rounded)
-
+            // [테스트] 간단한 이메일 형식 체크만 수행 (필요 시 수정)
+            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                // 이메일 형식이 아닐 때
+                isEmailVerified = false
+                updateEmailStatusUI(false, "올바른 이메일 형식이 아닙니다.")
             } else {
-                // 테스트 이메일 외 모든 이메일은 성공으로 간주
-                isEmailVerified = true // 인증 성공 처리
-
-                binding.tvEmailStatus.visibility = View.VISIBLE
-                binding.tvEmailStatus.text = "사용 가능한 아이디에요."
-
-                // 성공 스타일 (연두색)
-                val color = ContextCompat.getColor(requireContext(), R.color.success_green)
-                binding.tvEmailStatus.setTextColor(color)
-
-                // 체크 아이콘 + 연두색 틴트
-                binding.tvEmailStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_check_circle, 0, 0, 0)
-                binding.tvEmailStatus.compoundDrawables[0].setTint(color)
-
-                // 성공 테두리 적용
-                binding.etEmail.setBackgroundResource(R.drawable.bg_edittext_success)
+                // 성공 처리
+                isEmailVerified = true
+                updateEmailStatusUI(true, "사용 가능한 아이디에요.")
             }
-
-            // 버튼 상태 갱신
             checkInputValidity()
         }
 
         binding.btnNext.setOnClickListener {
-            // 다음 단계(닉네임 입력)로 이동
-            (activity as? SignUpActivity)?.changeFragment(SignUpStep3Fragment())
+            val email = binding.etEmail.text.toString()
+            val password = binding.etPassword.text.toString()
+
+            // Step3로 데이터 전달
+            val fragment = SignUpStep3Fragment()
+            val bundle = Bundle()
+            bundle.putString("email", email)
+            bundle.putString("password", password)
+            fragment.arguments = bundle
+
+            (activity as? SignUpActivity)?.changeFragment(fragment)
+        }
+    }
+
+    private fun updateEmailStatusUI(isSuccess: Boolean, message: String) {
+        binding.tvEmailStatus.visibility = View.VISIBLE
+        binding.tvEmailStatus.text = message
+
+        if (isSuccess) {
+            val color = ContextCompat.getColor(requireContext(), R.color.success_green)
+            binding.tvEmailStatus.setTextColor(color)
+            binding.tvEmailStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_check_circle, 0, 0, 0)
+            binding.tvEmailStatus.compoundDrawables[0]?.setTint(color)
+            binding.etEmail.setBackgroundResource(R.drawable.bg_edittext_success)
+        } else {
+            val color = Color.RED
+            binding.tvEmailStatus.setTextColor(color)
+            binding.tvEmailStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_error_circle, 0, 0, 0)
+            binding.tvEmailStatus.compoundDrawables[0]?.setTint(color)
+            binding.etEmail.setBackgroundResource(R.drawable.bg_edittext_rounded)
         }
     }
 
@@ -136,14 +138,13 @@ class SignUpStep2Fragment : Fragment() {
             }
         }
 
-        // 이메일 입력 변경 시 초기화
         binding.etEmail.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
+                // 이메일 수정 시 인증 상태 초기화
                 isEmailVerified = false
                 binding.tvEmailStatus.visibility = View.GONE
-                // 배경 원래대로(회색) 복구
                 binding.etEmail.setBackgroundResource(R.drawable.bg_edittext_rounded)
                 checkInputValidity()
             }
@@ -153,7 +154,6 @@ class SignUpStep2Fragment : Fragment() {
         binding.etPasswordCheck.addTextChangedListener(watcher)
     }
 
-    // 비밀번호 확인 로직
     private fun checkPasswordMatch() {
         val pw = binding.etPassword.text.toString()
         val pwCheck = binding.etPasswordCheck.text.toString()
@@ -166,32 +166,22 @@ class SignUpStep2Fragment : Fragment() {
         }
 
         if (pw == pwCheck) {
-            // [일치] 성공 스타일 적용 (우측 정렬됨)
             binding.tvPwStatus.visibility = View.VISIBLE
             binding.tvPwStatus.text = "비밀번호가 일치해요."
-
             val color = ContextCompat.getColor(requireContext(), R.color.success_green)
             binding.tvPwStatus.setTextColor(color)
-
-            // 체크 아이콘 + 연두색 틴트
             binding.tvPwStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_check_circle, 0, 0, 0)
-            binding.tvPwStatus.compoundDrawables[0].setTint(color)
-
+            binding.tvPwStatus.compoundDrawables[0]?.setTint(color)
             binding.etPasswordCheck.setBackgroundResource(R.drawable.bg_edittext_success)
             isPasswordMatched = true
         } else {
-            // [불일치] 실패 스타일 적용 (우측 정렬됨)
             binding.tvPwStatus.visibility = View.VISIBLE
             binding.tvPwStatus.text = "비밀번호가 일치하지 않습니다."
-
-            val color = Color.RED // 실패 색상
+            val color = Color.RED
             binding.tvPwStatus.setTextColor(color)
-
-            // 느낌표 아이콘 + 빨간색 틴트
             binding.tvPwStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_error_circle, 0, 0, 0)
-            binding.tvPwStatus.compoundDrawables[0].setTint(color)
-
-            binding.etPasswordCheck.setBackgroundResource(R.drawable.bg_edittext_rounded) // 혹은 에러용 빨간 테두리
+            binding.tvPwStatus.compoundDrawables[0]?.setTint(color)
+            binding.etPasswordCheck.setBackgroundResource(R.drawable.bg_edittext_rounded)
             isPasswordMatched = false
         }
     }
@@ -200,12 +190,7 @@ class SignUpStep2Fragment : Fragment() {
         val email = binding.etEmail.text.toString()
         val pw = binding.etPassword.text.toString()
 
-        val isValid = email.isNotEmpty() &&
-                isEmailVerified &&
-                pw.isNotEmpty() &&
-                isPasswordMatched
-
-        binding.btnNext.isEnabled = isValid
+        binding.btnNext.isEnabled = email.isNotEmpty() && isEmailVerified && pw.isNotEmpty() && isPasswordMatched
     }
 
     override fun onDestroyView() {

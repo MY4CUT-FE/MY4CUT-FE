@@ -1,83 +1,199 @@
 package com.umc.mobile.my4cut.ui.mypage
 
-import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
+import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.base.BaseResponse
+import com.umc.mobile.my4cut.data.user.model.ProfileImageRequest
+import com.umc.mobile.my4cut.data.user.model.NicknameRequest
+import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 import com.umc.mobile.my4cut.databinding.ActivityEditProfileBinding
+import com.umc.mobile.my4cut.network.RetrofitClient
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class EditProfileActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityEditProfileBinding
+    private var selectedImageUri: Uri? = null
 
-    // 선택된 이미지 URI를 저장할 변수 선언
-    private var selectedImageUri: android.net.Uri? = null
-
-    // 갤러리 런처
-    private val galleryLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val uri = result.data?.data
+    // 갤러리 이미지 선택
+    private val imagePickerLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             if (uri != null) {
-                // 변수에 저장해두기
                 selectedImageUri = uri
-
-                // 화면에 즉시 반영 (선택한 사진 미리보기)
-                com.bumptech.glide.Glide.with(this)
+                Glide.with(this)
                     .load(uri)
                     .circleCrop()
                     .into(binding.ivProfile)
             }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityEditProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 초기화: 넘어온 닉네임 등을 표시
-        val currentNickname = intent.getStringExtra("nickname")
-        binding.etNickname.setText(currentNickname)
-
+        initView()
         initClickListener()
+        loadMyInfo()
     }
 
+    /** 초기 닉네임 */
+    private fun initView() {
+        val nickname = intent.getStringExtra("nickname")
+        binding.etNickname.setText(nickname)
+    }
+
+    /** 클릭 리스너 */
     private fun initClickListener() {
+
         binding.btnBack.setOnClickListener { finish() }
 
-        // 사진 변경 버튼
-        val imageClickListener = {
-            val intent = android.content.Intent(android.content.Intent.ACTION_PICK)
-            intent.type = "image/*"
-            galleryLauncher.launch(intent)
+        binding.ivProfile.setOnClickListener {
+            imagePickerLauncher.launch("image/*")
         }
-        binding.ivProfile.setOnClickListener { imageClickListener() }
-        binding.ivEditIcon.setOnClickListener { imageClickListener() }
 
-        // 확인 버튼: 데이터 담아서 보내기
+        binding.ivEditIcon.setOnClickListener {
+            imagePickerLauncher.launch("image/*")
+        }
+
         binding.btnConfirm.setOnClickListener {
-            val newNickname = binding.etNickname.text.toString()
+            val nickname = binding.etNickname.text.toString()
 
-            // 1. 변경된 닉네임을 내부 저장소에 저장
-            val sharedPref = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-            with(sharedPref.edit()) {
-                putString("nickname", newNickname)
-                apply() // 저장 확정
+            if (nickname.isBlank()) {
+                Toast.makeText(this, "닉네임을 입력해주세요.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
-
-            // 2. 결과 인텐트 설정
-            val resultIntent = Intent()
-            resultIntent.putExtra("nickname", newNickname)
 
             if (selectedImageUri != null) {
-                resultIntent.putExtra("profile_image", selectedImageUri.toString())
+                updateProfileImage(selectedImageUri.toString()) {
+                    updateNickname(nickname)
+                }
+            } else {
+                updateNickname(nickname)
+            }
+        }
+    }
+
+    /** 내 정보 조회 (초기 프로필 이미지) */
+    private fun loadMyInfo() {
+        RetrofitClient.userService.getMyPage()
+            .enqueue(object : Callback<BaseResponse<UserMeResponse>> {
+
+                override fun onResponse(
+                    call: Call<BaseResponse<UserMeResponse>>,
+                    response: Response<BaseResponse<UserMeResponse>>
+                ) {
+                    val body = response.body()?.data ?: return
+
+                    if (!body.profileImageUrl.isNullOrEmpty()) {
+                        Glide.with(this@EditProfileActivity)
+                            .load(body.profileImageUrl)
+                            .circleCrop()
+                            .into(binding.ivProfile)
+                    } else {
+                        binding.ivProfile.setImageResource(R.drawable.img_profile_default)
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<BaseResponse<UserMeResponse>>,
+                    t: Throwable
+                ) {
+                    // 실패해도 기본 이미지 유지
+                    binding.ivProfile.setImageResource(R.drawable.img_profile_default)
+                }
+            })
+    }
+
+    /** 프로필 이미지 변경 */
+    private fun updateProfileImage(
+        imageUrl: String,
+        onSuccess: () -> Unit
+    ) {
+        RetrofitClient.userService.updateProfileImage(
+            ProfileImageRequest(imageUrl)
+        ).enqueue(object : Callback<BaseResponse<UserMeResponse>> {
+
+            override fun onResponse(
+                call: Call<BaseResponse<UserMeResponse>>,
+                response: Response<BaseResponse<UserMeResponse>>
+            ) {
+                if (response.isSuccessful) {
+                    onSuccess()
+                } else {
+                    Toast.makeText(
+                        this@EditProfileActivity,
+                        "프로필 이미지 변경 실패",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
 
-            setResult(RESULT_OK, resultIntent)
-            finish()
-        }
+            override fun onFailure(
+                call: Call<BaseResponse<UserMeResponse>>,
+                t: Throwable
+            ) {
+                Toast.makeText(
+                    this@EditProfileActivity,
+                    "네트워크 오류",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        })
+    }
+
+    /** 닉네임 변경 */
+    private fun updateNickname(nickname: String) {
+        RetrofitClient.userService.updateNickname(
+            NicknameRequest(nickname)
+        ).enqueue(object : Callback<BaseResponse<UserMeResponse>> {
+
+            override fun onResponse(
+                call: Call<BaseResponse<UserMeResponse>>,
+                response: Response<BaseResponse<UserMeResponse>>
+            ) {
+                if (response.isSuccessful) {
+
+                    val intent = Intent().apply {
+                        putExtra("nickname", nickname)
+                        putExtra("profile_image", selectedImageUri?.toString())
+                    }
+                    setResult(RESULT_OK, intent)
+
+                    Toast.makeText(
+                        this@EditProfileActivity,
+                        "회원정보가 수정되었습니다.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    finish()
+                } else {
+                    Toast.makeText(
+                        this@EditProfileActivity,
+                        "닉네임 변경 실패",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            override fun onFailure(
+                call: Call<BaseResponse<UserMeResponse>>,
+                t: Throwable
+            ) {
+                Toast.makeText(
+                    this@EditProfileActivity,
+                    "네트워크 오류",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        })
     }
 }
