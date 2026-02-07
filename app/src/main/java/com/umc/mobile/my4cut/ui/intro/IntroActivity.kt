@@ -45,14 +45,13 @@ class IntroActivity : AppCompatActivity() {
 
     private fun checkAutoLogin() {
         val savedRefreshToken = TokenManager.getRefreshToken(this)
-
         if (savedRefreshToken.isNullOrEmpty()) return
 
         val headerToken = "Bearer $savedRefreshToken"
 
-        RetrofitClient.authService.refresh(headerToken)
+        // 인터셉터가 없는 NoAuth 서비스를 사용
+        RetrofitClient.authServiceNoAuth.refresh(headerToken)
             .enqueue(object : Callback<BaseResponse<TokenResult>> {
-
                 override fun onResponse(
                     call: Call<BaseResponse<TokenResult>>,
                     response: Response<BaseResponse<TokenResult>>
@@ -62,27 +61,22 @@ class IntroActivity : AppCompatActivity() {
                         if (resp != null && (resp.code == "SUCCESS" || resp.code == "COMMON200")) {
                             val newTokens = resp.data
                             if (newTokens != null) {
-
-                                // ✅ TokenManager로 저장
+                                // 새로운 토큰 저장
                                 TokenManager.saveTokens(
                                     this@IntroActivity,
                                     newTokens.accessToken,
                                     newTokens.refreshToken
                                 )
 
-                                Toast.makeText(
-                                    this@IntroActivity,
-                                    "자동 로그인 되었습니다.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                Toast.makeText(this@IntroActivity, "자동 로그인 되었습니다.", Toast.LENGTH_SHORT).show()
 
                                 val intent = Intent(this@IntroActivity, MainActivity::class.java)
-                                intent.flags =
-                                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                 startActivity(intent)
                             }
                         } else {
                             Log.d("AutoLogin", "Refresh Failed: ${resp?.message}")
+                            TokenManager.clear(this@IntroActivity)
                         }
                     }
                 }
@@ -168,14 +162,14 @@ class IntroActivity : AppCompatActivity() {
                             Log.d("AUTH", "서버 accessToken = ${tokenResult.accessToken}")
                             Log.d("AUTH", "서버 refreshToken = ${tokenResult.refreshToken}")
 
-                            // ✅ 토큰은 TokenManager로 저장
+                            // 토큰은 TokenManager로 저장
                             TokenManager.saveTokens(
                                 this@IntroActivity,
                                 tokenResult.accessToken,
                                 tokenResult.refreshToken
                             )
 
-                            // ✅ 사용자 정보만 UserPrefs
+                            // 사용자 정보만 UserPrefs
                             saveUserInfo(
                                 tokenResult.userId,
                                 "KAKAO"

@@ -1,6 +1,7 @@
 package com.umc.mobile.my4cut.data.auth.local
 
 import android.content.Context
+import android.util.Log
 
 object TokenManager {
 
@@ -13,17 +14,27 @@ object TokenManager {
         accessToken: String,
         refreshToken: String
     ) {
+        Log.d("TokenManager", "Saving tokens...")
+        Log.d("TokenManager", "AccessToken: $accessToken")
+
         val spf = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         spf.edit()
             .putString(KEY_ACCESS, accessToken)
             .putString(KEY_REFRESH, refreshToken)
             .apply()
+
+        // 토큰 저장 확인
+        val saved = spf.getString(KEY_ACCESS, null)
+        Log.d("TokenManager", "Saved and retrieved: $saved")
     }
 
     fun getAccessToken(context: Context): String? {
-        return context
+        val token = context
             .getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
             .getString(KEY_ACCESS, null)
+
+        Log.d("TokenManager", "Getting AccessToken: $token")
+        return token
     }
 
     fun getRefreshToken(context: Context): String? {
@@ -33,6 +44,7 @@ object TokenManager {
     }
 
     fun clear(context: Context) {
+        Log.d("TokenManager", "Clearing tokens...")
         context
             .getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
             .edit()
