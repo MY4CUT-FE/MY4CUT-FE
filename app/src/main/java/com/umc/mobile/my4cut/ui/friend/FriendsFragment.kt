@@ -1,5 +1,9 @@
 package com.umc.mobile.my4cut.ui.friend
 
+import androidx.lifecycle.lifecycleScope
+import com.umc.mobile.my4cut.data.friend.remote.FriendServiceApi
+import kotlinx.coroutines.launch
+
 import FriendUiItem
 import FriendsAdapter
 import FriendsMode
@@ -24,7 +28,7 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
 
     // 상태
     private var friendsMode: FriendsMode = FriendsMode.NORMAL
-    private val selectedFriendIds = mutableSetOf<Int>()
+    private val selectedFriendIds = mutableSetOf<Long>()
     // 전체 친구 데이터(상태)
     private val allFriends = mutableListOf<Friend>()
 
@@ -47,23 +51,31 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
         setupAddFriendResultListener()
     }
 
-    // 최초 친구 데이터 초기화(더미)
+    // 최초 친구 데이터 초기화(API 연동)
     private fun initFriends() {
+        // 더미 데이터 사용 중단
         allFriends.clear()
-        allFriends.addAll(
-            listOf(
-                Friend(1, "네버"),
-                Friend(2, "모모"),
-                Friend(3, "아몬드", true),
-                Friend(4, "예디"),
-                Friend(5, "유메"),
-                Friend(6, "유복치", true),
-                Friend(7, "이마빡"),
-                Friend(8, "화운"),
-                Friend(9, "에블린"),
-            ).sortedBy { it.nickname }
-        )
-        submitFriends()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = FriendServiceApi.service.getFriends()
+                val friends = response.data ?: return@launch
+
+                allFriends.addAll(
+                    friends.map {
+                        Friend(
+                            id = it.id,
+                            nickname = it.nickname,
+                            isFavorite = it.isFavorite
+                        )
+                    }.sortedBy { it.nickname }
+                )
+
+                submitFriends()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     // allFriends에서 UI 리스트 생성 및 어댑터에 반영
@@ -84,7 +96,9 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
     private fun setupAdapter() {
         friendsAdapter = FriendsAdapter(
             getMode = { friendsMode },
-            isSelected = { id -> selectedFriendIds.contains(id) },
+            isSelected = { friendId: Long ->
+                selectedFriendIds.contains(friendId)
+            },
             onFriendClick = ::onFriendItemClicked,
             onFavoriteClick = ::onFavoriteToggled,
             hideFavoriteDivider = false,
@@ -262,7 +276,7 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
             if (allFriends.any { it.nickname == nickname }) return@setFragmentResultListener
 
             // 임시 id 생성 (더미 데이터 기준)
-            val newId = (allFriends.maxOfOrNull { it.id } ?: 0) + 1
+            val newId = (allFriends.maxOfOrNull { it.id } ?: 0L) + 1L
 
             allFriends.add(
                 Friend(

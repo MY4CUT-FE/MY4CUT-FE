@@ -1,5 +1,9 @@
 package com.umc.mobile.my4cut.ui.friend
 
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.umc.mobile.my4cut.network.RetrofitClient
+
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.Paint
@@ -90,11 +94,30 @@ class AddFriendDialogFragment : DialogFragment() {
             return
         }
 
-        // TODO: 실제 API 연동
-        // 지금은 더미 성공 처리
-        showSearchResult(
-            nickname = "화운"
-        )
+        lifecycleScope.launch {
+            try {
+                val response =
+                    RetrofitClient.friendService.searchFriendByCode(inputCode)
+
+                if (response.code == "SUCCESS" && response.data != null) {
+                    showSearchResult(
+                        nickname = response.data.nickname
+                    )
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        response.message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    "네트워크 오류가 발생했어요",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     /** 검색 결과 표시 */

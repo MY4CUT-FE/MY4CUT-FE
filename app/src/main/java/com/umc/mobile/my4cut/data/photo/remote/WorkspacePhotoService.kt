@@ -4,42 +4,52 @@ import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.photo.model.CommentCreateRequest
 import com.umc.mobile.my4cut.data.photo.model.CommentDto
 import com.umc.mobile.my4cut.data.photo.model.PhotoDto
-import com.umc.mobile.my4cut.data.photo.model.PhotoUploadRequest
-import retrofit2.http.Body
-import retrofit2.http.DELETE
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Path
+import okhttp3.MultipartBody
+import retrofit2.http.*
 
 interface WorkspacePhotoService {
 
+    /** 사진 목록 조회 */
     @GET("workspaces/{workspaceId}/photos")
     suspend fun getPhotos(
         @Path("workspaceId") workspaceId: Long
     ): BaseResponse<List<PhotoDto>>
 
+    /** 사진 업로드 */
+    @Multipart
     @POST("workspaces/{workspaceId}/photos")
-    suspend fun upload(
+    suspend fun uploadPhoto(
         @Path("workspaceId") workspaceId: Long,
-        @Body request: PhotoUploadRequest
+        @Part image: MultipartBody.Part
     ): BaseResponse<PhotoDto>
 
+    /** 댓글 목록 조회 */
     @GET("workspaces/{workspaceId}/photos/{photoId}/comments")
     suspend fun getComments(
         @Path("workspaceId") workspaceId: Long,
         @Path("photoId") photoId: Long
     ): BaseResponse<List<CommentDto>>
 
+    /** 댓글 등록 */
     @POST("workspaces/{workspaceId}/photos/{photoId}/comments")
-    suspend fun addComment(
+    suspend fun createComment(
         @Path("workspaceId") workspaceId: Long,
         @Path("photoId") photoId: Long,
         @Body request: CommentCreateRequest
     ): BaseResponse<CommentDto>
 
-    @DELETE("workspaces/{workspaceId}/photos/{photoId}")
+    /** 댓글 삭제 */
+    @DELETE("workspaces/{workspaceId}/photos/{photoId}/comments/{commentId}")
+    suspend fun deleteComment(
+        @Path("workspaceId") workspaceId: Long,
+        @Path("photoId") photoId: Long,
+        @Path("commentId") commentId: Long
+    ): BaseResponse<Unit>
+
+    /** 사진 삭제 */
+    @DELETE("workspaces/{workspaceId}/photos/{id}")
     suspend fun deletePhoto(
         @Path("workspaceId") workspaceId: Long,
-        @Path("photoId") photoId: Long
+        @Path("id") photoId: Long
     ): BaseResponse<Unit>
 }

@@ -19,6 +19,13 @@ import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.DialogCreateSpaceBinding
 import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
 
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.umc.mobile.my4cut.data.workspace.model.WorkspaceCreateRequest
+import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequest
+import com.umc.mobile.my4cut.data.workspace.remote.WorkspaceServiceApi
+import com.umc.mobile.my4cut.data.invitation.remote.WorkspaceInvitationServiceApi
+
 class CreateSpaceDialogFragment : DialogFragment() {
 
     private var onConfirmListener: ((CreateSpaceResult) -> Unit)? = null
@@ -37,14 +44,14 @@ class CreateSpaceDialogFragment : DialogFragment() {
     private val selectedFriends = mutableListOf<Friend>()
 
     /** 선택 상태 관리 (어댑터용) */
-    private val selectedFriendIds = mutableSetOf<Int>()
+    private val selectedFriendIds = mutableSetOf<Long>()
 
     /** 임시 친구 목록 */
     private val friendList = listOf(
-        Friend(1, "아몬드", true),
-        Friend(2, "유복치", true),
-        Friend(3, "네버"),
-        Friend(4, "모모")
+        Friend(1L, "아몬드", true),
+        Friend(2L, "유복치", true),
+        Friend(3L, "네버"),
+        Friend(4L, "모모")
     )
 
     override fun onCreateView(
@@ -90,18 +97,51 @@ class CreateSpaceDialogFragment : DialogFragment() {
             dismiss()
         }
 
-        // 확인 버튼 → 선택된 친구로 스페이스 생성
+        // 확인 버튼 → 스페이스 생성 후 멤버 초대
         binding.mainText.setOnClickListener {
             val spaceName = binding.etSpaceName.text.toString().trim()
+            val memberIds = selectedFriends.map { it.id }
 
-            onConfirmListener?.invoke(
-                CreateSpaceResult(
-                    spaceName = spaceName,
-                    currentMember = selectedFriends.size + 1,
-                    maxMember = 10
-                )
-            )
-            dismiss()
+            lifecycleScope.launch {
+                try {
+                    // 1. 스페이스 생성
+                    val createResponse = WorkspaceServiceApi.service.createWorkspace(
+                        WorkspaceCreateRequest(
+                            name = spaceName,
+                            memberIds = memberIds
+                        )
+                    )
+
+                    // 생성 성공 시 workspaceId 필요 (서버 응답 구조에 맞게 수정 필요)
+                    val workspaceId = createResponse.data?.id
+
+                    // 2. 초대 API 호출 (workspaceId가 있는 경우만)
+                    if (workspaceId != null) {
+                        memberIds.forEach { memberId ->
+                            WorkspaceInvitationServiceApi.service.inviteMember(
+                                WorkspaceInviteRequest(
+                                    workspaceId = workspaceId,
+                                    inviteeId = memberId
+                                )
+                            )
+                        }
+                    }
+
+                    // 기존 콜백 유지 (UI 갱신용)
+                    onConfirmListener?.invoke(
+                        CreateSpaceResult(
+                            spaceName = spaceName,
+                            currentMember = selectedFriends.size + 1,
+                            maxMember = 10
+                        )
+                    )
+
+                    dismiss()
+
+                } catch (e: Exception) {
+                    Log.e("CreateSpace", "스페이스 생성 실패", e)
+                }
+            }
         }
     }
 
@@ -138,7 +178,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
 
         friendsAdapter = FriendsAdapter(
             getMode = { FriendsMode.NORMAL },
-            isSelected = { id -> selectedFriendIds.contains(id) },
+            isSelected = { id: Long -> selectedFriendIds.contains(id) },
             onFriendClick = { friend ->
                 val id = friend.id
                 if (selectedFriendIds.contains(id)) {

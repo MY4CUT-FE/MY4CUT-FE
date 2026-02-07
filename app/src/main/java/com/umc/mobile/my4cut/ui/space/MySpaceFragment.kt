@@ -1,5 +1,9 @@
 package com.umc.mobile.my4cut.ui.space
 
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.umc.mobile.my4cut.network.RetrofitClient
+
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -45,16 +49,17 @@ class MySpaceFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        parentFragmentManager.setFragmentResultListener(
+            "SPACE_CREATED",
+            viewLifecycleOwner
+        ) { _, _ ->
+            loadSpacesFromApi()
+        }
+
         binding.tvAddSpace.setOnClickListener {
             if (spaces.size >= 4) return@setOnClickListener
 
             val dialog = CreateSpaceDialogFragment()
-            dialog.setOnConfirmListener { result ->
-                addNewSpace(
-                    name = result.spaceName,
-                    currentMember = result.currentMember
-                )
-            }
             dialog.show(parentFragmentManager, "CreateSpaceDialog")
         }
 
@@ -152,12 +157,15 @@ class MySpaceFragment : Fragment() {
                 // ===== 스페이스 클릭 → SpaceFragment 이동 =====
                 setOnClickListener {
                     android.util.Log.d("MySpaceFragment", "Space clicked: ${space.id}")
+
                     requireActivity()
                         .supportFragmentManager
                         .beginTransaction()
                         .replace(
                             R.id.fcv_main,
-                            SpaceFragment.newInstance(space.id)
+                            SpaceFragment.newInstance(
+                                spaceId = space.id.toLong()
+                            )
                         )
                         .addToBackStack("SpaceFragment")
                         .commit()
@@ -181,7 +189,7 @@ class MySpaceFragment : Fragment() {
         val sevenDays = 7L * 24 * 60 * 60 * 1000
 
         val newSpace = Space(
-            id = spaces.size + 1,
+            id = (spaces.size + 1).toLong(),
             name = name,
             currentMember = currentMember,
             maxMember = 10,
@@ -206,6 +214,34 @@ class MySpaceFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         expireHandler.post(expireCheckRunnable)
+        loadSpacesFromApi()
+    }
+
+    private fun loadSpacesFromApi() {
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.workspaceService.getMyWorkspaces()
+
+                if (response.code == "SUCCESS" && response.data != null) {
+                    spaces.clear()
+                    spaces.addAll(
+                        response.data.map {
+                            Space(
+                                id = it.id,
+                                name = it.name,
+                                currentMember = it.currentMember,
+                                maxMember = it.maxMember,
+                                createdAt = it.createdAt,
+                                expiredAt = it.expiredAt
+                            )
+                        }
+                    )
+                    updateSpaceUi()
+                }
+            } catch (e: Exception) {
+                // TODO: 필요 시 에러 처리 (Toast 등)
+            }
+        }
     }
 
     override fun onStop() {

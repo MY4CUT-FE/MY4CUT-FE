@@ -10,7 +10,7 @@ import com.umc.mobile.my4cut.databinding.ItemFriendHeaderBinding
 
 class FriendsAdapter(
     private val getMode: () -> FriendsMode,
-    private val isSelected: (Int) -> Boolean,
+    private val isSelected: (Long) -> Boolean,
     private val onFriendClick: (Friend) -> Unit,
     private val onFavoriteClick: (Friend) -> Unit,
     private val hideFavoriteDivider: Boolean,

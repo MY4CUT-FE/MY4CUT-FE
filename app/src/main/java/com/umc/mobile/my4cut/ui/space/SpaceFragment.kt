@@ -1,5 +1,10 @@
 package com.umc.mobile.my4cut.ui.space
 
+import com.umc.mobile.my4cut.data.photo.remote.WorkspacePhotoService
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import okhttp3.OkHttpClient
+
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
@@ -17,17 +22,13 @@ import com.umc.mobile.my4cut.databinding.FragmentSpaceBinding
 import com.umc.mobile.my4cut.ui.photo.ChatRVAdapter
 import com.umc.mobile.my4cut.ui.home.HomeFragment
 
-class SpaceFragment : Fragment(R.layout.fragment_space) {
-    data class Space(
-        val id: Int,
-        val name: String,
-        val createdAt: Long,
-        val expiredAt: Long,
-        val maxMember: Int = 10,
-        val currentMember: Int
-    )
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import android.util.Log
+import com.umc.mobile.my4cut.data.workspace.remote.WorkspaceServiceApi
+import com.umc.mobile.my4cut.network.RetrofitClient
 
-    private val spaces = mutableListOf<Space>()
+class SpaceFragment : Fragment(R.layout.fragment_space) {
 
     private lateinit var binding: FragmentSpaceBinding
     private lateinit var photoAdapter: PhotoRVAdapter
@@ -37,6 +38,22 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     private var chatAdapter: ChatRVAdapter? = null
     private var chatDatas = ArrayList<ChatData>()
 
+    private var spaceId: Long = -1L
+
+    private val workspacePhotoService: WorkspacePhotoService by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://api.my4cut.shop/")
+            .client(OkHttpClient.Builder().build())
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(WorkspacePhotoService::class.java)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        spaceId = arguments?.getLong(ARG_SPACE_ID) ?: -1L
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentSpaceBinding.bind(view)
@@ -45,8 +62,8 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         binding.rvPhotoList.adapter = photoAdapter
         binding.rvPhotoList.layoutManager = GridLayoutManager(requireContext(), 2)
 
-        initDummyPhotos()
-
+        // initDummyPhotos() // 더미 데이터 제거, 실제 API로 대체
+        loadSpaceFromApi()
 
         photoAdapter.onItemClickListener = { photo ->
             showPhotoDialog(photo, isCommentExpanded = true)
@@ -56,9 +73,24 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
             showExitDialog()  //혼자일 때 -> tvMessage.text = 나가면 스페이스가 삭제되어 복구할 수 없어요.
         }
 
-
         binding.btnChange.setOnClickListener {
             showChangeDialog()
+        }
+    }
+
+    private fun loadSpaceFromApi() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = WorkspaceServiceApi.workspaceService.getWorkspaceDetail(spaceId)
+                val data = response.data ?: return@launch
+
+                // 스페이스 정보 UI 반영
+                binding.tvTitle.text = data.name
+
+                // TODO: 사진 / 댓글 API 결과로 교체
+            } catch (e: Exception) {
+                Log.e("SpaceFragment", "스페이스 정보 API 실패", e)
+            }
         }
     }
 
@@ -153,7 +185,8 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         // 더미 댓글 데이터 사용 (파일 추가 없이 SpaceFragment 내부 데이터 사용)
         val currentUserName = "유복치" // TODO: 로그인 유저 닉네임으로 교체
         chatDatas.clear()
-        initDummyChats()
+        // initDummyChats()
+        loadCommentsFromApi(photo)
 
         chatAdapter = ChatRVAdapter(chatDatas, currentUserName)
         dialogBinding.rvChatList.adapter = chatAdapter
@@ -236,6 +269,40 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         dialog.show()
     }
 
+    private fun loadCommentsFromApi(photo: PhotoData) {
+        lifecycleScope.launch {
+            try {
+                val response = workspacePhotoService
+                    .getComments(spaceId, photo.photoId)
+
+                if (response.code == "SUCCESS" && response.data != null) {
+                    chatDatas.clear()
+                    chatDatas.addAll(
+                        response.data.map {
+                            ChatData(
+                                profileImg = R.drawable.ic_profile,
+                                userName = it.writerNickname,
+                                content = it.content,
+                                time = formatTime(it.createdAt)
+                            )
+                        }
+                    )
+                    chatAdapter?.notifyDataSetChanged()
+                }
+            } catch (e: Exception) {
+                Log.e("SpaceFragment", "댓글 API 실패", e)
+            }
+        }
+    }
+
+    private fun formatTime(timestamp: Long): String {
+        val sdf = java.text.SimpleDateFormat(
+            "MM/dd HH:mm",
+            java.util.Locale.getDefault()
+        )
+        return sdf.format(java.util.Date(timestamp))
+    }
+
     private fun showChangeDialog() {
         val dialogBinding = DialogChangeSpaceBinding.inflate(layoutInflater)
         val builder = MaterialAlertDialogBuilder(requireContext())
@@ -257,56 +324,9 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         dialog.show()
     }
 
-    private fun initDummyPhotos() {
-        photoDatas.clear()
+    // initDummyPhotos() // 더미 사진 데이터 함수는 임시로 유지 (주석처리)
 
-        photoDatas.add(
-            PhotoData(
-                userImageRes = R.drawable.ic_profile,
-                userName = "에블린",
-                dateTime = "2025/11/04 20:45",
-                commentCount = 2,
-                photoImageRes = R.drawable.image1
-            )
-        )
-
-        photoDatas.add(
-            PhotoData(
-                userImageRes = R.drawable.ic_profile,
-                userName = "유복치",
-                dateTime = "2025/11/04 16:21",
-                commentCount = 0,
-                photoImageRes = R.drawable.image1
-            )
-        )
-
-        photoAdapter.notifyDataSetChanged()
-    }
-
-    // 더미 댓글 데이터 생성 예시
-    private fun initDummyChats() {
-        chatDatas.clear()
-
-        chatDatas.add(
-            ChatData(
-                profileImg = R.drawable.ic_profile,
-                userName = "에블린",
-                time = "20분 전",
-                content = "올릴 때 2번째 가리고 ㄱㄱ"
-            )
-        )
-
-        chatDatas.add(
-            ChatData(
-                profileImg = R.drawable.ic_profile,
-                userName = "유복치",
-                time = "1분 전",
-                content = "왜 예쁜데"
-            )
-        )
-
-        chatAdapter?.notifyDataSetChanged()
-    }
+    // initDummyChats() // 더미 댓글 데이터 함수는 임시로 유지 (주석처리)
 
     // 사진 삭제 모달 함수
     private fun showDeletePhotoDialog(onConfirm: () -> Unit) {
@@ -335,33 +355,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         dialog.show()
     }
 
-    // Space는 CreateSpaceDialogFragment 결과를 통해서만 생성됨
-    // - name: 모달에서 입력한 스페이스 이름
-    // - currentMember: 선택한 인원 수 (+ 본인)
-    // - maxMember: 항상 10
-    // 이 함수는 외부(Fragment/Dialog)에서 전달받은 값만 사용해야 함
-    private fun addNewSpace(
-        name: String,
-        currentMember: Int,
-        maxMember: Int = 10
-    ) {
-        val now = System.currentTimeMillis()
-        val sevenDays = 7L * 24 * 60 * 60 * 1000
-
-        val newSpace = Space(
-            id = spaces.size + 1,
-            name = name,
-            createdAt = now,
-            expiredAt = now + sevenDays,
-            maxMember = maxMember,
-            currentMember = currentMember
-        )
-
-        spaces.add(newSpace)
-
-        // TODO: SpaceCircleView / Adapter 반영
-        // spaceCircleView.setSpaces(spaces)
-    }
+    // addNewSpace() // 더 이상 SpaceFragment 내부에서 사용하지 않으므로 제거
 
     private fun showMaxSpaceDialog() {
         val dialogBinding = DialogExitBinding.inflate(layoutInflater)
@@ -385,12 +379,12 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     }
 
     companion object {
-        private const val ARG_SPACE_ID = "space_id"
+        private const val ARG_SPACE_ID = "arg_space_id"
 
-        fun newInstance(spaceId: Int): SpaceFragment {
+        fun newInstance(spaceId: Long): SpaceFragment {
             return SpaceFragment().apply {
                 arguments = Bundle().apply {
-                    putInt(ARG_SPACE_ID, spaceId)
+                    putLong(ARG_SPACE_ID, spaceId)
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.umc.mobile.my4cut.ui.space
 
+import FriendUiItem
 import FriendsAdapter
 import android.graphics.Color
 import android.graphics.Rect
@@ -14,9 +15,12 @@ import android.widget.PopupWindow
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.umc.mobile.my4cut.ui.friend.Friend
+import com.umc.mobile.my4cut.data.friend.remote.FriendServiceApi
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.DialogCreateSpaceBinding
 import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 class EditSpaceDialogFragment : DialogFragment() {
 
@@ -28,19 +32,26 @@ class EditSpaceDialogFragment : DialogFragment() {
 
     /** 선택된 친구 */
     private val selectedFriends = mutableListOf<Friend>()
-    private val selectedFriendIds = mutableSetOf<Int>()
+    private val selectedFriendIds = mutableSetOf<Long>()
 
-    /** 기존 스페이스 정보 (더미) */
-    private val originalSpaceName = "1104 네컷"
+    /** 기존 스페이스 정보 (초기화: arguments에서 전달) */
+    private var spaceId: Long = -1L
+    private var originalSpaceName: String = ""
+    private val originalMemberIds = mutableSetOf<Long>()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-    /** 전체 친구 목록 (더미) */
-    private val friendList = mutableListOf(
-        Friend(1, "아몬드", true),
-        Friend(2, "유복치", true),
-        Friend(3, "네버"),
-        Friend(4, "모모"),
-        Friend(5, "예디")
-    )
+        arguments?.let { bundle ->
+            spaceId = bundle.getLong(ARG_SPACE_ID)
+            originalSpaceName = bundle.getString(ARG_SPACE_NAME).orEmpty()
+            originalMemberIds.addAll(
+                bundle.getLongArray(ARG_SPACE_MEMBER_IDS)?.toList() ?: emptyList()
+            )
+        }
+    }
+
+    /** 전체 친구 목록 (API) */
+    private val friendList = mutableListOf<Friend>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -58,11 +69,8 @@ class EditSpaceDialogFragment : DialogFragment() {
         /** 기존 이름 세팅 */
         binding.etSpaceName.setText(originalSpaceName)
 
-        /** 기존 멤버 미리 선택 (예시) */
-        friendList.filter { it.isFavorite }.forEach {
-            selectedFriends.add(it)
-            selectedFriendIds.add(it.id)
-        }
+        // 친구 목록 로드 및 기존 멤버 반영
+        loadFriendsFromApi()
 
         binding.layoutFriendSelect.setBackgroundResource(R.drawable.bg_dropdown_closed)
 
@@ -113,7 +121,7 @@ class EditSpaceDialogFragment : DialogFragment() {
 
         friendsAdapter = FriendsAdapter(
             getMode = { FriendsMode.NORMAL },
-            isSelected = { selectedFriendIds.contains(it) },
+            isSelected = { id: Long -> selectedFriendIds.contains(id) },
             onFriendClick = { friend ->
                 if (selectedFriendIds.contains(friend.id)) {
                     selectedFriendIds.remove(friend.id)
@@ -161,7 +169,7 @@ class EditSpaceDialogFragment : DialogFragment() {
         val favorites = friendList.filter { it.isFavorite }
         val normals = friendList.filter { !it.isFavorite }
 
-        val uiItems = buildList {
+        val uiItems = mutableListOf<FriendUiItem>().apply {
             if (favorites.isNotEmpty()) {
                 add(FriendUiItem.Header("즐겨찾기"))
                 favorites.forEach { add(FriendUiItem.Item(it)) }
@@ -194,6 +202,42 @@ class EditSpaceDialogFragment : DialogFragment() {
         }
     }
 
+    private fun loadFriendsFromApi() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = FriendServiceApi.service.getFriends()
+                val data = response.data ?: return@launch
+
+                friendList.clear()
+                selectedFriends.clear()
+                selectedFriendIds.clear()
+
+                friendList.addAll(
+                    data.map {
+                        Friend(
+                            id = it.id,
+                            nickname = it.nickname,
+                            isFavorite = it.isFavorite
+                        )
+                    }
+                )
+
+                // 기존 스페이스 멤버 미리 선택
+                friendList.forEach { friend ->
+                    if (originalMemberIds.contains(friend.id)) {
+                        selectedFriendIds.add(friend.id)
+                        selectedFriends.add(friend)
+                    }
+                }
+
+                updateFriendSummary()
+                submitDialogFriends()
+            } catch (e: Exception) {
+                Log.e("EditSpace", "친구 목록 API 실패", e)
+            }
+        }
+    }
+
     override fun onStart() {
         super.onStart()
         dialog?.window?.apply {
@@ -209,5 +253,28 @@ class EditSpaceDialogFragment : DialogFragment() {
         popupWindow?.dismiss()
         _binding = null
         super.onDestroyView()
+    }
+
+    companion object {
+        const val ARG_SPACE_ID = "arg_space_id"
+        const val ARG_SPACE_NAME = "arg_space_name"
+        const val ARG_SPACE_MEMBER_IDS = "arg_space_member_ids"
+
+        fun newInstance(
+            spaceId: Long,
+            spaceName: String,
+            memberIds: List<Long>
+        ): EditSpaceDialogFragment {
+            return EditSpaceDialogFragment().apply {
+                arguments = Bundle().apply {
+                    putLong(ARG_SPACE_ID, spaceId)
+                    putString(ARG_SPACE_NAME, spaceName)
+                    putLongArray(
+                        ARG_SPACE_MEMBER_IDS,
+                        memberIds.toLongArray()
+                    )
+                }
+            }
+        }
     }
 }
