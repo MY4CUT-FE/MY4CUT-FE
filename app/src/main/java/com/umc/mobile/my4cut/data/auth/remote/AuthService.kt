@@ -28,9 +28,11 @@ interface AuthService {
     @POST("auth/login")
     fun login(@Body request: LoginRequest): Call<BaseResponse<TokenResult>>
 
-    // 3. 토큰 재발급 (헤더에 Authorization 필요)
+    // 3. 토큰 재발급
     @POST("auth/refresh")
-    fun refresh(@Header("Authorization") token: String): Call<BaseResponse<TokenResult>>
+    fun refresh(
+        @Header("Authorization") refreshToken: String // 수동으로 헤더 주입
+    ): Call<BaseResponse<TokenResult>>
 
     // 4. 카카오 로그인
     @POST("auth/kakao")
@@ -39,9 +41,10 @@ interface AuthService {
     ): Call<BaseResponse<TokenResult>>
 
     // 5. 회원 탈퇴
+    @Headers(
+        "Accept: application/json",
+        "Content-Type: application/json"
+    )
     @DELETE("auth/withdraw")
-    fun withdraw(
-        @Header("Authorization") token: String
-    ): Call<BaseResponse<String>>
-
+    fun withdraw(): Call<BaseResponse<String>>
 }

@@ -4,6 +4,7 @@ import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.user.model.*
 import retrofit2.Call
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 
@@ -24,4 +25,5 @@ interface UserService {
     fun updateProfileImage(
         @Body request: ProfileImageRequest
     ): Call<BaseResponse<UserMeResponse>>
+
 }
