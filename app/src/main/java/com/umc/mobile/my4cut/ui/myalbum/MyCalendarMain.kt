@@ -47,6 +47,7 @@ class MyCalendarMain @JvmOverloads constructor(
     private var selectedDate: LocalDate? = null
     private var currentMonth = YearMonth.now()
     private var onDateSelectedListener: ((String, CalendarData?) -> Unit)? = null
+    private var onMonthChangeListener: ((Int, Int) -> Unit)? = null
     private var datesWithDataMap = mutableMapOf<LocalDate, CalendarData>()
 
     fun setDatesWithData(dataList: List<CalendarData>) {
@@ -69,6 +70,10 @@ class MyCalendarMain @JvmOverloads constructor(
         onDateSelectedListener = listener
     }
 
+    fun setOnMonthChangeListener(listener: (Int, Int) -> Unit) {
+        onMonthChangeListener = listener
+    }
+
     fun setHeaderVisible(isVisible: Boolean) {
         binding.btnUpload.visibility = if (isVisible) VISIBLE else GONE
     }
@@ -77,12 +82,18 @@ class MyCalendarMain @JvmOverloads constructor(
         binding.btnUpload.setOnClickListener { listener.invoke() }
     }
 
-    fun setDayLayout(layoutRes: Int) {}
+    fun getCurrentYear(): Int = currentMonth.year
+    fun getCurrentMonth(): Int = currentMonth.monthValue
 
     fun getSelectedDateFormatted(): String {
         return selectedDate?.let {
             "${it.year}.${it.monthValue}.${it.dayOfMonth}"
         } ?: "${currentMonth.year}.${currentMonth.monthValue}"
+    }
+
+    fun getSelectedDateApiFormat(): String? {
+        // LocalDate의 toString()은 기본적으로 "YYYY-MM-DD" 형식을 반환합니다.
+        return selectedDate?.toString()
     }
 
     init {
@@ -266,6 +277,9 @@ class MyCalendarMain @JvmOverloads constructor(
 
     private fun updateYearMonthText() {
         binding.tvYearMonth.text = "${currentMonth.monthValue}월"
+
+        // 월이 바뀔 때 리스너 실행
+        onMonthChangeListener?.invoke(currentMonth.year, currentMonth.monthValue)
     }
 }
 

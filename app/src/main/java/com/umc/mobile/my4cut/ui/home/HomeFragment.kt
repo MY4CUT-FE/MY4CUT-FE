@@ -7,19 +7,27 @@ import android.os.Bundle
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.FragmentHomeBinding
 import com.umc.mobile.my4cut.databinding.ItemCalendarDayBinding
+import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.calendar.CalendarFullActivity
 import com.umc.mobile.my4cut.ui.calendar.CalendarPickerActivity
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 import com.umc.mobile.my4cut.ui.pose.PoseRecommendActivity
+import com.umc.mobile.my4cut.ui.record.EntryRegisterActivity
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -30,10 +38,11 @@ class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
-    // 현재 선택된 날짜 (기본값: 오늘)
     private var selectedDate: LocalDate = LocalDate.now()
 
-    // 캘린더 화면(전체 달력)에서 날짜를 받아오기 위한 런처
+    // ✅ 캘린더 데이터 (날짜별 기록 여부)
+    private val recordedDates = mutableSetOf<Int>() // 기록이 있는 날짜 저장
+
     private val startCalendarForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val dateString = result.data?.getStringExtra("SELECTED_DATE")
@@ -41,6 +50,15 @@ class HomeFragment : Fragment() {
                 selectedDate = LocalDate.parse(dateString)
                 refreshCalendarData()
             }
+        }
+    }
+
+    // ✅ 기록 등록 후 돌아올 때 갱신
+    private val entryRegisterLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // 기록 등록 완료 후 화면 갱신
+            loadCalendarData()
+            loadDay4CutData(selectedDate)
         }
     }
 
@@ -56,13 +74,14 @@ class HomeFragment : Fragment() {
 
         setupDateBanner()
         setupWelcomeText()
-        setupWeekCalendar()
         setupClickListeners()
-        updateContentState(selectedDate)
+
+        // ✅ API 데이터 로드
+        loadCalendarData()
+        loadDay4CutData(selectedDate)
     }
 
     private fun setupDateBanner() {
-        // 상단 배너 '오늘' 날짜를 보여주는 것으로 유지
         val today = LocalDate.now()
         val formatter = DateTimeFormatter.ofPattern("yyyy MMMM d", Locale.ENGLISH)
         binding.tvDateBanner.text = "${today.format(formatter)}${getDayNumberSuffix(today.dayOfMonth)}"
@@ -80,15 +99,99 @@ class HomeFragment : Fragment() {
         binding.tvWelcomeBanner.text = spannable
     }
 
-    // 주간 캘린더 생성 (selectedDate 기준)
+    // ✅ 캘린더 데이터 로드 (API)
+    private fun loadCalendarData() {
+        val year = selectedDate.year
+        val month = selectedDate.monthValue
+
+        Log.d("HomeFragment", "📤 Loading calendar - year: $year, month: $month")
+
+        RetrofitClient.day4CutService.getCalendar(year, month)
+            .enqueue(object : Callback<BaseResponse<Day4CutCalendarResponse>> {
+                override fun onResponse(
+                    call: Call<BaseResponse<Day4CutCalendarResponse>>,
+                    response: Response<BaseResponse<Day4CutCalendarResponse>>
+                ) {
+                    if (response.isSuccessful) {
+                        val calendarData = response.body()?.data
+                        if (calendarData != null) {
+                            Log.d("HomeFragment", "✅ Calendar loaded: ${calendarData.dates.size} dates")
+
+                            // 기록이 있는 날짜 저장
+                            recordedDates.clear()
+                            calendarData.dates.forEach { date ->
+                                recordedDates.add(date.day)
+                            }
+
+                            setupWeekCalendar() // 주간 캘린더 다시 그리기
+                        }
+                    } else {
+                        Log.e("HomeFragment", "❌ Calendar load failed: ${response.code()}")
+                    }
+                }
+
+                override fun onFailure(call: Call<BaseResponse<Day4CutCalendarResponse>>, t: Throwable) {
+                    Log.e("HomeFragment", "❌ Network error", t)
+                }
+            })
+    }
+
+    // ✅ 특정 날짜의 하루네컷 데이터 로드 (API)
+    private fun loadDay4CutData(date: LocalDate) {
+        val dateString = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+
+        Log.d("HomeFragment", "📤 Loading day4cut for date: $dateString")
+
+        RetrofitClient.day4CutService.getDay4Cut(dateString)
+            .enqueue(object : Callback<BaseResponse<Day4CutResponse>> {
+                override fun onResponse(
+                    call: Call<BaseResponse<Day4CutResponse>>,
+                    response: Response<BaseResponse<Day4CutResponse>>
+                ) {
+                    if (response.isSuccessful) {
+                        val day4cut = response.body()?.data
+                        if (day4cut != null) {
+                            Log.d("HomeFragment", "✅ Day4cut loaded: ${day4cut.id}")
+                            showFilledState(day4cut)
+                        } else {
+                            Log.d("HomeFragment", "⚠️ No data for this date")
+                            showEmptyState()
+                        }
+                    } else {
+                        Log.d("HomeFragment", "⚠️ No record for this date: ${response.code()}")
+                        showEmptyState()
+                    }
+                }
+
+                override fun onFailure(call: Call<BaseResponse<Day4CutResponse>>, t: Throwable) {
+                    Log.e("HomeFragment", "❌ Network error", t)
+                    Toast.makeText(requireContext(), "네트워크 오류", Toast.LENGTH_SHORT).show()
+                    showEmptyState()
+                }
+            })
+    }
+
+    // ✅ 기록이 있는 경우 표시
+    private fun showFilledState(day4cut: Day4CutResponse) {
+        binding.clEmptyState.visibility = View.GONE
+        binding.llFilledState.visibility = View.VISIBLE
+
+        // TODO: 실제 이미지와 내용 표시 (추후 구현)
+        // binding.ivDay4CutImage.load(day4cut.fileUrl.firstOrNull())
+        // binding.tvContent.text = day4cut.content
+    }
+
+    // ✅ 기록이 없는 경우 표시
+    private fun showEmptyState() {
+        binding.clEmptyState.visibility = View.VISIBLE
+        binding.llFilledState.visibility = View.GONE
+    }
+
+    // 주간 캘린더 생성
     private fun setupWeekCalendar() {
         val calendarContainer = binding.llWeekCalendar
         calendarContainer.removeAllViews()
 
-        // selectedDate가 포함된 주(일요일 시작) 계산
-        // dayOfWeek.value: 월(1) ~ 일(7)
-        // 일요일(7) -> % 7 = 0 (일요일이 시작)
-        // 월요일(1) -> % 7 = 1
         val daysFromSunday = selectedDate.dayOfWeek.value % 7
         val startOfWeek = selectedDate.minusDays(daysFromSunday.toLong())
 
@@ -96,10 +199,8 @@ class HomeFragment : Fragment() {
             val date = startOfWeek.plusDays(i.toLong())
             val dayViewBinding = ItemCalendarDayBinding.inflate(layoutInflater, calendarContainer, false)
 
-            // 요일 표시 (일, 월, 화...)
             dayViewBinding.tvDayOfWeek.text = date.format(DateTimeFormatter.ofPattern("E", Locale.KOREAN))
 
-            // 요일별 색상 지정
             val dayColor = when (date.dayOfWeek) {
                 DayOfWeek.SUNDAY -> Color.parseColor("#FF7E67")
                 DayOfWeek.SATURDAY -> Color.parseColor("#4B7EFF")
@@ -107,10 +208,8 @@ class HomeFragment : Fragment() {
             }
             dayViewBinding.tvDayOfWeek.setTextColor(dayColor)
 
-            // 날짜 숫자 표시
             dayViewBinding.tvDayNumber.text = date.dayOfMonth.toString()
 
-            // 선택된 날짜 UI 처리
             if (date.isEqual(selectedDate)) {
                 dayViewBinding.tvDayNumber.setBackgroundResource(R.drawable.bg_calendar_selected)
                 dayViewBinding.tvDayNumber.backgroundTintList = null
@@ -120,20 +219,18 @@ class HomeFragment : Fragment() {
                 dayViewBinding.tvDayNumber.setTextColor(Color.parseColor("#6A6A6A"))
             }
 
-            // 점 표시 로직 (테스트용: 오늘 & 짝수 날짜)
-            if (date.isEqual(LocalDate.now()) || date.dayOfMonth % 2 == 0) {
+            // ✅ API에서 받은 데이터로 점 표시
+            if (recordedDates.contains(date.dayOfMonth) && date.month == selectedDate.month) {
                 dayViewBinding.vRecordDot.visibility = View.VISIBLE
             } else {
                 dayViewBinding.vRecordDot.visibility = View.GONE
             }
 
-            // 날짜 클릭 시 해당 날짜 선택
             dayViewBinding.root.setOnClickListener {
                 selectedDate = date
                 refreshCalendarData()
             }
 
-            // 가중치(weight) 적용하여 균등 분할
             val params = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT)
             params.weight = 1f
             dayViewBinding.root.layoutParams = params
@@ -142,62 +239,40 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupClickListeners() {
-        // 왼쪽 화살표: 1주 전으로 이동
         binding.ivCalendarBack.setOnClickListener {
             selectedDate = selectedDate.minusWeeks(1)
             refreshCalendarData()
         }
 
-        // 오른쪽 화살표: 1주 후로 이동
         binding.ivCalendarNext.setOnClickListener {
             selectedDate = selectedDate.plusWeeks(1)
             refreshCalendarData()
         }
 
-        // 포즈 추천 클릭
         binding.clPoseRecommend.setOnClickListener {
             startActivity(Intent(requireContext(), PoseRecommendActivity::class.java))
         }
 
-        // 알림 클릭
         binding.ivNotification.setOnClickListener {
             startActivity(Intent(requireContext(), NotificationActivity::class.java))
         }
 
-        // 빈 화면 클릭 -> 날짜 선택(Picker) 화면으로 이동
-        // (필요 시 수정: EntryRegisterActivity로 이동할지, Picker로 갈지 결정)
+        // ✅ 빈 화면 클릭 → 기록 등록 화면으로 이동
         binding.clEmptyState.setOnClickListener {
-            // 예: 날짜를 선택해서 업로드 화면으로 이동하고 싶다면
-            /*
-            val intent = Intent(requireContext(), com.umc.mobile.my4cut.ui.record.EntryRegisterActivity::class.java)
+            val intent = Intent(requireContext(), EntryRegisterActivity::class.java)
             intent.putExtra("SELECTED_DATE", selectedDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd")))
-            startActivity(intent)
-            */
-            // 기존 로직 유지 (Picker로 이동)
-            startActivity(Intent(requireContext(), CalendarPickerActivity::class.java))
+            entryRegisterLauncher.launch(intent)
         }
     }
 
-    // 날짜 변경 시 화면 갱신을 담당하는 헬퍼 함수
     private fun refreshCalendarData() {
-        setupWeekCalendar()       // 주간 달력 다시 그리기
-        updateContentState(selectedDate) // 하단 컨텐츠(일기/빈화면) 갱신
+        loadCalendarData() // 캘린더 데이터 다시 로드
+        loadDay4CutData(selectedDate) // 선택된 날짜 데이터 로드
     }
 
     private fun updateContentState(date: LocalDate) {
         val formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
         binding.tvContentDate.text = date.format(formatter)
-
-        // 테스트용: 오늘이거나 짝수 날짜면 기록 있음
-        val hasRecord = date.isEqual(LocalDate.now()) || date.dayOfMonth % 2 == 0
-
-        if (hasRecord) {
-            binding.clEmptyState.visibility = View.GONE
-            binding.llFilledState.visibility = View.VISIBLE
-        } else {
-            binding.clEmptyState.visibility = View.VISIBLE
-            binding.llFilledState.visibility = View.GONE
-        }
     }
 
     override fun onDestroyView() {

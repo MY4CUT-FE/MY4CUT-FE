@@ -3,14 +3,16 @@ package com.umc.mobile.my4cut.ui.myalbum
 import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import com.bumptech.glide.Glide
+import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.album.model.AlbumResponse
 import com.umc.mobile.my4cut.databinding.ItemAlbumBinding
 
 
 class AlbumRVAdapter (
-    private val albums: List<AlbumData>,
-    private val onClick: (AlbumData) -> Unit // 클릭 콜백 추가
+    private val albums: List<AlbumResponse>,
+    private val onClick: (AlbumResponse) -> Unit
 ) : RecyclerView.Adapter<AlbumRVAdapter.ViewHolder>() {
-    var onItemClickListener: ((AlbumData) -> Unit)? = null
 
     override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): AlbumRVAdapter.ViewHolder {
         val binding: ItemAlbumBinding = ItemAlbumBinding.inflate(LayoutInflater.from(viewGroup.context), viewGroup, false)
@@ -23,16 +25,18 @@ class AlbumRVAdapter (
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val album = albums[position]
         holder.bind(album)
-
-        holder.binding.tvAlbumTitle.text = album.title
-        holder.itemView.setOnClickListener { onClick(album) }
     }
 
     inner class ViewHolder(val binding: ItemAlbumBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: AlbumData) {
-            binding.tvAlbumTitle.text = item.title
-            val coverImage = item.photoResIds.firstOrNull() ?: android.R.color.transparent
-            binding.ivAlbumCover.setImageResource(coverImage)
+        fun bind(item: AlbumResponse) {
+            binding.tvAlbumTitle.text = item.name
+            Glide.with(binding.root.context)
+                .load(item.coverImageUrl)
+                .placeholder(R.drawable.ic_alert) // 로딩 중 이미지
+                .error(R.drawable.ic_close)       // 실패 시 이미지
+                .into(binding.ivAlbumCover)
+
+            binding.root.setOnClickListener { onClick(item) }
         }
     }
 }

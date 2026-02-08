@@ -3,11 +3,13 @@ package com.umc.mobile.my4cut.ui.mypage
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.auth.local.TokenManager
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.user.model.ProfileImageRequest
 import com.umc.mobile.my4cut.data.user.model.NicknameRequest
@@ -65,6 +67,10 @@ class EditProfileActivity : AppCompatActivity() {
         }
 
         binding.btnConfirm.setOnClickListener {
+            // ✅ 디버깅용 로그 추가
+            val token = TokenManager.getAccessToken(this)
+            Log.d("EditProfile", "🔍 Current Token: $token")
+
             val nickname = binding.etNickname.text.toString()
 
             if (nickname.isBlank()) {
@@ -126,12 +132,17 @@ class EditProfileActivity : AppCompatActivity() {
                 call: Call<BaseResponse<UserMeResponse>>,
                 response: Response<BaseResponse<UserMeResponse>>
             ) {
+                // ✅ 로그 추가
+                Log.d("EditProfile", "Image Response Code: ${response.code()}")
+                Log.d("EditProfile", "Image Response Body: ${response.body()}")
+                Log.d("EditProfile", "Image Error Body: ${response.errorBody()?.string()}")
+
                 if (response.isSuccessful) {
                     onSuccess()
                 } else {
                     Toast.makeText(
                         this@EditProfileActivity,
-                        "프로필 이미지 변경 실패",
+                        "프로필 이미지 변경 실패 (${response.code()})",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -141,6 +152,7 @@ class EditProfileActivity : AppCompatActivity() {
                 call: Call<BaseResponse<UserMeResponse>>,
                 t: Throwable
             ) {
+                Log.e("EditProfile", "Image Network Error", t)
                 Toast.makeText(
                     this@EditProfileActivity,
                     "네트워크 오류",
@@ -160,8 +172,12 @@ class EditProfileActivity : AppCompatActivity() {
                 call: Call<BaseResponse<UserMeResponse>>,
                 response: Response<BaseResponse<UserMeResponse>>
             ) {
-                if (response.isSuccessful) {
+                // ✅ 로그 추가
+                Log.d("EditProfile", "Response Code: ${response.code()}")
+                Log.d("EditProfile", "Response Body: ${response.body()}")
+                Log.d("EditProfile", "Error Body: ${response.errorBody()?.string()}")
 
+                if (response.isSuccessful) {
                     val intent = Intent().apply {
                         putExtra("nickname", nickname)
                         putExtra("profile_image", selectedImageUri?.toString())
@@ -178,7 +194,7 @@ class EditProfileActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(
                         this@EditProfileActivity,
-                        "닉네임 변경 실패",
+                        "닉네임 변경 실패 (${response.code()})",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -188,6 +204,7 @@ class EditProfileActivity : AppCompatActivity() {
                 call: Call<BaseResponse<UserMeResponse>>,
                 t: Throwable
             ) {
+                Log.e("EditProfile", "Network Error", t)
                 Toast.makeText(
                     this@EditProfileActivity,
                     "네트워크 오류",
