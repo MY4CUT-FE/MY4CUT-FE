@@ -73,7 +73,7 @@ class EntryRegisterActivity : AppCompatActivity() {
 
         data?.let {
             binding.etDiary.setText(it.memo)
-            binding.etDiary.setSelection(binding.etDiary.text.length)
+            binding.etDiary.setSelection(binding.etDiary.text?.length ?: 0)
 
             val uris = it.imageUris.map { uriString -> Uri.parse(uriString) }
             selectedImageUris.addAll(uris)

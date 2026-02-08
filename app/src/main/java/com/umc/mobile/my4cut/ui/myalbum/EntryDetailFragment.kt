@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,32 +24,34 @@ import com.google.android.material.card.MaterialCardView
 import kotlin.math.abs
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
 import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.databinding.DialogExitBinding
 import com.umc.mobile.my4cut.databinding.FragmentEntryDetailBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.databinding.DialogExit2Binding
 import com.umc.mobile.my4cut.databinding.ItemPhotoSlider2Binding
+import kotlinx.coroutines.launch
 
 class EntryDetailFragment : Fragment() {
     private lateinit var binding: FragmentEntryDetailBinding
 
-    private var selectedImageUris = mutableListOf<Uri>()
-    private var isDiaryExpanded = false
-    private var selectedMoodIndex = 0
-
-    private var calendarData: CalendarData? = null
+    private var apiDate: String? = null
+    private var selectedImageUris = mutableListOf<String>()
     private var selectedDate: String? = null
 
     private var isEditMode = false
 
-    private var originalImageUris = mutableListOf<Uri>()
-    private var typicalImageUri: Uri? = null
+    private var originalImageUris = mutableListOf<String>()
+    private var originalContent: String = ""
+    private var typicalImageUri: String? = null
 
     // 갤러리 호출
     private val pickMultipleMedia = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(50)) { uris ->
         if (uris.isNotEmpty()) {
-            selectedImageUris.addAll(uris)
+            uris.forEach { selectedImageUris.add(it.toString()) }
             updatePhotoState()
             // 사진이 추가되면 가장 마지막에 추가된 사진 쪽으로 이동
             binding.vpPhotoSlider.currentItem = selectedImageUris.size - 1
@@ -63,51 +66,48 @@ class EntryDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupCalendarData()
-        setupClickListeners()
-        setupPhotoPicker()
-        setupDiaryLogic()
-    }
-
-    private fun setupCalendarData() {
-        arguments?.let {
-            selectedDate = it.getString("selected_date") ?: "2026.01.01"
-
-            calendarData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                it.getSerializable("calendar_data", CalendarData::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                it.getSerializable("calendar_data") as? CalendarData
-            }
-        }
-
+        apiDate = arguments?.getString("API_DATE")
+        selectedDate = arguments?.getString("SELECTED_DATE") ?: "2026.01.01"
         binding.tvDateCapsule.text = selectedDate
 
-        calendarData?.let { data ->
-            binding.etDiary.setText(data.memo)
+        setupClickListeners()
+        setupDiaryLogic()
 
-            val uris = data.imageUris.map { Uri.parse(it) }
-            selectedImageUris.clear()
-            selectedImageUris.addAll(uris)
+        if (apiDate != null) fetchDay4CutDetail()
+    }
 
-            if (selectedImageUris.isNotEmpty()) {
-                typicalImageUri = selectedImageUris[0]
+    private fun fetchDay4CutDetail() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.day4CutService.getDay4CutDetail(apiDate!!)
+                if (response.code == "SUCCESS") {
+                    response.data?.let { data ->
+                        binding.etDiary.setText(data.content ?: "")
+
+                        selectedImageUris.clear()
+                        data.fileUrl?.let { selectedImageUris.addAll(it) }
+
+                        if (selectedImageUris.isNotEmpty()) {
+                            typicalImageUri = selectedImageUris[0] // 첫 번째를 대표 이미지로 임시 설정
+                        }
+                        updatePhotoState()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("API_ERROR", "조회 실패: ${e.message}")
             }
-
-            updatePhotoState()
         }
     }
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener {
-            parentFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
-
-            val mainFragment = CalendarMainFragment()
-
-            (requireActivity() as MainActivity).changeFragment(mainFragment)
+            (requireActivity() as? MainActivity)?.changeFragment(CalendarMainFragment())
         }
 
         binding.btnEdit.setOnClickListener {
+            originalImageUris.clear()
+            originalImageUris.addAll(selectedImageUris)
+            originalContent = binding.etDiary.text.toString()
             setEditMode(true)
 
             binding.vpPhotoSlider.setCurrentItem(selectedImageUris.size, true)
@@ -116,41 +116,26 @@ class EntryDetailFragment : Fragment() {
         binding.btnCancel.setOnClickListener {
             selectedImageUris.clear()
             selectedImageUris.addAll(originalImageUris)
-
-            updatePhotoState()
+            binding.etDiary.setText(originalContent)
             setEditMode(false)
         }
 
         binding.btnComplete.setOnClickListener {
-            originalImageUris.clear()
             setEditMode(false)
-            updatePhotoState()
+            // RetrofitClient.day4CutService.updateDay4Cut..
         }
     }
 
     private fun setEditMode(isEditing: Boolean) {
-        if (isEditing) {
-            // 편집 모드 활성화
-            originalImageUris.clear()
-            originalImageUris.addAll(selectedImageUris)
+        this.isEditMode = isEditing
 
-            binding.btnEdit.visibility = View.GONE
-            binding.btnCancel.visibility = View.VISIBLE
-            binding.btnComplete.visibility = View.VISIBLE
-            binding.tvTextCount.visibility = View.VISIBLE
+        binding.btnEdit.visibility = if (isEditing) View.GONE else View.VISIBLE
+        binding.btnCancel.visibility = if (isEditing) View.VISIBLE else View.GONE
+        binding.btnComplete.visibility = if (isEditing) View.VISIBLE else View.GONE
+        binding.tvTextCount.visibility = if (isEditing) View.VISIBLE else View.GONE
 
-            isEditMode = true
-        } else {
-            // 편집 모드 종료
-            binding.btnEdit.visibility = View.VISIBLE
-            binding.btnCancel.visibility = View.GONE
-            binding.btnComplete.visibility = View.GONE
-            binding.tvTextCount.visibility = View.GONE
-
-            isEditMode = false
-        }
-
-        binding.vpPhotoSlider.adapter?.notifyDataSetChanged()
+        // 편집 모드에 따라 어댑터 재생성 (추가 버튼 노출 여부 때문)
+        updatePhotoState()
     }
 
     private fun setupPhotoPicker() {
@@ -164,7 +149,7 @@ class EntryDetailFragment : Fragment() {
     }
 
     private fun updatePhotoState() {
-        if (selectedImageUris.isNotEmpty()) {
+        if (selectedImageUris.isNotEmpty() || isEditMode) {
             binding.clPhotoEmpty.visibility = View.GONE
             binding.vpPhotoSlider.visibility = View.VISIBLE
             binding.vpPhotoSlider.adapter = PhotoPagerAdapter(selectedImageUris)
@@ -269,7 +254,7 @@ class EntryDetailFragment : Fragment() {
     }
 
     // 어댑터는 내부 클래스로 유지하되, LayoutInflater 호출 시 context 주의
-    inner class PhotoPagerAdapter(private val imageUris: List<Uri>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    inner class PhotoPagerAdapter(private val imageUris: List<String>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         private val TYPE_PHOTO = 0
         private val TYPE_ADD = 1
@@ -304,11 +289,15 @@ class EntryDetailFragment : Fragment() {
                     if (isTypical) R.drawable.ic_typical_on else R.drawable.ic_typical_off
                 )
 
-                photoHolder.binding.ivPhoto.setImageURI(imageUris[position])
+                Glide.with(photoHolder.binding.ivPhoto.context)
+                    .load(currentUri)
+                    .into(photoHolder.binding.ivPhoto)
 
                 photoHolder.binding.ivTypical.setOnClickListener {
-                    typicalImageUri = currentUri
-                    notifyDataSetChanged()
+                    if (isEditMode) {
+                        typicalImageUri = currentUri
+                        notifyDataSetChanged()
+                    }
                 }
 
                 photoHolder.binding.ivDelete.setOnClickListener {

@@ -23,7 +23,7 @@
         android:id="@+id/ivNotification"
         android:layout_width="22dp"
         android:layout_height="22dp"
-        android:src="@drawable/ic_notification_selector"
+        android:src="@drawable/ic_notification"
         android:contentDescription="notification"
         android:layout_marginEnd="20dp"
         app:layout_constraintTop_toTopOf="@id/tvAppTitle"

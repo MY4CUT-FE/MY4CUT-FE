@@ -6,14 +6,24 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.auth.local.TokenManager
+import com.umc.mobile.my4cut.data.auth.model.LoginRequest
+import com.umc.mobile.my4cut.data.auth.model.TokenResult
+import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.ActivityLoginBinding
+import com.umc.mobile.my4cut.data.network.RetrofitClient
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class LoginActivity : AppCompatActivity() {
 
@@ -35,12 +45,78 @@ class LoginActivity : AppCompatActivity() {
 
         // 로그인 버튼
         binding.btnLogin.setOnClickListener {
-            // TODO: 실제 서버 로그인 API 연동
-            // 여기서는 임시로 메인화면으로 이동하도록 구현
-            val intent = Intent(this, MainActivity::class.java)
-            // 로그인 후 뒤로가기 시 로그인 화면이 안 나오게 하려면 플래그 설정
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
+            val email = binding.etEmail.text.toString()
+            val password = binding.etPassword.text.toString()
+
+            val request = LoginRequest(
+                email = email,
+                password = password
+            )
+
+            RetrofitClient.authService.login(request)
+                .enqueue(object : Callback<BaseResponse<TokenResult>> {
+
+                    override fun onResponse(
+                        call: Call<BaseResponse<TokenResult>>,
+                        response: Response<BaseResponse<TokenResult>>
+                    ) {
+                        val resp = response.body()
+
+                        Log.d("Login", "http=${response.code()}")
+                        Log.d("Login", "code=${resp?.code}, message=${resp?.message}")
+
+                        // ✅ 성공 조건 수정: C20xx 계열
+                        if (response.isSuccessful && resp != null && resp.code.startsWith("C20")) {
+                            val tokenResult = resp.data
+
+                            if (tokenResult != null) {
+                                // ✅ TokenManager로 토큰 저장
+                                TokenManager.saveTokens(
+                                    this@LoginActivity,
+                                    tokenResult.accessToken,
+                                    tokenResult.refreshToken
+                                )
+
+                                Toast.makeText(
+                                    this@LoginActivity,
+                                    "로그인에 성공했습니다.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                val intent =
+                                    Intent(this@LoginActivity, MainActivity::class.java)
+                                intent.flags =
+                                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                startActivity(intent)
+                            } else {
+                                Toast.makeText(
+                                    this@LoginActivity,
+                                    "토큰 정보를 받아오지 못했습니다.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        } else {
+                            // 로그인 실패
+                            Toast.makeText(
+                                this@LoginActivity,
+                                resp?.message ?: "로그인 실패",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    override fun onFailure(
+                        call: Call<BaseResponse<TokenResult>>,
+                        t: Throwable
+                    ) {
+                        Log.e("LoginActivity", "Login Error", t)
+                        Toast.makeText(
+                            this@LoginActivity,
+                            "네트워크 연결 상태를 확인해주세요.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                })
         }
     }
 
@@ -51,7 +127,6 @@ class LoginActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {
                 checkInputValidity()
 
-                // 입력 중일 때는 에러 메시지 숨기기
                 binding.tvEmailError.visibility = View.GONE
                 binding.tvPwError.visibility = View.GONE
                 binding.etEmail.setBackgroundResource(R.drawable.bg_edittext_rounded)
@@ -71,22 +146,34 @@ class LoginActivity : AppCompatActivity() {
         binding.btnLogin.isEnabled = email.isNotEmpty() && password.isNotEmpty()
     }
 
-    // 비밀번호 눈알 아이콘 토글 로직 (회원가입과 동일)
+    // 비밀번호 눈알 아이콘 토글 로직
     @SuppressLint("ClickableViewAccessibility")
     private fun initPasswordToggle() {
         binding.etPassword.setOnTouchListener { v, event ->
             if (event.action == MotionEvent.ACTION_UP) {
                 val editText = v as EditText
-                if (event.rawX >= (editText.right - editText.compoundDrawables[2].bounds.width())) {
+                if (event.rawX >=
+                    (editText.right - editText.compoundDrawables[2].bounds.width())
+                ) {
                     val selection = editText.selectionEnd
-                    if (editText.inputType == (InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
-                        editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_on, 0)
+                    if (editText.inputType ==
+                        (InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
+                    ) {
+                        editText.inputType =
+                            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                        editText.setCompoundDrawablesWithIntrinsicBounds(
+                            0, 0, R.drawable.ic_visibility_on, 0
+                        )
                     } else {
-                        editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_off, 0)
+                        editText.inputType =
+                            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                        editText.setCompoundDrawablesWithIntrinsicBounds(
+                            0, 0, R.drawable.ic_visibility_off, 0
+                        )
                     }
-                    editText.compoundDrawables[2]?.setTint(ContextCompat.getColor(this, R.color.gray_500))
+                    editText.compoundDrawables[2]?.setTint(
+                        ContextCompat.getColor(this, R.color.gray_500)
+                    )
                     editText.setSelection(selection)
                     return@setOnTouchListener true
                 }
