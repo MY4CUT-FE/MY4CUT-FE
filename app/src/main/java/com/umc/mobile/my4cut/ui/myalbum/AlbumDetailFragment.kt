@@ -127,44 +127,26 @@ class AlbumDetailFragment : Fragment() {
     private fun uploadImagesAndAddToAlbum(uris: List<Uri>) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val uploadedMediaIds = mutableListOf<Int>()
+                // 1. Multipart 리스트 준비
+                val multipartFiles = prepareMultipartList(uris)
 
-                // 1. Presigned URL 발급 요청
-                for (uri in uris) {
-                    val urlRes = RetrofitClient.imageService.getUploadPresignedUrl(
-                        PresignedUrlRequest(
-                            type = "PROFILE",
-                            fileName = "photo_${System.currentTimeMillis()}.jpg",
-                            contentType = "image/jpeg"
+                // 2. 벌크 업로드 API 호출 (딱 한 번!)
+                val uploadRes = RetrofitClient.imageService.uploadImagesMedia(multipartFiles)
+
+                if (uploadRes.code == "SUCCESS_CODE") { // 서버 응답 코드 확인
+                    val uploadedMediaIds = uploadRes.data?.map { it.fileId } ?: emptyList()
+
+                    if (uploadedMediaIds.isNotEmpty()) {
+                        // 3. 앨범 사진 추가 API 호출
+                        val addRes = RetrofitClient.albumService.addPhotosToAlbum(
+                            albumId,
+                            AlbumRequest(photoIds = uploadedMediaIds)
                         )
-                    )
 
-                    // 2. 응답 데이터 안전하게 가져오기
-                    val data = urlRes.data ?: continue
-                    val uploadUrl = data.uploadUrl
-                    val mediaId = data.mediaId
-
-                    // 3. S3에 실제 이미지 바이트 전송 (PUT)
-                    if (uploadToS3(uploadUrl, uri)) {
-                        uploadedMediaIds.add(mediaId)
-                        Log.d("ALBUM", "S3 업로드 성공: mediaId = $mediaId")
-                    }
-                }
-
-                // 4. 앨범 사진 추가 API 호출
-                if (uploadedMediaIds.isNotEmpty()) {
-                    val addRes = RetrofitClient.albumService.addPhotosToAlbum(
-                        albumId,
-                        AlbumRequest(photoIds = uploadedMediaIds)
-                    )
-
-                    if (addRes.code == "A2006") {
-                        Log.d("ALBUM", "앨범 등록 완료!")
-                        // updateUI(addRes.data?.photos)
-
-                        fetchAlbumDetail()
-                    } else {
-                        Log.e("ALBUM", "앨범 등록 실패: ${addRes.message}")
+                        if (addRes.code == "A2006") {
+                            Log.d("ALBUM", "미디어 업로드 및 앨범 추가 성공!")
+                            fetchAlbumDetail()
+                        }
                     }
                 }
             } catch (e: Exception) {
