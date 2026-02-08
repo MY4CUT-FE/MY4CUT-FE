@@ -1,39 +1,55 @@
 package com.umc.mobile.my4cut.ui.record
 
 import android.animation.ArgbEvaluator
-import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.base.BaseResponse
+import com.umc.mobile.my4cut.data.day4cut.remote.CreateDay4CutRequest
+import com.umc.mobile.my4cut.data.day4cut.remote.Day4CutImage
+import com.umc.mobile.my4cut.data.image.remote.PresignedUrlRequest
 import com.umc.mobile.my4cut.databinding.ActivityEntryRegisterBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoAddBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoSliderBinding
+import com.umc.mobile.my4cut.network.RetrofitClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.asRequestBody
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import java.io.File
+import java.io.FileOutputStream
 
 class EntryRegisterActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityEntryRegisterBinding
 
-    // 이미지 무한대 추가 리스트
     private var selectedImageUris = mutableListOf<Uri>()
-
     private var isDiaryExpanded = false
-    private var selectedMoodIndex = 0
+    private var selectedMoodIndex = 1
+
+    private val uploadedMediaIds = mutableListOf<Int>()
 
     private val pickMultipleMedia = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(50)) { uris ->
         if (uris.isNotEmpty()) {
-            // 기존 리스트에 추가
             selectedImageUris.addAll(uris)
             updatePhotoState()
         }
@@ -58,7 +74,23 @@ class EntryRegisterActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener { finish() }
-        binding.btnComplete.setOnClickListener { finish() }
+
+        binding.btnComplete.setOnClickListener {
+            // TODO: API 변경으로 인해 임시로 비활성화
+            Toast.makeText(this, "API 변경 중입니다. 곧 사용 가능합니다.", Toast.LENGTH_SHORT).show()
+
+            /* 기존 코드 - API 수정 후 활성화 필요
+            if (selectedImageUris.isNotEmpty()) {
+                Log.d("EntryRegister", "====================================")
+                Log.d("EntryRegister", "🚀 UPLOAD PROCESS STARTED")
+                Log.d("EntryRegister", "📸 Total images: ${selectedImageUris.size}")
+                Log.d("EntryRegister", "====================================")
+                uploadImagesAndCreateDay4Cut()
+            } else {
+                Toast.makeText(this, "이미지를 추가해주세요.", Toast.LENGTH_SHORT).show()
+            }
+            */
+        }
     }
 
     private fun setupPhotoPicker() {
@@ -92,7 +124,6 @@ class EntryRegisterActivity : AppCompatActivity() {
                     val r = 1 - kotlin.math.abs(position)
                     page.scaleY = 0.85f + r * 0.15f
 
-                    // 테두리 색상 변경
                     val photoCard = page.findViewById<MaterialCardView>(R.id.cv_photo_card)
                     val addCard = page.findViewById<MaterialCardView>(R.id.cv_add_card)
                     val targetCard = photoCard ?: addCard
@@ -104,13 +135,10 @@ class EntryRegisterActivity : AppCompatActivity() {
                     }
 
                     val addIcon = page.findViewById<ImageView>(R.id.iv_add_icon)
-
                     if (addIcon != null && addCard != null) {
                         if (position > 0) {
                             val cardWidth = if (addCard.width > 0) addCard.width.toFloat() else 1000f
-
                             val moveDistance = (cardWidth / 2f) - (addIcon.width / 2f) - 20f
-
                             addIcon.translationX = -position * moveDistance
                         } else {
                             addIcon.translationX = 0f
@@ -128,6 +156,261 @@ class EntryRegisterActivity : AppCompatActivity() {
             binding.btnComplete.isEnabled = false
             binding.btnComplete.alpha = 0.5f
         }
+    }
+
+    /* ========================================
+       ⚠️ API 변경으로 인해 아래 함수들 주석 처리
+       imageService.getPresignedUrl 메서드가 없어 오류 발생
+       API 수정 후 다시 활성화 필요
+       ======================================== */
+
+    /*
+    private fun uploadImagesAndCreateDay4Cut() {
+        binding.btnComplete.isEnabled = false
+        Toast.makeText(this, "업로드 중...", Toast.LENGTH_SHORT).show()
+
+        lifecycleScope.launch {
+            try {
+                uploadedMediaIds.clear()
+                Log.d("EntryRegister", "")
+                Log.d("EntryRegister", "📂 Step 1-2: IMAGE UPLOAD PHASE")
+                Log.d("EntryRegister", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+                for ((index, uri) in selectedImageUris.withIndex()) {
+                    Log.d("EntryRegister", "")
+                    Log.d("EntryRegister", "📤 Uploading image ${index + 1}/${selectedImageUris.size}")
+                    Log.d("EntryRegister", "URI: $uri")
+
+                    val mediaId = uploadImageWithPresignedUrl(uri, index)
+
+                    if (mediaId != null) {
+                        uploadedMediaIds.add(mediaId)
+                        Log.d("EntryRegister", "✅ Image ${index + 1} uploaded successfully")
+                        Log.d("EntryRegister", "   └─ mediaId: $mediaId")
+                    } else {
+                        Log.e("EntryRegister", "❌ Image ${index + 1} upload FAILED")
+                        throw Exception("이미지 ${index + 1} 업로드 실패")
+                    }
+                }
+
+                Log.d("EntryRegister", "")
+                Log.d("EntryRegister", "✅ ALL IMAGES UPLOADED SUCCESSFULLY")
+                Log.d("EntryRegister", "📊 Uploaded mediaIds: $uploadedMediaIds")
+                Log.d("EntryRegister", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+                withContext(Dispatchers.Main) {
+                    createDay4Cut()
+                }
+
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Log.e("EntryRegister", "")
+                    Log.e("EntryRegister", "💥 UPLOAD PROCESS FAILED")
+                    Log.e("EntryRegister", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                    Log.e("EntryRegister", "Error: ${e.message}", e)
+                    Toast.makeText(this@EntryRegisterActivity, "업로드 실패: ${e.message}", Toast.LENGTH_LONG).show()
+                    binding.btnComplete.isEnabled = true
+                }
+            }
+        }
+    }
+
+    private suspend fun uploadImageWithPresignedUrl(uri: Uri, imageIndex: Int): Int? = withContext(Dispatchers.IO) {
+        try {
+            // ==================== Step 1: Presigned URL 발급 ====================
+            val fileName = "photo_${System.currentTimeMillis()}.jpg"
+            val request = PresignedUrlRequest(
+                type = "CALENDAR",
+                fileName = fileName,
+                contentType = "image/jpeg"
+            )
+
+            Log.d("EntryRegister", "")
+            Log.d("EntryRegister", "   [Step 1] 🔑 Requesting Presigned URL")
+            Log.d("EntryRegister", "   ├─ API: POST /images/presigned-url")
+            Log.d("EntryRegister", "   ├─ type: CALENDAR")
+            Log.d("EntryRegister", "   ├─ fileName: $fileName")
+            Log.d("EntryRegister", "   └─ contentType: image/jpeg")
+
+            // ⚠️ API 변경으로 getPresignedUrl 메서드가 없어 오류 발생
+            // imageService에 해당 메서드 추가 필요
+            val presignedResponse = RetrofitClient.imageService.getPresignedUrl(request).execute()
+
+            Log.d("EntryRegister", "   ├─ Response Code: ${presignedResponse.code()}")
+
+            if (!presignedResponse.isSuccessful) {
+                val errorBody = presignedResponse.errorBody()?.string()
+                Log.e("EntryRegister", "")
+                Log.e("EntryRegister", "   ❌ API ERROR: POST /images/presigned-url")
+                Log.e("EntryRegister", "   ├─ Status Code: ${presignedResponse.code()}")
+                Log.e("EntryRegister", "   ├─ Error Message: ${presignedResponse.message()}")
+                Log.e("EntryRegister", "   └─ Error Body: $errorBody")
+                return@withContext null
+            }
+
+            if (presignedResponse.body()?.data == null) {
+                Log.e("EntryRegister", "   ❌ Response body or data is null")
+                return@withContext null
+            }
+
+            val presignedData = presignedResponse.body()!!.data!!
+            val mediaId = presignedData.mediaId
+            val uploadUrl = presignedData.uploadUrl
+
+            Log.d("EntryRegister", "   ✅ Presigned URL received")
+            Log.d("EntryRegister", "   ├─ mediaId: $mediaId")
+            Log.d("EntryRegister", "   ├─ fileKey: ${presignedData.fileKey}")
+            Log.d("EntryRegister", "   └─ uploadUrl: ${uploadUrl.take(100)}...")
+
+            // ==================== Step 2: S3 업로드 ====================
+            val file = uriToFile(uri)
+            val fileSize = file.length() / 1024 // KB
+            val requestBody = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+
+            Log.d("EntryRegister", "")
+            Log.d("EntryRegister", "   [Step 2] ☁️ Uploading to S3")
+            Log.d("EntryRegister", "   ├─ Method: PUT")
+            Log.d("EntryRegister", "   ├─ File size: ${fileSize}KB")
+            Log.d("EntryRegister", "   ├─ Content-Type: image/jpeg")
+            Log.d("EntryRegister", "   └─ URL: ${uploadUrl.take(100)}...")
+
+            val uploadResponse = RetrofitClient.s3Service.uploadFile(uploadUrl, requestBody).execute()
+
+            Log.d("EntryRegister", "   ├─ S3 Response Code: ${uploadResponse.code()}")
+
+            if (uploadResponse.isSuccessful) {
+                Log.d("EntryRegister", "   ✅ S3 upload successful")
+                mediaId
+            } else {
+                val errorBody = uploadResponse.errorBody()?.string()
+                Log.e("EntryRegister", "")
+                Log.e("EntryRegister", "   ❌ S3 UPLOAD ERROR")
+                Log.e("EntryRegister", "   ├─ Status Code: ${uploadResponse.code()}")
+                Log.e("EntryRegister", "   ├─ Error Message: ${uploadResponse.message()}")
+                Log.e("EntryRegister", "   └─ Error Body: $errorBody")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("EntryRegister", "")
+            Log.e("EntryRegister", "   💥 EXCEPTION during image upload")
+            Log.e("EntryRegister", "   └─ ${e.message}", e)
+            null
+        }
+    }
+
+    private fun uriToFile(uri: Uri): File {
+        val inputStream = contentResolver.openInputStream(uri)
+        val file = File(cacheDir, "temp_${System.currentTimeMillis()}.jpg")
+        val outputStream = FileOutputStream(file)
+        inputStream?.copyTo(outputStream)
+        inputStream?.close()
+        outputStream.close()
+        return file
+    }
+    */
+
+    private fun createDay4Cut() {
+        val dateString = binding.tvDateCapsule.text.toString()
+        val apiDate = dateString.replace(".", "-")
+
+        val content = binding.etDiary.text.toString().takeIf { it.isNotBlank() }
+
+        // ✅ 변경된 이모지 타입
+        val emojiType = when (selectedMoodIndex) {
+            1 -> "HAPPY"
+            2 -> "ANGRY"
+            3 -> "TIRED"
+            4 -> "SAD"
+            5 -> "CALM"
+            else -> "HAPPY"
+        }
+
+        val images = uploadedMediaIds.mapIndexed { index, mediaId ->
+            Day4CutImage(
+                mediaFileId = mediaId,
+                isThumbnail = (index == 0)
+            )
+        }
+
+        val request = CreateDay4CutRequest(
+            date = apiDate,
+            content = content,
+            emojiType = emojiType,
+            images = images
+        )
+
+        Log.d("EntryRegister", "")
+        Log.d("EntryRegister", "📝 Step 3: DAY4CUT CREATION PHASE")
+        Log.d("EntryRegister", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        Log.d("EntryRegister", "🔹 API: POST /day4cut")
+        Log.d("EntryRegister", "🔹 Request Body:")
+        Log.d("EntryRegister", "   ├─ date: $apiDate")
+        Log.d("EntryRegister", "   ├─ content: ${content ?: "(null)"}")
+        Log.d("EntryRegister", "   ├─ emojiType: $emojiType")
+        Log.d("EntryRegister", "   └─ images: ${images.size} items")
+        images.forEachIndexed { index, image ->
+            Log.d("EntryRegister", "       ├─ [$index] mediaFileId: ${image.mediaFileId}, isThumbnail: ${image.isThumbnail}")
+        }
+
+        // TODO: API 변경으로 인해 임시로 주석 처리 - createDay4Cut이 suspend 함수로 변경됨
+        Toast.makeText(this, "API 변경 중입니다.", Toast.LENGTH_SHORT).show()
+
+        /*
+        RetrofitClient.day4CutService.createDay4Cut(request)
+            .enqueue(object : Callback<BaseResponse<String>> {
+                override fun onResponse(
+                    call: Call<BaseResponse<String>>,
+                    response: Response<BaseResponse<String>>
+                ) {
+                    Log.d("EntryRegister", "")
+                    Log.d("EntryRegister", "📨 Response received from POST /day4cut")
+                    Log.d("EntryRegister", "   ├─ Status Code: ${response.code()}")
+                    Log.d("EntryRegister", "   ├─ Status Message: ${response.message()}")
+
+                    if (response.isSuccessful) {
+                        val responseBody = response.body()
+                        Log.d("EntryRegister", "   ├─ Response Body: $responseBody")
+                        Log.d("EntryRegister", "   └─ Result: SUCCESS ✅")
+                        Log.d("EntryRegister", "")
+                        Log.d("EntryRegister", "🎉 DAY4CUT CREATED SUCCESSFULLY")
+                        Log.d("EntryRegister", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                        Log.d("EntryRegister", "")
+
+                        Toast.makeText(this@EntryRegisterActivity, "기록이 저장되었습니다!", Toast.LENGTH_SHORT).show()
+
+                        setResult(RESULT_OK)
+                        finish()
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        Log.e("EntryRegister", "   └─ Result: FAILED ❌")
+                        Log.e("EntryRegister", "")
+                        Log.e("EntryRegister", "❌ API ERROR: POST /day4cut")
+                        Log.e("EntryRegister", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                        Log.e("EntryRegister", "Status Code: ${response.code()}")
+                        Log.e("EntryRegister", "Error Message: ${response.message()}")
+                        Log.e("EntryRegister", "Error Body: $errorBody")
+                        Log.e("EntryRegister", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                        Log.e("EntryRegister", "")
+
+                        Toast.makeText(this@EntryRegisterActivity, "저장 실패: ${response.code()}", Toast.LENGTH_LONG).show()
+                        binding.btnComplete.isEnabled = true
+                    }
+                }
+
+                override fun onFailure(call: Call<BaseResponse<String>>, t: Throwable) {
+                    Log.e("EntryRegister", "")
+                    Log.e("EntryRegister", "💥 NETWORK ERROR: POST /day4cut")
+                    Log.e("EntryRegister", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                    Log.e("EntryRegister", "Exception type: ${t.javaClass.simpleName}")
+                    Log.e("EntryRegister", "Message: ${t.message}", t)
+                    Log.e("EntryRegister", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                    Log.e("EntryRegister", "")
+
+                    Toast.makeText(this@EntryRegisterActivity, "네트워크 오류: ${t.message}", Toast.LENGTH_LONG).show()
+                    binding.btnComplete.isEnabled = true
+                }
+            })
+        */
     }
 
     private fun setupDiaryLogic() {
@@ -162,6 +445,8 @@ class EntryRegisterActivity : AppCompatActivity() {
                 updateMoodUI(moodViews, index)
             }
         }
+
+        updateMoodUI(moodViews, 0)
     }
 
     private fun updateMoodUI(views: List<ImageView>, selectedIndex: Int) {
@@ -198,26 +483,19 @@ class EntryRegisterActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             if (getItemViewType(position) == TYPE_PHOTO) {
-                // 사진 바인딩
                 val photoHolder = holder as PhotoViewHolder
                 photoHolder.binding.ivPhoto.setImageURI(imageUris[position])
             } else {
-                // 추가 버튼 바인딩
                 val addHolder = holder as AddViewHolder
                 addHolder.itemView.setOnClickListener {
-                    // 추가 버튼 클릭 시 다시 갤러리 열기
                     launchPhotoPicker()
                 }
             }
         }
 
-        override fun getItemCount(): Int {
-            // 사진 개수 + 1 (마지막 플러스 버튼)
-            return imageUris.size + 1
-        }
+        override fun getItemCount(): Int = imageUris.size + 1
 
         override fun getItemViewType(position: Int): Int {
-            // 마지막 아이템은 '추가 버튼', 나머지는 '사진'
             return if (position == imageUris.size) TYPE_ADD else TYPE_PHOTO
         }
     }
