@@ -1,8 +1,11 @@
 package com.umc.mobile.my4cut.ui.pose
 
+import com.google.gson.annotations.SerializedName
+
 data class PoseData(
-    val id: Int,
-    val title: String,
-    val peopleCount: Int, // 1: 1인, 2: 2인, 3: 3인, 4: 4인
-    var isFavorite: Boolean = false // 즐겨찾기 여부
+    @SerializedName("poseId") val poseId: Int,
+    @SerializedName("title") val title: String,
+    @SerializedName("imageUrl") val imageUrl: String,
+    @SerializedName("peopleCount") val peopleCount: Int,
+    var isFavorite: Boolean = false // 로컬에서 관리 (북마크 여부)
 )
