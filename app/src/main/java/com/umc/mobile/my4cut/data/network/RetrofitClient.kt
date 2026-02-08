@@ -2,11 +2,11 @@ package com.umc.mobile.my4cut.network
 
 import android.content.Context
 import android.util.Log
+import com.umc.mobile.my4cut.data.album.remote.AlbumService
+import com.umc.mobile.my4cut.data.album.remote.ImageService
 import com.umc.mobile.my4cut.data.auth.local.TokenManager
 import com.umc.mobile.my4cut.data.auth.remote.AuthService
 import com.umc.mobile.my4cut.data.day4cut.remote.Day4CutService
-import com.umc.mobile.my4cut.data.image.remote.ImageService
-import com.umc.mobile.my4cut.data.media.remote.MediaService
 import com.umc.mobile.my4cut.data.pose.remote.PoseService
 import com.umc.mobile.my4cut.data.user.remote.UserService
 import com.umc.mobile.my4cut.data.friend.remote.FriendService
@@ -149,8 +149,8 @@ object RetrofitClient {
     val poseService: PoseService = authRetrofit.create(PoseService::class.java)
     val day4CutService: Day4CutService = authRetrofit.create(Day4CutService::class.java)
     val imageService: ImageService = authRetrofit.create(ImageService::class.java)
-    val mediaService: MediaService = authRetrofit.create(MediaService::class.java)
-    val s3UploadService: ImageService = noAuthRetrofit.create(ImageService::class.java)
+
+    val albumService: AlbumService = authRetrofit.create(AlbumService::class.java)
 
     val friendService: FriendService =
         authRetrofit.create(FriendService::class.java)
