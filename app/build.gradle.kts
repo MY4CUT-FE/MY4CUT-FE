@@ -117,4 +117,7 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+
+    // Splash Screen API
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }
