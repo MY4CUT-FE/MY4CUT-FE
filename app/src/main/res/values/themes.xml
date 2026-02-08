@@ -6,6 +6,11 @@
         <item name="android:fontFamily">@font/suit</item>
     </style>
 
+    <style name="Base.Theme.My4cut" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <item name="colorPrimary">@color/coral_700</item>
+    </style>
+
     <!-- App Theme -->
     <style name="Theme.MY4CUT" parent="Base.Theme.MY4CUT" />
 
@@ -48,11 +53,12 @@
         <item name="android:scrollbarTrackVertical">@null</item>
     </style>
 
-    <!-- splash -->
+    <!-- Splash Theme  -->
     <style name="Theme.App.Splash" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_background</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowActionBar">false</item>
+        <item name="android:windowDisablePreview">true</item>
     </style>
 </resources>
