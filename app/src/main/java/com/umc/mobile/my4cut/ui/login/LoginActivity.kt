@@ -20,7 +20,7 @@ import com.umc.mobile.my4cut.data.auth.model.LoginRequest
 import com.umc.mobile.my4cut.data.auth.model.TokenResult
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.ActivityLoginBinding
-import com.umc.mobile.my4cut.data.network.RetrofitClient
+import com.umc.mobile.my4cut.network.RetrofitClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -40,10 +40,8 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun initClickListener() {
-        // 뒤로가기
         binding.btnBack.setOnClickListener { finish() }
 
-        // 로그인 버튼
         binding.btnLogin.setOnClickListener {
             val email = binding.etEmail.text.toString()
             val password = binding.etPassword.text.toString()
@@ -53,7 +51,8 @@ class LoginActivity : AppCompatActivity() {
                 password = password
             )
 
-            RetrofitClient.authService.login(request)
+            // ✅ authServiceNoAuth 사용 (인증 없는 클라이언트)
+            RetrofitClient.authServiceNoAuth.login(request)
                 .enqueue(object : Callback<BaseResponse<TokenResult>> {
 
                     override fun onResponse(
@@ -65,17 +64,18 @@ class LoginActivity : AppCompatActivity() {
                         Log.d("Login", "http=${response.code()}")
                         Log.d("Login", "code=${resp?.code}, message=${resp?.message}")
 
-                        // ✅ 성공 조건 수정: C20xx 계열
                         if (response.isSuccessful && resp != null && resp.code.startsWith("C20")) {
                             val tokenResult = resp.data
 
                             if (tokenResult != null) {
-                                // ✅ TokenManager로 토큰 저장
+                                // ✅ 토큰 저장
                                 TokenManager.saveTokens(
                                     this@LoginActivity,
                                     tokenResult.accessToken,
                                     tokenResult.refreshToken
                                 )
+
+                                Log.d("Login", "✅ Tokens saved successfully")
 
                                 Toast.makeText(
                                     this@LoginActivity,
@@ -83,10 +83,8 @@ class LoginActivity : AppCompatActivity() {
                                     Toast.LENGTH_SHORT
                                 ).show()
 
-                                val intent =
-                                    Intent(this@LoginActivity, MainActivity::class.java)
-                                intent.flags =
-                                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                 startActivity(intent)
                             } else {
                                 Toast.makeText(
@@ -96,7 +94,6 @@ class LoginActivity : AppCompatActivity() {
                                 ).show()
                             }
                         } else {
-                            // 로그인 실패
                             Toast.makeText(
                                 this@LoginActivity,
                                 resp?.message ?: "로그인 실패",
@@ -138,7 +135,6 @@ class LoginActivity : AppCompatActivity() {
         binding.etPassword.addTextChangedListener(watcher)
     }
 
-    // 이메일, 비밀번호가 모두 입력되어야 버튼 활성화
     private fun checkInputValidity() {
         val email = binding.etEmail.text.toString()
         val password = binding.etPassword.text.toString()
@@ -146,34 +142,21 @@ class LoginActivity : AppCompatActivity() {
         binding.btnLogin.isEnabled = email.isNotEmpty() && password.isNotEmpty()
     }
 
-    // 비밀번호 눈알 아이콘 토글 로직
     @SuppressLint("ClickableViewAccessibility")
     private fun initPasswordToggle() {
         binding.etPassword.setOnTouchListener { v, event ->
             if (event.action == MotionEvent.ACTION_UP) {
                 val editText = v as EditText
-                if (event.rawX >=
-                    (editText.right - editText.compoundDrawables[2].bounds.width())
-                ) {
+                if (event.rawX >= (editText.right - editText.compoundDrawables[2].bounds.width())) {
                     val selection = editText.selectionEnd
-                    if (editText.inputType ==
-                        (InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
-                    ) {
-                        editText.inputType =
-                            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                        editText.setCompoundDrawablesWithIntrinsicBounds(
-                            0, 0, R.drawable.ic_visibility_on, 0
-                        )
+                    if (editText.inputType == (InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+                        editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_on, 0)
                     } else {
-                        editText.inputType =
-                            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                        editText.setCompoundDrawablesWithIntrinsicBounds(
-                            0, 0, R.drawable.ic_visibility_off, 0
-                        )
+                        editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_visibility_off, 0)
                     }
-                    editText.compoundDrawables[2]?.setTint(
-                        ContextCompat.getColor(this, R.color.gray_500)
-                    )
+                    editText.compoundDrawables[2]?.setTint(ContextCompat.getColor(this, R.color.gray_500))
                     editText.setSelection(selection)
                     return@setOnTouchListener true
                 }

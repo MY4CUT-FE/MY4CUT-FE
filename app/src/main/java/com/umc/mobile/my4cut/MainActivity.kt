@@ -7,7 +7,6 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.databinding.ActivityMainBinding
 import com.umc.mobile.my4cut.ui.home.HomeFragment
 import com.umc.mobile.my4cut.ui.myalbum.CalendarData
@@ -25,8 +24,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        RetrofitClient.init(this)
 
         // 바텀 네비게이션 초기화 및 리스너 설정
         initBottomNavigation(savedInstanceState)
