@@ -2,6 +2,8 @@ package com.umc.mobile.my4cut.data.day4cut.remote
 
 import com.google.gson.annotations.SerializedName
 import com.umc.mobile.my4cut.data.base.BaseResponse
+import com.umc.mobile.my4cut.data.day4cut.model.CalendarStatusResponse
+import com.umc.mobile.my4cut.data.day4cut.model.Day4CutDetailResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST

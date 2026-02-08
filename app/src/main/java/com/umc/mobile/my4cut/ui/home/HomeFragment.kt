@@ -17,6 +17,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.base.BaseResponse
+import com.umc.mobile.my4cut.data.day4cut.model.CalendarStatusResponse
+import com.umc.mobile.my4cut.data.day4cut.model.Day4CutDetailResponse
 import com.umc.mobile.my4cut.databinding.FragmentHomeBinding
 import com.umc.mobile.my4cut.databinding.ItemCalendarDayBinding
 import com.umc.mobile.my4cut.network.RetrofitClient
@@ -25,9 +27,10 @@ import com.umc.mobile.my4cut.ui.calendar.CalendarPickerActivity
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 import com.umc.mobile.my4cut.ui.pose.PoseRecommendActivity
 import com.umc.mobile.my4cut.ui.record.EntryRegisterActivity
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -99,21 +102,20 @@ class HomeFragment : Fragment() {
         binding.tvWelcomeBanner.text = spannable
     }
 
-    // ✅ 캘린더 데이터 로드 (API)
+    // ✅ 캘린더 데이터 로드 (API) - suspend 함수로 변경
     private fun loadCalendarData() {
         val year = selectedDate.year
         val month = selectedDate.monthValue
 
         Log.d("HomeFragment", "📤 Loading calendar - year: $year, month: $month")
 
-        RetrofitClient.day4CutService.getCalendar(year, month)
-            .enqueue(object : Callback<BaseResponse<Day4CutCalendarResponse>> {
-                override fun onResponse(
-                    call: Call<BaseResponse<Day4CutCalendarResponse>>,
-                    response: Response<BaseResponse<Day4CutCalendarResponse>>
-                ) {
-                    if (response.isSuccessful) {
-                        val calendarData = response.body()?.data
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.day4CutService.getCalendarStatus(year, month)
+
+                withContext(Dispatchers.Main) {
+                    if (response.code == "SUCCESS" || response.code == "200") {
+                        val calendarData = response.data
                         if (calendarData != null) {
                             Log.d("HomeFragment", "✅ Calendar loaded: ${calendarData.dates.size} dates")
 
@@ -124,32 +126,34 @@ class HomeFragment : Fragment() {
                             }
 
                             setupWeekCalendar() // 주간 캘린더 다시 그리기
+                        } else {
+                            Log.e("HomeFragment", "❌ Calendar data is null")
                         }
                     } else {
-                        Log.e("HomeFragment", "❌ Calendar load failed: ${response.code()}")
+                        Log.e("HomeFragment", "❌ Calendar load failed: ${response.message}")
                     }
                 }
-
-                override fun onFailure(call: Call<BaseResponse<Day4CutCalendarResponse>>, t: Throwable) {
-                    Log.e("HomeFragment", "❌ Network error", t)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Log.e("HomeFragment", "❌ Network error", e)
                 }
-            })
+            }
+        }
     }
 
-    // ✅ 특정 날짜의 하루네컷 데이터 로드 (API)
+    // ✅ 특정 날짜의 하루네컷 데이터 로드 (API) - suspend 함수로 변경
     private fun loadDay4CutData(date: LocalDate) {
         val dateString = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 
         Log.d("HomeFragment", "📤 Loading day4cut for date: $dateString")
 
-        RetrofitClient.day4CutService.getDay4Cut(dateString)
-            .enqueue(object : Callback<BaseResponse<Day4CutResponse>> {
-                override fun onResponse(
-                    call: Call<BaseResponse<Day4CutResponse>>,
-                    response: Response<BaseResponse<Day4CutResponse>>
-                ) {
-                    if (response.isSuccessful) {
-                        val day4cut = response.body()?.data
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.day4CutService.getDay4CutDetail(dateString)
+
+                withContext(Dispatchers.Main) {
+                    if (response.code == "SUCCESS" || response.code == "200") {
+                        val day4cut = response.data
                         if (day4cut != null) {
                             Log.d("HomeFragment", "✅ Day4cut loaded: ${day4cut.id}")
                             showFilledState(day4cut)
@@ -158,21 +162,22 @@ class HomeFragment : Fragment() {
                             showEmptyState()
                         }
                     } else {
-                        Log.d("HomeFragment", "⚠️ No record for this date: ${response.code()}")
+                        Log.d("HomeFragment", "⚠️ No record for this date: ${response.message}")
                         showEmptyState()
                     }
                 }
-
-                override fun onFailure(call: Call<BaseResponse<Day4CutResponse>>, t: Throwable) {
-                    Log.e("HomeFragment", "❌ Network error", t)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Log.e("HomeFragment", "❌ Network error", e)
                     Toast.makeText(requireContext(), "네트워크 오류", Toast.LENGTH_SHORT).show()
                     showEmptyState()
                 }
-            })
+            }
+        }
     }
 
     // ✅ 기록이 있는 경우 표시
-    private fun showFilledState(day4cut: Day4CutResponse) {
+    private fun showFilledState(day4cut: Day4CutDetailResponse) {
         binding.clEmptyState.visibility = View.GONE
         binding.llFilledState.visibility = View.VISIBLE
 

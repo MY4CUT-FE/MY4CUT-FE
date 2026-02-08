@@ -17,7 +17,7 @@ import com.umc.mobile.my4cut.data.album.model.AlbumRequest
 import com.umc.mobile.my4cut.data.album.model.AlbumResponse
 import com.umc.mobile.my4cut.data.auth.local.TokenManager
 import com.umc.mobile.my4cut.data.base.BaseResponse
-import com.umc.mobile.my4cut.data.network.RetrofitClient
+import com.umc.mobile.my4cut.network.RetrofitClient
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
