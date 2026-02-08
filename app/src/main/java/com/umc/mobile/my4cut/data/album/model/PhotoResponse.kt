@@ -1,8 +1,9 @@
 package com.umc.mobile.my4cut.data.album.model
 
 data class PhotoResponse(
-    val id: Int,
-    val fileUrl: String,
+    val mediaId: Int,
+    val fileKey: String,
+    val viewUrl: String,
     val mediaType: String,
     val takenDate: String,
     val isFinal: Boolean,

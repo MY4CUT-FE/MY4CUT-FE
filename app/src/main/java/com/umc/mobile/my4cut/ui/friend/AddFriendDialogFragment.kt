@@ -1,5 +1,10 @@
 package com.umc.mobile.my4cut.ui.friend
 
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.friend.model.FriendRequestCreateDto
+
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.Paint
@@ -26,6 +31,11 @@ class AddFriendDialogFragment : DialogFragment() {
 
     /** 현재 검색 상태 */
     private var isSearchResultVisible = false
+
+    /** 검색된 친구 userId 저장 */
+    private var searchedUserId: Long? = null
+    /** 검색에 사용한 친구 코드 저장 */
+    private var searchedFriendCode: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -90,11 +100,32 @@ class AddFriendDialogFragment : DialogFragment() {
             return
         }
 
-        // TODO: 실제 API 연동
-        // 지금은 더미 성공 처리
-        showSearchResult(
-            nickname = "화운"
-        )
+        lifecycleScope.launch {
+            try {
+                val response =
+                    RetrofitClient.friendService.searchFriendByCode(inputCode)
+
+                if (response.data != null) {
+                    searchedUserId = response.data.userId
+                    searchedFriendCode = inputCode
+                    showSearchResult(
+                        nickname = response.data.nickname
+                    )
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        response.message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    "네트워크 오류가 발생했어요",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     /** 검색 결과 표시 */
@@ -110,19 +141,25 @@ class AddFriendDialogFragment : DialogFragment() {
         isSearchResultVisible = true
     }
 
-    /** 친구 추가 */
+    /** 친구 요청 보내기 */
     private fun addFriend() {
-        val nickname = binding.tvResultName.text.toString()
+        val friendCode = searchedFriendCode ?: return
 
-        // 부모 Fragment에 친구 추가 결과 전달
-        parentFragmentManager.setFragmentResult(
-            RESULT_ADD_FRIEND,
-            Bundle().apply {
-                putString(KEY_FRIEND_NICKNAME, nickname)
+        lifecycleScope.launch {
+            try {
+                val requestDto = FriendRequestCreateDto(targetFriendCode = friendCode)
+                val response = RetrofitClient.friendService.requestFriend(requestDto)
+
+                if (response.code.startsWith("C2")) {
+                    Toast.makeText(requireContext(), "친구 요청을 보냈어요", Toast.LENGTH_SHORT).show()
+                    dismiss()
+                } else {
+                    Toast.makeText(requireContext(), response.message, Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "네트워크 오류가 발생했어요", Toast.LENGTH_SHORT).show()
             }
-        )
-
-        dismiss()
+        }
     }
 
     override fun onStart() {

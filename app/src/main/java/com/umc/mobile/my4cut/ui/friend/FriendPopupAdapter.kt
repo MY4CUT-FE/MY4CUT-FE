@@ -27,7 +27,7 @@ class FriendPopupAdapter(
 
     override fun onBindViewHolder(holder: FriendViewHolder, position: Int) {
         val friend = friends[position]
-        val friendId = friend.id.toLong()
+        val friendId = friend.userId.toLong()
 
         holder.binding.tvNickname.text = friend.nickname
 

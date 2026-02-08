@@ -18,7 +18,7 @@ import com.umc.mobile.my4cut.data.auth.model.SignUpRequest
 import com.umc.mobile.my4cut.data.auth.model.TokenResult
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.FragmentSignUpStep3Binding
-import com.umc.mobile.my4cut.data.network.RetrofitClient
+import com.umc.mobile.my4cut.network.RetrofitClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -103,7 +103,7 @@ class SignUpStep3Fragment : Fragment() {
         }
     }
 
-    // 자동 로그인
+   // 자동 로그인
     private fun autoLogin() {
         val loginRequest = LoginRequest(
             email = emailStr,

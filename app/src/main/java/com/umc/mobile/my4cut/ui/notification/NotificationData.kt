@@ -1,7 +1,8 @@
-package com.umc.mobile.my4cut.data
+package com.umc.mobile.my4cut.ui.notification
 
-// 알림 데이터 클래스
 data class NotificationData(
+    val id: Long,             // 서버에서 내려온 알림 또는 요청 ID
+    val type: String,         // 알림 타입 (FRIEND_REQUEST, WORKSPACE_INVITE 등)
     val iconResId: Int,       // 아이콘 리소스 ID (R.drawable.xxx)
     val category: String,     // 카테고리 (초대, 친구, 댓글)
     val content: String,      // 알림 내용
