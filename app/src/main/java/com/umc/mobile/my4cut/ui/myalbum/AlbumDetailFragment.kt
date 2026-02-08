@@ -24,7 +24,7 @@ import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.album.model.AlbumRequest
 import com.umc.mobile.my4cut.data.album.model.PhotoResponse
 import com.umc.mobile.my4cut.data.auth.local.TokenManager
-import com.umc.mobile.my4cut.data.network.RetrofitClient
+import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.databinding.DialogExit2Binding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -115,7 +115,7 @@ class AlbumDetailFragment : Fragment() {
             try {
                 val response = RetrofitClient.albumService.getAlbumDetail(albumId)
                 if (response.code == "A2003") {
-                    updateUI(response.data?.photos)
+                    updateUI(response.data?.mediaList)
                 }
             } catch (e: Exception) {
                 Log.e("API_ERROR", "상세 데이터 로드 실패: ${e.message}")
@@ -127,44 +127,26 @@ class AlbumDetailFragment : Fragment() {
     private fun uploadImagesAndAddToAlbum(uris: List<Uri>) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val uploadedMediaIds = mutableListOf<Int>()
+                // 1. Multipart 리스트 준비
+                val multipartFiles = prepareMultipartList(uris)
 
-                // 1. Presigned URL 발급 요청
-                for (uri in uris) {
-                    val urlRes = RetrofitClient.imageService.getUploadPresignedUrl(
-                        PresignedUrlRequest(
-                            type = "PROFILE",
-                            fileName = "photo_${System.currentTimeMillis()}.jpg",
-                            contentType = "image/jpeg"
+                // 2. 미디어 업로드 API 호출
+                val uploadRes = RetrofitClient.imageService.uploadImagesMedia(multipartFiles)
+
+                if (uploadRes.code == "SUCCESS_CODE") { // 서버 응답 코드 확인
+                    val uploadedMediaIds = uploadRes.data?.map { it.fileId } ?: emptyList()
+
+                    if (uploadedMediaIds.isNotEmpty()) {
+                        // 3. 앨범 사진 추가 API 호출
+                        val addRes = RetrofitClient.albumService.addPhotosToAlbum(
+                            albumId,
+                            AlbumRequest(photoIds = uploadedMediaIds)
                         )
-                    )
 
-                    // 2. 응답 데이터 안전하게 가져오기
-                    val data = urlRes.data ?: continue
-                    val uploadUrl = data.uploadUrl
-                    val mediaId = data.mediaId
-
-                    // 3. S3에 실제 이미지 바이트 전송 (PUT)
-                    if (uploadToS3(uploadUrl, uri)) {
-                        uploadedMediaIds.add(mediaId)
-                        Log.d("ALBUM", "S3 업로드 성공: mediaId = $mediaId")
-                    }
-                }
-
-                // 4. 앨범 사진 추가 API 호출
-                if (uploadedMediaIds.isNotEmpty()) {
-                    val addRes = RetrofitClient.albumService.addPhotosToAlbum(
-                        albumId,
-                        AlbumRequest(photoIds = uploadedMediaIds)
-                    )
-
-                    if (addRes.code == "A2006") {
-                        Log.d("ALBUM", "앨범 등록 완료!")
-                        // updateUI(addRes.data?.photos)
-
-                        fetchAlbumDetail()
-                    } else {
-                        Log.e("ALBUM", "앨범 등록 실패: ${addRes.message}")
+                        if (addRes.code == "A2006") {
+                            Log.d("ALBUM", "미디어 업로드 및 앨범 추가 성공!")
+                            fetchAlbumDetail()
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -292,7 +274,7 @@ class AlbumDetailFragment : Fragment() {
             if (holder is PhotoViewHolder) {
                 val photo = photos[position]
 
-                val cleanUrl = photo.fileUrl.substringBefore("?")
+                val cleanUrl = photo.viewUrl.substringBefore("?")
 
                 val testS3Url = "https://my4cut-image-bucket.s3.ap-northeast-2.amazonaws.com/profile/a03d47f6-74de-4b52-88ae-761611a93cec_string?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEJP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDmFwLW5vcnRoZWFzdC0yIkgwRgIhAJ2Sr3%2BvUjqnOvWqtJWvn4F6HLi2DJ9NS%2F45LN8oUVJdAiEAldOwjYiZODDlabsiVan235WfC6GKHZ%2F%2BNXxXqfgeP2YqywUIXBAAGgw5NjA5MDA4ODQ0NzQiDEqEqF2QJrOKG%2BmQIyqoBRsaZpiFAW%2BM01ScomWnh%2Ba0uxtRF5RqSqYYnO8mjfIS25EqXFTAlLoaxN%2B7zC9n0iQ1xMpkg58YsQCXTnPp5EUM1I2zVceRT7HEAsJV9G3iAt0J%2BUAw71Qtl%2Fk0V7eoXCgvcwO8uNX9SP4y7AcK8miPkdfWSmigYzjvghFIaqHDu5uKUPI%2FuoOK3a1GzvmacvrLKWFn2u%2FAkTQMrh6MLGLxg%2FJrSYLd%2BE3J5NyUycxyfPQCQXHazwDhUulV4Q8VOXr5E1M4MGL1OGcaeZieQjznpwKfphljDDHdoRMZa336FiB5Ww6z%2Bzoe5g1TCdm044Ydx7j1CJpC3VmPufUKDslILqETMPTqhugX330BzfPLXHNq7LfUOiIQCB%2BDY08TmmOfWnLyF2xmUZ0TCdpn%2FfqvnnbS%2F%2BTYOD0ebTB1sFWtup9Vk2MoVcrhq0ZsYsPdXOn0fh%2FqyB8u%2FBwSR3KaejzrrvxOiIMkyKtQ8g83deIUFKRdQMwN%2BkwabrA%2FqNGVi9tJMApqEFPz3m9eArcEgpVqYZYgytxM%2FBtDafs7LGJftCizu85MxuzSf%2FaGDzzubWRWAJ94N5erKvs2t0K6yPaiqxmzgseOoPMgnZaw9%2Bbs5cJechZ6yyIaRI2DL%2Fdbulmral%2BRKH2tlbqhFBh1eyaMs4vjqufbJUoJCj0PHa9jw%2Bs%2BPDR0jc5yFxaUKJUdDoF8MKJabIuJmy88Tnp6RvYJQ7C4BshnF4uN7aL4M0u%2BVipl%2BlgZ13c5fd8vz4Le61L4L41TH0x8Hfp3a%2Bdi41cKL002pecYO2qI3sTU5gmx1RxqXcTeZ2tXxPqr2pFy5yLpFAixUbeP4T3rWiua3LVLF3tA%2Fgm5VaARWOAxEsBoxDwVrfj6%2BMlXL3qMLE0Zq4Uq0Ka77LyxMK25nMwGOrABrrToR65%2FGlGbIcJU2VMUnAOYlM7OW61aZmads0yLIELSKO1xxtDoZ4PO%2Br5H90PhnYiAls5IsmncaGsuMS%2BV5rbvLrkOq0LSBlNT9kQucdYocI1NMyBsXvzYq%2F4CbJDtDMiS64EmWGo13TlY9%2Fft6GL5xeTLA6egR%2Fw6Hej247sXLNT%2FWHUFaADx2V0OUPktly4fX1L9AiGxRnjvW%2BMZWkAM1wdw6GyflyPEmtSuVBA%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260207T115819Z&X-Amz-SignedHeaders=host&X-Amz-Credential=ASIA57ORH475NK3MCPSZ%2F20260207%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Expires=300&X-Amz-Signature=14a02e39a06fc4949361b634e845bbd61935ecdbf1668106c14418345f20a38b"
 
@@ -301,10 +283,10 @@ class AlbumDetailFragment : Fragment() {
                 val BASE_URL = "https://cdn.my4cut.shop/"
 
                 // 2. 만약 photo.fileUrl이 http로 시작하지 않는다면 도메인을 붙여줍니다.
-                val finalUrl = if (photo.fileUrl.startsWith("http")) {
-                    photo.fileUrl
+                val finalUrl = if (photo.viewUrl.startsWith("http")) {
+                    photo.viewUrl
                 } else {
-                    "${test}${photo.fileUrl}"
+                    "${test}${photo.viewUrl}"
                 }
 
                 Log.d("ALBUM_DEBUG", "최종 로드 URL: $finalUrl")
