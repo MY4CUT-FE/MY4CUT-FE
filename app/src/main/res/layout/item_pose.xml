@@ -1,106 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="8dp">
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cv_image_container"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardView"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:cardElevation="0dp"
-        app:strokeColor="#D9D9D9"
-        app:strokeWidth="5dp"
-        app:layout_constraintDimensionRatio="3:4"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="2dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#D9D9D9">
+            android:layout_height="wrap_content"
+            android:padding="12dp">
 
+            <!-- ✅ 네컷 전체 이미지 (4개 프레임 합쳐진 하나의 이미지) -->
             <ImageView
-                android:id="@+id/iv_cut_1"
+                android:id="@+id/ivPoseImage"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                android:layout_marginEnd="1dp"
-                android:layout_marginBottom="1dp"
-                android:background="#FFFFFF"
                 android:scaleType="centerCrop"
-                android:src="@drawable/img_pose_sample"
-                app:layout_constraintBottom_toTopOf="@id/iv_cut_3"
-                app:layout_constraintEnd_toStartOf="@id/iv_cut_2"
+                android:src="@drawable/pose_1person_1"
+                android:contentDescription="포즈 이미지"
+                app:layout_constraintDimensionRatio="169:237"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <ImageView
-                android:id="@+id/iv_cut_2"
+            <!-- 포즈 이름 -->
+            <TextView
+                android:id="@+id/tvPoseName"
                 android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_marginStart="1dp"
-                android:layout_marginBottom="1dp"
-                android:background="#FFFFFF"
-                android:scaleType="centerCrop"
-                android:src="@drawable/img_pose_sample"
-                app:layout_constraintBottom_toTopOf="@id/iv_cut_4"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/iv_cut_1"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <ImageView
-                android:id="@+id/iv_cut_3"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_marginTop="1dp"
-                android:layout_marginEnd="1dp"
-                android:background="#FFFFFF"
-                android:scaleType="centerCrop"
-                android:src="@drawable/img_pose_sample"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/iv_cut_4"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/suit_regular"
+                android:text="포즈 이름"
+                android:textColor="@color/black"
+                android:textSize="14sp"
+                app:layout_constraintEnd_toStartOf="@+id/ivStar"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/iv_cut_1" />
+                app:layout_constraintTop_toBottomOf="@+id/ivPoseImage" />
 
+            <!-- 즐겨찾기 별 아이콘 -->
             <ImageView
-                android:id="@+id/iv_cut_4"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_marginStart="1dp"
-                android:layout_marginTop="1dp"
-                android:background="#FFFFFF"
-                android:scaleType="centerCrop"
-                android:src="@drawable/img_pose_sample"
-                app:layout_constraintBottom_toBottomOf="parent"
+                android:id="@+id/ivStar"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="8dp"
+                android:contentDescription="즐겨찾기"
+                android:src="@drawable/ic_star_off"
+                app:layout_constraintBottom_toBottomOf="@+id/tvPoseName"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/iv_cut_3"
-                app:layout_constraintTop_toBottomOf="@id/iv_cut_2" />
+                app:layout_constraintTop_toTopOf="@+id/tvPoseName" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
-    </com.google.android.material.card.MaterialCardView>
 
-    <TextView
-        android:id="@+id/tv_pose_name"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:fontFamily="@font/suit_medium"
-        android:text="포즈 이름"
-        android:textColor="#1A1A1A"
-        android:textSize="12sp"
-        app:layout_constraintEnd_toStartOf="@id/iv_star"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cv_image_container" />
-
-    <ImageView
-        android:id="@+id/iv_star"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
-        android:src="@drawable/ic_star_off"
-        app:layout_constraintBottom_toBottomOf="@id/tv_pose_name"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/tv_pose_name" />
+    </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
