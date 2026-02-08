@@ -82,6 +82,7 @@
                     android:id="@+id/layoutSpaceItems"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:layout_marginTop="20dp"
                     android:clipChildren="false"
                     android:clipToPadding="false"
                     app:layout_constraintTop_toTopOf="@id/viewOrangeCircle"
