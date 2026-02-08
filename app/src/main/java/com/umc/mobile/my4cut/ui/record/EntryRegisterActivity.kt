@@ -76,6 +76,10 @@ class EntryRegisterActivity : AppCompatActivity() {
         binding.btnBack.setOnClickListener { finish() }
 
         binding.btnComplete.setOnClickListener {
+            // TODO: API 변경으로 인해 임시로 비활성화
+            Toast.makeText(this, "API 변경 중입니다. 곧 사용 가능합니다.", Toast.LENGTH_SHORT).show()
+
+            /* 기존 코드 - API 수정 후 활성화 필요
             if (selectedImageUris.isNotEmpty()) {
                 Log.d("EntryRegister", "====================================")
                 Log.d("EntryRegister", "🚀 UPLOAD PROCESS STARTED")
@@ -85,6 +89,7 @@ class EntryRegisterActivity : AppCompatActivity() {
             } else {
                 Toast.makeText(this, "이미지를 추가해주세요.", Toast.LENGTH_SHORT).show()
             }
+            */
         }
     }
 
@@ -153,6 +158,13 @@ class EntryRegisterActivity : AppCompatActivity() {
         }
     }
 
+    /* ========================================
+       ⚠️ API 변경으로 인해 아래 함수들 주석 처리
+       imageService.getPresignedUrl 메서드가 없어 오류 발생
+       API 수정 후 다시 활성화 필요
+       ======================================== */
+
+    /*
     private fun uploadImagesAndCreateDay4Cut() {
         binding.btnComplete.isEnabled = false
         Toast.makeText(this, "업로드 중...", Toast.LENGTH_SHORT).show()
@@ -220,6 +232,8 @@ class EntryRegisterActivity : AppCompatActivity() {
             Log.d("EntryRegister", "   ├─ fileName: $fileName")
             Log.d("EntryRegister", "   └─ contentType: image/jpeg")
 
+            // ⚠️ API 변경으로 getPresignedUrl 메서드가 없어 오류 발생
+            // imageService에 해당 메서드 추가 필요
             val presignedResponse = RetrofitClient.imageService.getPresignedUrl(request).execute()
 
             Log.d("EntryRegister", "   ├─ Response Code: ${presignedResponse.code()}")
@@ -258,49 +272,45 @@ class EntryRegisterActivity : AppCompatActivity() {
             Log.d("EntryRegister", "   ├─ Method: PUT")
             Log.d("EntryRegister", "   ├─ File size: ${fileSize}KB")
             Log.d("EntryRegister", "   ├─ Content-Type: image/jpeg")
-            Log.d("EntryRegister", "   └─ Destination: S3 Bucket")
+            Log.d("EntryRegister", "   └─ URL: ${uploadUrl.take(100)}...")
 
-            val uploadResponse = RetrofitClient.s3UploadService.uploadToS3(uploadUrl, requestBody).execute()
+            val uploadResponse = RetrofitClient.s3Service.uploadFile(uploadUrl, requestBody).execute()
 
-            Log.d("EntryRegister", "   ├─ Response Code: ${uploadResponse.code()}")
+            Log.d("EntryRegister", "   ├─ S3 Response Code: ${uploadResponse.code()}")
 
-            if (!uploadResponse.isSuccessful) {
+            if (uploadResponse.isSuccessful) {
+                Log.d("EntryRegister", "   ✅ S3 upload successful")
+                mediaId
+            } else {
                 val errorBody = uploadResponse.errorBody()?.string()
                 Log.e("EntryRegister", "")
-                Log.e("EntryRegister", "   ❌ S3 UPLOAD FAILED")
+                Log.e("EntryRegister", "   ❌ S3 UPLOAD ERROR")
                 Log.e("EntryRegister", "   ├─ Status Code: ${uploadResponse.code()}")
                 Log.e("EntryRegister", "   ├─ Error Message: ${uploadResponse.message()}")
                 Log.e("EntryRegister", "   └─ Error Body: $errorBody")
-                return@withContext null
+                null
             }
-
-            Log.d("EntryRegister", "   ✅ S3 upload successful")
-            Log.d("EntryRegister", "   └─ Returning mediaId: $mediaId")
-
-            mediaId
-
         } catch (e: Exception) {
             Log.e("EntryRegister", "")
             Log.e("EntryRegister", "   💥 EXCEPTION during image upload")
-            Log.e("EntryRegister", "   ├─ Image index: $imageIndex")
-            Log.e("EntryRegister", "   ├─ Exception type: ${e.javaClass.simpleName}")
-            Log.e("EntryRegister", "   └─ Message: ${e.message}", e)
+            Log.e("EntryRegister", "   └─ ${e.message}", e)
             null
         }
     }
 
     private fun uriToFile(uri: Uri): File {
         val inputStream = contentResolver.openInputStream(uri)
-        val file = File(cacheDir, "temp_image_${System.currentTimeMillis()}.jpg")
+        val file = File(cacheDir, "temp_${System.currentTimeMillis()}.jpg")
         val outputStream = FileOutputStream(file)
         inputStream?.copyTo(outputStream)
         inputStream?.close()
         outputStream.close()
         return file
     }
+    */
 
     private fun createDay4Cut() {
-        val dateString = intent.getStringExtra("SELECTED_DATE") ?: "2026.01.01"
+        val dateString = binding.tvDateCapsule.text.toString()
         val apiDate = dateString.replace(".", "-")
 
         val content = binding.etDiary.text.toString().takeIf { it.isNotBlank() }
@@ -342,6 +352,10 @@ class EntryRegisterActivity : AppCompatActivity() {
             Log.d("EntryRegister", "       ├─ [$index] mediaFileId: ${image.mediaFileId}, isThumbnail: ${image.isThumbnail}")
         }
 
+        // TODO: API 변경으로 인해 임시로 주석 처리 - createDay4Cut이 suspend 함수로 변경됨
+        Toast.makeText(this, "API 변경 중입니다.", Toast.LENGTH_SHORT).show()
+
+        /*
         RetrofitClient.day4CutService.createDay4Cut(request)
             .enqueue(object : Callback<BaseResponse<String>> {
                 override fun onResponse(
@@ -396,6 +410,7 @@ class EntryRegisterActivity : AppCompatActivity() {
                     binding.btnComplete.isEnabled = true
                 }
             })
+        */
     }
 
     private fun setupDiaryLogic() {
