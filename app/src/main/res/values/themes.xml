@@ -4,6 +4,7 @@
     <!-- Base application theme -->
     <style name="Base.Theme.MY4CUT" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:fontFamily">@font/suit</item>
+        <item name="android:statusBarColor">@color/white</item> <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <!-- App Theme -->
