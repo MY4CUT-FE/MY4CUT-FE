@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
+import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.ActivitySplashBinding
 import com.umc.mobile.my4cut.ui.intro.IntroActivity
 
@@ -24,6 +25,6 @@ class SplashActivity : AppCompatActivity() {
             val intent = Intent(this, IntroActivity::class.java)
             startActivity(intent)
             finish()
-        }, 2000) // 2000ms = 2초
+        }, 2000)
     }
 }

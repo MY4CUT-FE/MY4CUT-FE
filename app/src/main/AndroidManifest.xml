@@ -31,7 +31,7 @@
 
         <activity
             android:name=".ui.intro.IntroActivity"
-            android:exported="false" />
+            android:exported="false"/>
 
         <activity
             android:name=".MainActivity"
