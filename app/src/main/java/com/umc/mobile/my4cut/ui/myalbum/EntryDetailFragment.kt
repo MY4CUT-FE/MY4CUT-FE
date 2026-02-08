@@ -30,7 +30,7 @@ import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.databinding.DialogExitBinding
 import com.umc.mobile.my4cut.databinding.FragmentEntryDetailBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.umc.mobile.my4cut.data.network.RetrofitClient
+import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.databinding.DialogExit2Binding
 import com.umc.mobile.my4cut.databinding.ItemPhotoSlider2Binding
 import kotlinx.coroutines.launch
@@ -73,31 +73,31 @@ class EntryDetailFragment : Fragment() {
         setupClickListeners()
         setupDiaryLogic()
 
-        if (apiDate != null) fetchDay4CutDetail()
+//        if (apiDate != null) fetchDay4CutDetail()
     }
 
-    private fun fetchDay4CutDetail() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val response = RetrofitClient.day4CutService.getDay4CutDetail(apiDate!!)
-                if (response.code == "SUCCESS") {
-                    response.data?.let { data ->
-                        binding.etDiary.setText(data.content ?: "")
-
-                        selectedImageUris.clear()
-                        data.fileUrl?.let { selectedImageUris.addAll(it) }
-
-                        if (selectedImageUris.isNotEmpty()) {
-                            typicalImageUri = selectedImageUris[0] // 첫 번째를 대표 이미지로 임시 설정
-                        }
-                        updatePhotoState()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("API_ERROR", "조회 실패: ${e.message}")
-            }
-        }
-    }
+//    private fun fetchDay4CutDetail() {
+//        viewLifecycleOwner.lifecycleScope.launch {
+//            try {
+//                val response = RetrofitClient.day4CutService.getDay4CutDetail(apiDate!!)
+//                if (response.code == "SUCCESS") {
+//                    response.data?.let { data ->
+//                        binding.etDiary.setText(data.content ?: "")
+//
+//                        selectedImageUris.clear()
+//                        data.fileUrl?.let { selectedImageUris.addAll(it) }
+//
+//                        if (selectedImageUris.isNotEmpty()) {
+//                            typicalImageUri = selectedImageUris[0] // 첫 번째를 대표 이미지로 임시 설정
+//                        }
+//                        updatePhotoState()
+//                    }
+//                }
+//            } catch (e: Exception) {
+//                Log.e("API_ERROR", "조회 실패: ${e.message}")
+//            }
+//        }
+//    }
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener {
