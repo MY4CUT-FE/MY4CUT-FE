@@ -9,6 +9,11 @@ import com.umc.mobile.my4cut.data.image.remote.ImageService
 import com.umc.mobile.my4cut.data.media.remote.MediaService
 import com.umc.mobile.my4cut.data.pose.remote.PoseService
 import com.umc.mobile.my4cut.data.user.remote.UserService
+import com.umc.mobile.my4cut.data.friend.remote.FriendService
+import com.umc.mobile.my4cut.data.photo.remote.WorkspacePhotoService
+import com.umc.mobile.my4cut.data.workspace.remote.WorkspaceService
+import com.umc.mobile.my4cut.data.invitation.remote.WorkspaceInvitationService
+import com.umc.mobile.my4cut.data.notification.remote.NotificationService
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -147,4 +152,18 @@ object RetrofitClient {
     val mediaService: MediaService = authRetrofit.create(MediaService::class.java)
     val s3UploadService: ImageService = noAuthRetrofit.create(ImageService::class.java)
 
+    val friendService: FriendService =
+        authRetrofit.create(FriendService::class.java)
+
+    val workspaceService: WorkspaceService =
+        authRetrofit.create(WorkspaceService::class.java)
+
+    val workspacePhotoService: WorkspacePhotoService =
+        authRetrofit.create(WorkspacePhotoService::class.java)
+
+    val workspaceInvitationService: WorkspaceInvitationService =
+        authRetrofit.create(WorkspaceInvitationService::class.java)
+
+    val notificationService: NotificationService =
+        authRetrofit.create(NotificationService::class.java)
 }

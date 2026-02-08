@@ -4,11 +4,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.umc.mobile.my4cut.data.NotificationData
 import com.umc.mobile.my4cut.databinding.ItemNotificationBinding
 
-class NotificationAdapter(private val items: List<NotificationData>) :
-    RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
+class NotificationAdapter(
+    private val items: List<NotificationData>,
+    private val onAcceptClick: (NotificationData) -> Unit,
+    private val onDeclineClick: (NotificationData) -> Unit
+) : RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
 
     inner class ViewHolder(private val binding: ItemNotificationBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -29,10 +31,10 @@ class NotificationAdapter(private val items: List<NotificationData>) :
 
             // 3. 버튼 클릭 리스너 예시
             binding.btnAccept.setOnClickListener {
-                // TODO: 수락 API 호출
+                onAcceptClick(item)
             }
             binding.btnDecline.setOnClickListener {
-                // TODO: 거절 API 호출
+                onDeclineClick(item)
             }
         }
     }
