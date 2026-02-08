@@ -295,12 +295,17 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         }
     }
 
-    private fun formatTime(timestamp: Long): String {
-        val sdf = java.text.SimpleDateFormat(
-            "MM/dd HH:mm",
-            java.util.Locale.getDefault()
-        )
-        return sdf.format(java.util.Date(timestamp))
+    private fun formatTime(timestamp: String): String {
+        return try {
+            val instant = java.time.OffsetDateTime.parse(timestamp).toInstant()
+            val sdf = java.text.SimpleDateFormat(
+                "MM/dd HH:mm",
+                java.util.Locale.getDefault()
+            )
+            sdf.format(java.util.Date.from(instant))
+        } catch (e: Exception) {
+            timestamp
+        }
     }
 
     private fun showChangeDialog() {

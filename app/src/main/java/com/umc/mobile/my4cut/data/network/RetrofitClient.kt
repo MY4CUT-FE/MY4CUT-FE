@@ -5,6 +5,11 @@ import android.util.Log
 import com.umc.mobile.my4cut.data.auth.local.TokenManager
 import com.umc.mobile.my4cut.data.auth.remote.AuthService
 import com.umc.mobile.my4cut.data.user.remote.UserService
+import com.umc.mobile.my4cut.data.friend.remote.FriendService
+import com.umc.mobile.my4cut.data.photo.remote.WorkspacePhotoService
+import com.umc.mobile.my4cut.data.workspace.remote.WorkspaceService
+import com.umc.mobile.my4cut.data.invitation.remote.WorkspaceInvitationService
+import com.umc.mobile.my4cut.data.notification.remote.NotificationService
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -80,4 +85,19 @@ object RetrofitClient {
 
     val userService: UserService =
         authRetrofit.create(UserService::class.java)
+
+    val friendService: FriendService =
+        authRetrofit.create(FriendService::class.java)
+
+    val workspaceService: WorkspaceService =
+        authRetrofit.create(WorkspaceService::class.java)
+
+    val workspacePhotoService: WorkspacePhotoService =
+        authRetrofit.create(WorkspacePhotoService::class.java)
+
+    val workspaceInvitationService: WorkspaceInvitationService =
+        authRetrofit.create(WorkspaceInvitationService::class.java)
+
+    val notificationService: NotificationService =
+        authRetrofit.create(NotificationService::class.java)
 }

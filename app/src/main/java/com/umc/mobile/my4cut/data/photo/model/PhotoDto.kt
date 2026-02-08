@@ -4,5 +4,5 @@ data class PhotoDto(
     val id: Long,
     val imageUrl: String,
     val uploaderNickname: String,
-    val createdAt: Long
+    val createdAt: String
 )

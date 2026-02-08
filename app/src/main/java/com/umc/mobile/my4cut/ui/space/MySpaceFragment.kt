@@ -229,10 +229,11 @@ class MySpaceFragment : Fragment() {
                             Space(
                                 id = it.id,
                                 name = it.name,
-                                currentMember = it.currentMember,
-                                maxMember = it.maxMember,
-                                createdAt = it.createdAt,
-                                expiredAt = it.expiredAt
+                                // 서버 응답에 멤버 수 정보가 없으므로 임시값 사용 (추후 API 확장 시 교체)
+                                currentMember = 1,
+                                maxMember = 10,
+                                createdAt = parseIsoToMillis(it.createdAt),
+                                expiredAt = parseIsoToMillis(it.expiresAt)
                             )
                         }
                     )
@@ -241,6 +242,14 @@ class MySpaceFragment : Fragment() {
             } catch (e: Exception) {
                 // TODO: 필요 시 에러 처리 (Toast 등)
             }
+        }
+    }
+
+    private fun parseIsoToMillis(iso: String): Long {
+        return try {
+            java.time.OffsetDateTime.parse(iso).toInstant().toEpochMilli()
+        } catch (e: Exception) {
+            0L
         }
     }
 

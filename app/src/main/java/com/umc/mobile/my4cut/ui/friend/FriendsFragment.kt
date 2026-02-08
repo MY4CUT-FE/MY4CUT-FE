@@ -20,6 +20,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.FragmentFriendsBinding
+import com.umc.mobile.my4cut.network.RetrofitClient
 
 class FriendsFragment : Fragment(R.layout.fragment_friends) {
 
@@ -58,13 +59,14 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val response = FriendServiceApi.service.getFriends()
+                val response = RetrofitClient.friendService.getFriends()
                 val friends = response.data ?: return@launch
 
                 allFriends.addAll(
                     friends.map {
                         Friend(
-                            id = it.id,
+                            friendId = it.friendId,
+                            userId = it.userId,
                             nickname = it.nickname,
                             isFavorite = it.isFavorite
                         )
@@ -142,15 +144,21 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
         // 친구 삭제
         binding.tvFriendsDelete.setOnClickListener {
             if (friendsMode == FriendsMode.EDIT) {
-                val dialog = DeleteFriendDialogFragment {
-                    // Remove selected friends from allFriends
-                    allFriends.removeAll { friend -> selectedFriendIds.contains(friend.id) }
-                    selectedFriendIds.clear()
-                    submitFriends()
-                    friendsMode = FriendsMode.NORMAL
-                    updateHeaderUi()
-                    friendsAdapter.notifyDataSetChanged()
-                }
+                // 선택된 친구가 없으면 아무 것도 하지 않음
+                val friendId = selectedFriendIds.firstOrNull() ?: return@setOnClickListener
+
+                val dialog = DeleteFriendDialogFragment(
+                    friendId = friendId,
+                    onConfirm = {
+                        // 삭제 성공 후 리스트에서 제거
+                        allFriends.removeAll { friend -> friend.friendId == friendId }
+                        selectedFriendIds.clear()
+                        submitFriends()
+                        friendsMode = FriendsMode.NORMAL
+                        updateHeaderUi()
+                        friendsAdapter.notifyDataSetChanged()
+                    }
+                )
                 dialog.show(parentFragmentManager, "DeleteFriendDialog")
             }
         }
@@ -235,7 +243,7 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
             }
 
             FriendsMode.EDIT -> {
-                val id = friend.id
+                val id = friend.friendId
                 if (selectedFriendIds.contains(id)) selectedFriendIds.remove(id)
                 else selectedFriendIds.add(id)
 
@@ -258,10 +266,25 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
     }
 
     private fun onFavoriteToggled(friend: Friend) {
-        // 즐겨찾기 상태 토글
-        friend.isFavorite = !friend.isFavorite
-        // 전체 리스트에서 다시 반영
-        submitFriends()
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                if (friend.isFavorite) {
+                    // 즐겨찾기 해제 API
+                    RetrofitClient.friendService.removeFavorite(friend.friendId)
+                    friend.isFavorite = false
+                } else {
+                    // 즐겨찾기 추가 API
+                    RetrofitClient.friendService.addFavorite(friend.friendId)
+                    friend.isFavorite = true
+                }
+
+                // 전체 리스트에서 다시 반영
+                submitFriends()
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     private fun setupAddFriendResultListener() {
@@ -272,23 +295,8 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
             val nickname =
                 bundle.getString(AddFriendDialogFragment.KEY_FRIEND_NICKNAME) ?: return@setFragmentResultListener
 
-            // 이미 존재하는 친구면 추가하지 않음
-            if (allFriends.any { it.nickname == nickname }) return@setFragmentResultListener
-
-            // 임시 id 생성 (더미 데이터 기준)
-            val newId = (allFriends.maxOfOrNull { it.id } ?: 0L) + 1L
-
-            allFriends.add(
-                Friend(
-                    id = newId,
-                    nickname = nickname,
-                    isFavorite = false
-                )
-            )
-
-            // 이름순 정렬 후 UI 반영
-            allFriends.sortBy { it.nickname }
-            submitFriends()
+            // 서버에서 최신 친구 목록 다시 불러오기
+            initFriends()
         }
     }
 }

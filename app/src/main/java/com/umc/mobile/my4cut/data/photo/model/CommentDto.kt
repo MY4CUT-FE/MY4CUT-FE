@@ -4,5 +4,5 @@ data class CommentDto(
     val id: Long,
     val content: String,
     val writerNickname: String,
-    val createdAt: Long
+    val createdAt: String
 )

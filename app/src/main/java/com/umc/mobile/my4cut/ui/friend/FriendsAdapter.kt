@@ -17,6 +17,10 @@ class FriendsAdapter(
     private val enableSelectionGray: Boolean
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
+    init {
+        setHasStableIds(true)
+    }
+
     private val items = mutableListOf<FriendUiItem>()
 
     companion object {
@@ -60,6 +64,13 @@ class FriendsAdapter(
 
     override fun getItemCount(): Int = items.size
 
+    override fun getItemId(position: Int): Long {
+        return when (val item = items[position]) {
+            is FriendUiItem.Item -> item.friend.friendId
+            is FriendUiItem.Header -> item.title.hashCode().toLong()
+        }
+    }
+
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = items[position]) {
             is FriendUiItem.Header -> {
@@ -97,7 +108,7 @@ class FriendsAdapter(
 
         fun bind(friend: Friend) {
             val mode = getMode()
-            val selected = isSelected(friend.id)
+            val selected = isSelected(friend.friendId)
 
             // 닉네임
             binding.tvNickname.text = friend.nickname
@@ -138,8 +149,14 @@ class FriendsAdapter(
                 }
             }
 
-            binding.root.setOnClickListener {
-                onFriendClick(friend)
+            binding.layoutContent.setOnClickListener {
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    val item = items[pos]
+                    if (item is FriendUiItem.Item) {
+                        onFriendClick(item.friend)
+                    }
+                }
             }
         }
     }

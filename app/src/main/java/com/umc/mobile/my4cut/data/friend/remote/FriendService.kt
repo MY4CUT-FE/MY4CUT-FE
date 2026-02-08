@@ -4,6 +4,7 @@ import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.friend.model.FriendDto
 import com.umc.mobile.my4cut.data.friend.model.FriendRequestCreateDto
 import com.umc.mobile.my4cut.data.friend.model.FriendRequestDto
+import com.umc.mobile.my4cut.data.friend.model.RequestStatusDto
 import retrofit2.http.*
 
 interface FriendService {
@@ -40,13 +41,13 @@ interface FriendService {
     @POST("friends/requests/{requestId}/accept")
     suspend fun acceptFriendRequest(
         @Path("requestId") requestId: Long
-    ): BaseResponse<Unit>
+    ): BaseResponse<RequestStatusDto>
 
     /** 친구 요청 거절 */
     @POST("friends/requests/{requestId}/reject")
     suspend fun rejectFriendRequest(
         @Path("requestId") requestId: Long
-    ): BaseResponse<Unit>
+    ): BaseResponse<RequestStatusDto>
 
     /** 보낸 친구 요청 취소 */
     @DELETE("friends/requests/{requestId}")

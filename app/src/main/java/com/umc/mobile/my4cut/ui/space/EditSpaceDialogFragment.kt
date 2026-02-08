@@ -123,11 +123,11 @@ class EditSpaceDialogFragment : DialogFragment() {
             getMode = { FriendsMode.NORMAL },
             isSelected = { id: Long -> selectedFriendIds.contains(id) },
             onFriendClick = { friend ->
-                if (selectedFriendIds.contains(friend.id)) {
-                    selectedFriendIds.remove(friend.id)
-                    selectedFriends.removeAll { it.id == friend.id }
+                if (selectedFriendIds.contains(friend.userId)) {
+                    selectedFriendIds.remove(friend.userId)
+                    selectedFriends.removeAll { it.userId == friend.userId }
                 } else {
-                    selectedFriendIds.add(friend.id)
+                    selectedFriendIds.add(friend.userId)
                     selectedFriends.add(friend)
                 }
                 updateFriendSummary()
@@ -215,7 +215,8 @@ class EditSpaceDialogFragment : DialogFragment() {
                 friendList.addAll(
                     data.map {
                         Friend(
-                            id = it.id,
+                            friendId = it.friendId,
+                            userId = it.userId,
                             nickname = it.nickname,
                             isFavorite = it.isFavorite
                         )
@@ -224,8 +225,8 @@ class EditSpaceDialogFragment : DialogFragment() {
 
                 // 기존 스페이스 멤버 미리 선택
                 friendList.forEach { friend ->
-                    if (originalMemberIds.contains(friend.id)) {
-                        selectedFriendIds.add(friend.id)
+                    if (originalMemberIds.contains(friend.userId)) {
+                        selectedFriendIds.add(friend.userId)
                         selectedFriends.add(friend)
                     }
                 }

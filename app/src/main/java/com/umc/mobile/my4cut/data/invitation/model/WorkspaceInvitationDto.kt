@@ -5,5 +5,5 @@ data class WorkspaceInvitationDto(
     val workspaceId: Long,
     val workspaceName: String,
     val inviterNickname: String,
-    val createdAt: Long
+    val createdAt: String
 )
