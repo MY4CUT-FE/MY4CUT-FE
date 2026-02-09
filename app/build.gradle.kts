@@ -120,4 +120,8 @@ dependencies {
 
     // Splash Screen API
     implementation("androidx.core:core-splashscreen:1.0.1")
+
+    implementation("io.coil-kt:coil:2.5.0")
+
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 }

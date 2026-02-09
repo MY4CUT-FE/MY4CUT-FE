@@ -33,6 +33,7 @@ class CalendarChildFragment : Fragment() {
         val month = binding.myCalendar.getCurrentMonth()
 
         // fetchCalendarData(year, month)
+        setupCalendar()
 
         setupClickListeners()
     }
@@ -60,21 +61,21 @@ class CalendarChildFragment : Fragment() {
 //        }
 //    }
 
-//    private fun setupCalendar() {
-//        // 1. 테스트용 임의 데이터 생성 (오늘, 어제, 그저께 등)
-//        val today = LocalDate.now()
-//        val path1 = "android.resource://${requireContext().packageName}/${R.drawable.image1}"
-//        val path2 = "android.resource://${requireContext().packageName}/${R.drawable.image2}"
-//        val path3 = "android.resource://${requireContext().packageName}/${R.drawable.image3}"
-//
-//        dummyDates = arrayListOf(
-//            CalendarData(today, listOf(path1, path2), "오늘 찍은 네컷사진"),
-//            CalendarData(today.minusDays(2), listOf(path2, path3), "사진도 찍고 기록한 날")
-//        )
-//
-//        // 2. 달력에 데이터 전달
-//        binding.myCalendar.setDatesWithData(dummyDates)
-//    }
+    private fun setupCalendar() {
+        // 1. 테스트용 임의 데이터 생성 (오늘, 어제, 그저께 등)
+        val today = LocalDate.now()
+        val path1 = "android.resource://${requireContext().packageName}/${R.drawable.image1}"
+        val path2 = "android.resource://${requireContext().packageName}/${R.drawable.image2}"
+        val path3 = "android.resource://${requireContext().packageName}/${R.drawable.image3}"
+
+        dummyDates = arrayListOf(
+            CalendarData(today, listOf(path1, path2), "오늘 찍은 네컷사진"),
+            CalendarData(today.minusDays(2), listOf(path2, path3), "사진도 찍고 기록한 날")
+        )
+
+        // 2. 달력에 데이터 전달
+        binding.myCalendar.setDatesWithData(dummyDates)
+    }
 
     private fun setupClickListeners() {
         binding.myCalendar.setOnUploadClickListener {

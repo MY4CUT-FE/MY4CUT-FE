@@ -46,6 +46,8 @@
         <activity android:name=".ui.notification.NotificationActivity"/>
         <activity android:name=".ui.mypage.EditProfileActivity"/>
         <activity android:name=".ui.pose.PoseRecommendActivity"/>
+        <activity android:name=".ui.myalbum.CalendarPickerActivity"/>
+        <activity android:name=".ui.myalbum.EntryRegisterActivity"/>
 
         <activity
             android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"

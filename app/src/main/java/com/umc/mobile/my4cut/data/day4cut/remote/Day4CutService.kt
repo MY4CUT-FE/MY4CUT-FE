@@ -18,7 +18,7 @@ interface Day4CutService {
     @POST("day4cut")
     suspend fun createDay4Cut(
         @Body request: CreateDay4CutRequest
-    ): BaseResponse<String>
+    ): BaseResponse<CreateDay4CutResponse>
 
     /**
      * 월별 기록 날짜 + 대표 이미지 조회
@@ -28,7 +28,7 @@ interface Day4CutService {
     suspend fun getCalendarStatus(
         @Query("year") year: Int,
         @Query("month") month: Int
-    ): BaseResponse<CalendarStatusResponse>
+    ): BaseResponse<CalendarStatusResponse> // 날짜와 이미지URL을 포함한 객체 리스트
 
     /**
      * 날짜별 하루네컷 상세 조회
@@ -36,7 +36,7 @@ interface Day4CutService {
      */
     @GET("day4cut")
     suspend fun getDay4CutDetail(
-        @Query("date") date: String
+        @Query("date") date: String // "2026-02-07" 형식
     ): BaseResponse<Day4CutDetailResponse>
 }
 
@@ -55,4 +55,11 @@ data class Day4CutImage(
     val mediaFileId: Int,
     @SerializedName("isThumbnail")
     val isThumbnail: Boolean
+)
+
+/* ===== Response DTO ===== */
+
+// 하루네컷 생성 응답
+data class CreateDay4CutResponse(
+    val success: Boolean
 )
