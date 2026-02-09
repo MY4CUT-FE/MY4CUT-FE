@@ -75,7 +75,7 @@ class NotificationActivity : AppCompatActivity() {
                                 "FRIEND_REQUEST" -> dto.message ?: "친구 요청이 도착했습니다."
                                 else -> dto.message ?: "알림이 도착했습니다."
                             },
-                            time = "방금 전",
+                            time = dto.createdAt?.let { formatTimeAgo(it) } ?: "방금 전",
                             hasButtons = dto.type == "FRIEND_REQUEST" || dto.type == "WORKSPACE_INVITE"
                         )
                     }.toMutableList()

@@ -59,7 +59,7 @@
             android:layout_height="12dp"
             android:layout_marginStart="4dp"
             android:layout_marginTop="8dp"
-            android:src="@drawable/ic_profile"
+            android:src="@drawable/ic_profile_cat"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/ivPhoto" />
 

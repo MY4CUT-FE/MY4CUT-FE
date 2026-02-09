@@ -17,6 +17,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import android.util.Log
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.FragmentFriendsBinding
@@ -61,14 +62,17 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
             try {
                 val response = RetrofitClient.friendService.getFriends()
                 val friends = response.data ?: return@launch
+                Log.d("FRIEND_API", "response size = ${friends.size}")
 
                 allFriends.addAll(
                     friends.map {
+                        Log.d("FRIEND_API", "nickname=${it.nickname}, profileImageUrl=${it.profileImageUrl}")
                         Friend(
                             friendId = it.friendId,
                             userId = it.userId,
                             nickname = it.nickname,
-                            isFavorite = it.isFavorite
+                            isFavorite = it.isFavorite,
+                            profileImageUrl = it.profileImageUrl
                         )
                     }.sortedBy { it.nickname }
                 )

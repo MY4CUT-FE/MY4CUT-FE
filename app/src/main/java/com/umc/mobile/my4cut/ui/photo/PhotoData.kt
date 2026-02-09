@@ -6,5 +6,9 @@ data class PhotoData(
     val userName: String,   // 이름
     val dateTime: String,   // 날짜
     val commentCount: Int,  // 댓글 수
-    val photoImageRes: Int  // 메인 사진 리소스 ID
+    // 기존 로컬 이미지 (미리보기용)
+    val photoImageRes: Int? = null,
+
+    // 서버 이미지 URL
+    val photoUrl: String? = null
 )

@@ -9,7 +9,7 @@
         android:id="@+id/ivProfile"
         android:layout_width="28dp"
         android:layout_height="28dp"
-        android:src="@drawable/ic_profile"
+        android:src="@drawable/ic_profile_cat"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>

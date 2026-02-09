@@ -258,7 +258,8 @@ class EditSpaceDialogFragment : DialogFragment() {
                             friendId = it.friendId,
                             userId = it.userId,
                             nickname = it.nickname,
-                            isFavorite = it.isFavorite
+                            isFavorite = it.isFavorite,
+                            profileImageUrl = it.profileImageUrl
                         )
                     }
                 )

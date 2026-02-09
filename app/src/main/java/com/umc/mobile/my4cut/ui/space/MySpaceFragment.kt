@@ -15,9 +15,6 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.FragmentMySpaceBinding
-import kotlin.code
-import kotlin.collections.addAll
-import kotlin.text.clear
 
 class MySpaceFragment : Fragment() {
 
@@ -30,12 +27,8 @@ class MySpaceFragment : Fragment() {
     private val expireHandler = Handler(Looper.getMainLooper())
     private val expireCheckRunnable = object : Runnable {
         override fun run() {
-            val beforeSize = spaces.size
-            removeExpiredSpaces()
-            if (spaces.size != beforeSize) {
-                updateSpaceUi()
-            }
-            // Check again after 1 minute (60,000 ms)
+            // 만료 자동 삭제 로직 비활성화 (서버 기준으로만 관리)
+            updateSpaceUi()
             expireHandler.postDelayed(this, 60_000)
         }
     }
@@ -136,8 +129,6 @@ class MySpaceFragment : Fragment() {
         val parent = binding.layoutSpaceItems as FrameLayout
         parent.removeAllViews()
 
-        removeExpiredSpaces()
-
         spaces.take(4).forEachIndexed { index, space ->
             val view = inflateCircleByIndex(index, parent, space)
             val (x, y) = getOffsetByIndex(index)
@@ -216,13 +207,7 @@ class MySpaceFragment : Fragment() {
     }
 
     private fun removeExpiredSpaces() {
-        val now = System.currentTimeMillis()
-        val iterator = spaces.iterator()
-        while (iterator.hasNext()) {
-            if (iterator.next().expiredAt <= now) {
-                iterator.remove()
-            }
-        }
+        // 서버에서 만료 관리하므로 클라이언트에서 삭제하지 않음
     }
 
     override fun onStart() {
@@ -246,11 +231,14 @@ class MySpaceFragment : Fragment() {
                     spaces.addAll(
                         response.data.map {
                             android.util.Log.d("SPACE_API", "workspace item = $it")
-
+                            android.util.Log.d(
+                                "SPACE_API",
+                                "workspace ownerId=${it.ownerId}, id=${it.id}, name=${it.name}, expiresAt=${it.expiresAt}, memberCount=${it.memberCount}"
+                            )
                             Space(
                                 id = it.id,
                                 name = it.name,
-                                currentMember = 1,
+                                currentMember = it.memberCount ?: 1,
                                 maxMember = 10,
                                 createdAt = parseIsoToMillis(it.createdAt),
                                 expiredAt = parseIsoToMillis(it.expiresAt)
@@ -278,7 +266,8 @@ class MySpaceFragment : Fragment() {
             zoned.toInstant().toEpochMilli()
         } catch (e: Exception) {
             android.util.Log.e("SPACE_API", "날짜 파싱 실패: $iso", e)
-            0L
+            // 파싱 실패 시 바로 만료 처리되지 않도록 현재 시각 + 1일을 기본값으로 사용
+            System.currentTimeMillis() + (24L * 60 * 60 * 1000)
         }
     }
 

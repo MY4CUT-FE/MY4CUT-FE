@@ -10,7 +10,7 @@
         android:id="@+id/ivCommentProfile"
         android:layout_width="10dp"
         android:layout_height="10dp"
-        android:src="@drawable/ic_profile"
+        android:src="@drawable/ic_profile_cat"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

@@ -5,5 +5,7 @@ data class WorkspaceInfoResponseDto(
     val name: String,
     val ownerId: Long,
     val expiresAt: String,
-    val createdAt: String
+    val createdAt: String,
+    val memberCount: Int?,
+    val memberProfiles: List<String>?
 )
