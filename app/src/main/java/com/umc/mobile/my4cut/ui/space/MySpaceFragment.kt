@@ -15,6 +15,9 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.FragmentMySpaceBinding
+import kotlin.code
+import kotlin.collections.addAll
+import kotlin.text.clear
 
 class MySpaceFragment : Fragment() {
 
@@ -222,14 +225,19 @@ class MySpaceFragment : Fragment() {
             try {
                 val response = RetrofitClient.workspaceService.getMyWorkspaces()
 
-                if (response.code == "SUCCESS" && response.data != null) {
+                android.util.Log.d("SPACE_API", "전체 response = $response")
+                android.util.Log.d("SPACE_API", "code = ${response.code}")
+                android.util.Log.d("SPACE_API", "data = ${response.data}")
+
+                if (response.data != null) {
                     spaces.clear()
                     spaces.addAll(
                         response.data.map {
+                            android.util.Log.d("SPACE_API", "workspace item = $it")
+
                             Space(
                                 id = it.id,
                                 name = it.name,
-                                // 서버 응답에 멤버 수 정보가 없으므로 임시값 사용 (추후 API 확장 시 교체)
                                 currentMember = 1,
                                 maxMember = 10,
                                 createdAt = parseIsoToMillis(it.createdAt),
@@ -237,18 +245,27 @@ class MySpaceFragment : Fragment() {
                             )
                         }
                     )
+
+                    android.util.Log.d("SPACE_API", "spaces.size = ${spaces.size}")
                     updateSpaceUi()
+                } else {
+                    android.util.Log.e("SPACE_API", "response.data is null")
                 }
             } catch (e: Exception) {
-                // TODO: 필요 시 에러 처리 (Toast 등)
+                android.util.Log.e("SPACE_API", "API 호출 실패", e)
             }
         }
     }
 
     private fun parseIsoToMillis(iso: String): Long {
         return try {
-            java.time.OffsetDateTime.parse(iso).toInstant().toEpochMilli()
+            // 서버 시간이 timezone 없이 내려오기 때문에 LocalDateTime으로 파싱 후
+            // 시스템 기본 timezone을 적용해서 millis로 변환
+            val localDateTime = java.time.LocalDateTime.parse(iso)
+            val zoned = localDateTime.atZone(java.time.ZoneId.systemDefault())
+            zoned.toInstant().toEpochMilli()
         } catch (e: Exception) {
+            android.util.Log.e("SPACE_API", "날짜 파싱 실패: $iso", e)
             0L
         }
     }

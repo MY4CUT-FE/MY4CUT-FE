@@ -25,7 +25,6 @@ import com.umc.mobile.my4cut.ui.home.HomeFragment
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import android.util.Log
-import com.umc.mobile.my4cut.data.workspace.remote.WorkspaceServiceApi
 import com.umc.mobile.my4cut.network.RetrofitClient
 
 class SpaceFragment : Fragment(R.layout.fragment_space) {
@@ -81,7 +80,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     private fun loadSpaceFromApi() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val response = WorkspaceServiceApi.workspaceService.getWorkspaceDetail(spaceId)
+                val response = RetrofitClient.workspaceService.getWorkspaceDetail(spaceId)
                 val data = response.data ?: return@launch
 
                 // 스페이스 정보 UI 반영

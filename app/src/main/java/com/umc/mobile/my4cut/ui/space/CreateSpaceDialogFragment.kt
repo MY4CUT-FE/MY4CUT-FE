@@ -12,6 +12,7 @@ import android.view.TouchDelegate
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupWindow
+import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.umc.mobile.my4cut.ui.friend.Friend
@@ -21,11 +22,9 @@ import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
 
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import com.umc.mobile.my4cut.data.workspace.model.WorkspaceCreateRequest
-import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequest
+import com.umc.mobile.my4cut.data.workspace.model.WorkspaceCreateRequestDto
 import com.umc.mobile.my4cut.network.RetrofitClient
-import kotlin.collections.addAll
-import kotlin.collections.remove
+import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
 
 class CreateSpaceDialogFragment : DialogFragment() {
 
@@ -128,9 +127,8 @@ class CreateSpaceDialogFragment : DialogFragment() {
                 try {
                     // 1. 스페이스 생성
                     val createResponse = RetrofitClient.workspaceService.createWorkspace(
-                        WorkspaceCreateRequest(
-                            name = spaceName,
-                            memberIds = memberIds
+                        WorkspaceCreateRequestDto(
+                            name = spaceName
                         )
                     )
 
@@ -138,14 +136,16 @@ class CreateSpaceDialogFragment : DialogFragment() {
                     val workspaceId = createResponse.data?.id
 
                     // 2. 초대 API 호출 (workspaceId가 있는 경우만)
-//                    if (workspaceId != null && memberIds.isNotEmpty()) {
-//                        RetrofitClient.workspaceInvitationService.inviteMember(
-//                            WorkspaceInviteRequest(
-//                                workspaceId = workspaceId,
-//                                userIds = memberIds
-//                            )
-//                        )
-//                    }
+                    if (workspaceId != null && memberIds.isNotEmpty()) {
+                        RetrofitClient.workspaceInvitationService.inviteMember(
+                            WorkspaceInviteRequestDto(
+                                workspaceId = workspaceId,
+                                userIds = memberIds
+                            )
+                        )
+
+                        Toast.makeText(requireContext(), "초대가 전송되었습니다", Toast.LENGTH_SHORT).show()
+                    }
 
                     // 기존 콜백 유지 (UI 갱신용)
                     onConfirmListener?.invoke(
@@ -159,7 +159,8 @@ class CreateSpaceDialogFragment : DialogFragment() {
                     dismiss()
 
                 } catch (e: Exception) {
-                    Log.e("CreateSpace", "스페이스 생성 실패", e)
+                    Log.e("CreateSpace", "스페이스 생성 또는 초대 실패", e)
+                    Toast.makeText(requireContext(), "스페이스 생성 또는 초대에 실패했습니다", Toast.LENGTH_SHORT).show()
                 }
             }
         }
