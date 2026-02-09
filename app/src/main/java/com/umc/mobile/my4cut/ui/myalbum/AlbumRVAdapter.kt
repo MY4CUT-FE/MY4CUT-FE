@@ -32,10 +32,7 @@ class AlbumRVAdapter (
             binding.tvAlbumTitle.text = item.name
             Glide.with(binding.root.context)
                 .load(item.coverImageUrl)
-                .placeholder(R.drawable.ic_alert) // 로딩 중 이미지
-                .error(R.drawable.ic_close)       // 실패 시 이미지
                 .into(binding.ivAlbumCover)
-
             binding.root.setOnClickListener { onClick(item) }
         }
     }

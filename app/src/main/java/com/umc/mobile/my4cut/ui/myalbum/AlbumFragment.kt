@@ -44,6 +44,11 @@ class AlbumFragment : Fragment() {
         setupRecyclerView()
         fetchAlbumList()
 
+        // 상세 화면에서 수정/삭제/추가 작업이 있었다는 신호를 받으면 새로고침
+        parentFragmentManager.setFragmentResultListener("album_changed", viewLifecycleOwner) { _, _ ->
+            fetchAlbumList()
+        }
+
         binding.btnCreateAlbum.setOnClickListener { showCreateDialog() }
     }
 
@@ -61,11 +66,9 @@ class AlbumFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response = RetrofitClient.albumService.getAlbums()
-                if (response.code == "SUCCESS") {
                     albumList.clear()
                     response.data?.let { albumList.addAll(it) }
                     albumAdapter.notifyDataSetChanged()
-                }
             } catch (e: Exception) {
                 Log.e("API_ERROR", "목록 조회 실패: ${e.message}")
             }
