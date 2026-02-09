@@ -254,6 +254,8 @@ class MyCalendarMain @JvmOverloads constructor(
                         }
                         container.textView.setTextColor(Color.WHITE)
                         container.textView.gravity = Gravity.CENTER
+                    } else {
+                        container.textView.background = null
                     }
 
                     val onClickListener = View.OnClickListener {

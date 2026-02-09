@@ -149,6 +149,7 @@ object RetrofitClient {
     val userService: UserService = authRetrofit.create(UserService::class.java)
     val poseService: PoseService = authRetrofit.create(PoseService::class.java)
     val day4CutService: Day4CutService = authRetrofit.create(Day4CutService::class.java)
+
     val imageService: ImageService = authRetrofit.create(ImageService::class.java)
     val albumService: AlbumService = authRetrofit.create(AlbumService::class.java)
     val friendService: FriendService = authRetrofit.create(FriendService::class.java)

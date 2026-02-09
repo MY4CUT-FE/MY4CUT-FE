@@ -1,11 +1,14 @@
 package com.umc.mobile.my4cut
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import com.umc.mobile.my4cut.databinding.ActivityMainBinding
 import com.umc.mobile.my4cut.ui.home.HomeFragment
@@ -31,6 +34,13 @@ class MainActivity : AppCompatActivity() {
         // 외부에서 들어온 인텐트가 있는지 확인 (예: 앨범 상세 보기 등)
         checkIntent(intent)
     }
+
+
+//    fun setStatusBarColor(isLightIcon: Boolean) {
+//        window.statusBarColor = Color.TRANSPARENT
+//        WindowCompat.setDecorFitsSystemWindows(window, false)
+//        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = isLightIcon
+//    }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)

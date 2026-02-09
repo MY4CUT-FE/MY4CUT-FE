@@ -14,8 +14,14 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import coil.load
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.day4cut.model.CalendarStatusResponse
@@ -88,7 +94,37 @@ class HomeFragment : Fragment() {
         // ✅ API 데이터 로드
         loadCalendarData()
         loadDay4CutData(selectedDate)
+
+//        (activity as? MainActivity)?.setStatusBarColor(true)
+
+//        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+//            // 상단바와 하단 네비게이션 바의 높이를 모두 가져옵니다.
+//            val systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+//
+//            // 1. 상단 로고 마진 설정 (상단바 대응)
+//            val logoParams = binding.tvLogo.layoutParams as ViewGroup.MarginLayoutParams
+//            logoParams.topMargin = systemBars.top + dpToPx(16)
+//            binding.tvLogo.layoutParams = logoParams
+//
+//            // 2. 커스텀 하단 내비게이션 바 마진 설정 (수정됨)
+//            val bnv = (requireActivity() as? MainActivity?)?.findViewById<BottomNavigationView>(R.id.bnv_main)
+//            bnv?.let {
+//                val params = it.layoutParams as ViewGroup.MarginLayoutParams
+//                params.bottomMargin = dpToPx(7)
+//                it.layoutParams = params
+//
+//                // 실제 아이콘들이 시스템 바에 가려지지 않게 내부 패딩을 줍니다.
+//                it.setPadding(0, 0, 0, systemBars.bottom)
+//            }
+//
+//            windowInsets
+//        }
     }
+//
+//    fun dpToPx(dp: Int): Int {
+//        val density = android.content.res.Resources.getSystem().displayMetrics.density
+//        return (dp * density).toInt()
+//    }
 
     private fun setupDateBanner() {
         val today = LocalDate.now()
@@ -350,5 +386,10 @@ class HomeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+
+//        // 홈을 나갈 때는 다시 시스템 윈도우에 맞게 복구 (원래대로)
+//        val window = requireActivity().window
+//        WindowCompat.setDecorFitsSystemWindows(window, true)
+//        window.statusBarColor = Color.WHITE // 혹은 원하는 기본색
     }
 }
