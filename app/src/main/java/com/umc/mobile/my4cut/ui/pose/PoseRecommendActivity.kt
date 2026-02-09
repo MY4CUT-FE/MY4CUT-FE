@@ -96,7 +96,20 @@ class PoseRecommendActivity : AppCompatActivity() {
                             Log.d("PoseRecommend", "✅ Loaded ${poseList.size} poses")
                             allPoseList.clear()
                             allPoseList.addAll(poseList)
-                            poseAdapter.updateData(allPoseList)
+
+                            // ✅ 로컬 즐겨찾기 상태 적용
+                            allPoseList.forEach { pose ->
+                                pose.isFavorite = BookmarkManager.isBookmarked(this@PoseRecommendActivity, pose.poseId)
+                            }
+
+                            // ✅ 즐겨찾기순 필터링 (클라이언트에서 처리)
+                            val filteredList = if (sort == "bookmark") {
+                                allPoseList.filter { it.isFavorite }  // 즐겨찾기된 것만 표시
+                            } else {
+                                allPoseList
+                            }
+
+                            poseAdapter.updateData(filteredList)
                         } else {
                             Log.e("PoseRecommend", "❌ Data is null")
                             Toast.makeText(this@PoseRecommendActivity, "데이터를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
@@ -127,58 +140,62 @@ class PoseRecommendActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ 즐겨찾기 등록 API
+    // ✅ 즐겨찾기 등록 (로컬 우선)
     private fun addBookmark(poseId: Int, position: Int) {
         Log.d("PoseRecommend", "📤 Adding bookmark for poseId: $poseId")
 
+        // ✅ 로컬에 먼저 저장 (UI 즉시 업데이트)
+        allPoseList[position].isFavorite = true
+        poseAdapter.updateItem(position, true)
+        BookmarkManager.addBookmark(this, poseId)
+        Toast.makeText(this, "즐겨찾기에 추가되었습니다.", Toast.LENGTH_SHORT).show()
+
+        // 서버 동기화 (실패해도 로컬 상태 유지)
         RetrofitClient.poseService.addBookmark(poseId)
-            .enqueue(object : Callback<BaseResponse<String>> {
+            .enqueue(object : Callback<BaseResponse<Any>> {
                 override fun onResponse(
-                    call: Call<BaseResponse<String>>,
-                    response: Response<BaseResponse<String>>
+                    call: Call<BaseResponse<Any>>,
+                    response: Response<BaseResponse<Any>>
                 ) {
                     if (response.isSuccessful) {
-                        Log.d("PoseRecommend", "✅ Bookmark added")
-                        allPoseList[position].isFavorite = true
-                        poseAdapter.updateItem(position, true)
-                        Toast.makeText(this@PoseRecommendActivity, "즐겨찾기에 추가되었습니다.", Toast.LENGTH_SHORT).show()
+                        Log.d("PoseRecommend", "✅ Bookmark synced to server")
                     } else {
-                        Log.e("PoseRecommend", "❌ Add bookmark failed: ${response.code()}")
-                        Toast.makeText(this@PoseRecommendActivity, "즐겨찾기 추가 실패", Toast.LENGTH_SHORT).show()
+                        Log.e("PoseRecommend", "⚠️ Server sync failed (${response.code()}), but local state saved")
                     }
                 }
 
-                override fun onFailure(call: Call<BaseResponse<String>>, t: Throwable) {
-                    Log.e("PoseRecommend", "❌ Network error", t)
-                    Toast.makeText(this@PoseRecommendActivity, "네트워크 오류", Toast.LENGTH_SHORT).show()
+                override fun onFailure(call: Call<BaseResponse<Any>>, t: Throwable) {
+                    Log.e("PoseRecommend", "⚠️ Network error, but local state saved", t)
                 }
             })
     }
 
-    // ✅ 즐겨찾기 해제 API
+    // ✅ 즐겨찾기 해제 (로컬 우선)
     private fun removeBookmark(poseId: Int, position: Int) {
         Log.d("PoseRecommend", "📤 Removing bookmark for poseId: $poseId")
 
+        // ✅ 로컬에 먼저 저장 (UI 즉시 업데이트)
+        allPoseList[position].isFavorite = false
+        poseAdapter.updateItem(position, false)
+        BookmarkManager.removeBookmark(this, poseId)
+        Toast.makeText(this, "즐겨찾기가 해제되었습니다.", Toast.LENGTH_SHORT).show()
+
+        // 서버 동기화 (실패해도 로컬 상태 유지)
         RetrofitClient.poseService.removeBookmark(poseId)
-            .enqueue(object : Callback<BaseResponse<String>> {
+            .enqueue(object : Callback<BaseResponse<Any>> {
                 override fun onResponse(
-                    call: Call<BaseResponse<String>>,
-                    response: Response<BaseResponse<String>>
+                    call: Call<BaseResponse<Any>>,
+                    response: Response<BaseResponse<Any>>
                 ) {
                     if (response.isSuccessful) {
-                        Log.d("PoseRecommend", "✅ Bookmark removed")
-                        allPoseList[position].isFavorite = false
-                        poseAdapter.updateItem(position, false)
-                        Toast.makeText(this@PoseRecommendActivity, "즐겨찾기가 해제되었습니다.", Toast.LENGTH_SHORT).show()
+                        Log.d("PoseRecommend", "✅ Bookmark removal synced to server")
                     } else {
-                        Log.e("PoseRecommend", "❌ Remove bookmark failed: ${response.code()}")
-                        Toast.makeText(this@PoseRecommendActivity, "즐겨찾기 해제 실패", Toast.LENGTH_SHORT).show()
+                        Log.e("PoseRecommend", "⚠️ Server sync failed (${response.code()}), but local state saved")
                     }
                 }
 
-                override fun onFailure(call: Call<BaseResponse<String>>, t: Throwable) {
-                    Log.e("PoseRecommend", "❌ Network error", t)
-                    Toast.makeText(this@PoseRecommendActivity, "네트워크 오류", Toast.LENGTH_SHORT).show()
+                override fun onFailure(call: Call<BaseResponse<Any>>, t: Throwable) {
+                    Log.e("PoseRecommend", "⚠️ Network error, but local state saved", t)
                 }
             })
     }
