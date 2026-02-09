@@ -40,6 +40,17 @@ class MySpaceFragment : Fragment() {
         }
     }
 
+    // Handler & Runnable for periodic API refresh
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val refreshRunnable = object : Runnable {
+        override fun run() {
+            loadSpacesFromApi()
+            // Refresh every 30 seconds
+            refreshHandler.postDelayed(this, 30_000)
+        }
+    }
+
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -218,6 +229,7 @@ class MySpaceFragment : Fragment() {
         super.onStart()
         expireHandler.post(expireCheckRunnable)
         loadSpacesFromApi()
+        refreshHandler.postDelayed(refreshRunnable, 30_000)
     }
 
     private fun loadSpacesFromApi() {
@@ -273,5 +285,6 @@ class MySpaceFragment : Fragment() {
     override fun onStop() {
         super.onStop()
         expireHandler.removeCallbacks(expireCheckRunnable)
+        refreshHandler.removeCallbacks(refreshRunnable)
     }
 }

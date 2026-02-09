@@ -1,9 +1,7 @@
 package com.umc.mobile.my4cut.ui.space
 
 import com.umc.mobile.my4cut.data.photo.remote.WorkspacePhotoService
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import okhttp3.OkHttpClient
+import com.umc.mobile.my4cut.data.workspace.remote.WorkspaceMemberService
 
 import android.os.Bundle
 import android.view.View
@@ -15,7 +13,7 @@ import com.umc.mobile.my4cut.ui.photo.PhotoData
 import com.umc.mobile.my4cut.ui.photo.PhotoRVAdapter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.umc.mobile.my4cut.R
-import com.umc.mobile.my4cut.databinding.DialogChangeSpaceBinding
+import com.umc.mobile.my4cut.ui.space.EditSpaceDialogFragment
 import com.umc.mobile.my4cut.databinding.DialogExitBinding
 import com.umc.mobile.my4cut.databinding.DialogPhotoBinding
 import com.umc.mobile.my4cut.databinding.FragmentSpaceBinding
@@ -25,6 +23,8 @@ import com.umc.mobile.my4cut.ui.home.HomeFragment
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import android.util.Log
+import com.umc.mobile.my4cut.data.base.BaseResponse
+import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 import com.umc.mobile.my4cut.network.RetrofitClient
 
 class SpaceFragment : Fragment(R.layout.fragment_space) {
@@ -38,14 +38,15 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     private var chatDatas = ArrayList<ChatData>()
 
     private var spaceId: Long = -1L
+    private var isOwner: Boolean = false
+    private var myUserId: Long = -1L
 
     private val workspacePhotoService: WorkspacePhotoService by lazy {
-        Retrofit.Builder()
-            .baseUrl("https://api.my4cut.shop/")
-            .client(OkHttpClient.Builder().build())
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(WorkspacePhotoService::class.java)
+        RetrofitClient.workspacePhotoService
+    }
+
+    private val workspaceMemberService: WorkspaceMemberService by lazy {
+        RetrofitClient.workspaceMemberService
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,7 +74,12 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         }
 
         binding.btnChange.setOnClickListener {
-            showChangeDialog()
+            showChangeDialog(spaceId)
+        }
+
+        // 뒤로가기 버튼: 이전(리터치 스페이스) 화면으로 돌아가기
+        binding.back.setOnClickListener {
+            parentFragmentManager.popBackStack()
         }
     }
 
@@ -85,6 +91,29 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
 
                 // 스페이스 정보 UI 반영
                 binding.tvTitle.text = data.name
+
+                // 현재 로그인 사용자 정보 조회 → 방장 여부 판단
+                RetrofitClient.userService.getMyPage().enqueue(object :
+                    retrofit2.Callback<BaseResponse<UserMeResponse>> {
+
+                    override fun onResponse(
+                        call: retrofit2.Call<BaseResponse<UserMeResponse>>,
+                        response: retrofit2.Response<BaseResponse<UserMeResponse>>
+                    ) {
+                        val body = response.body()
+                        myUserId = body?.data?.userId?.toLong() ?: -1L
+                        isOwner = (data.ownerId?.toLong() == myUserId)
+
+                        Log.d("SpaceFragment", "isOwner=$isOwner ownerId=${data.ownerId} myUserId=$myUserId")
+                    }
+
+                    override fun onFailure(
+                        call: retrofit2.Call<BaseResponse<UserMeResponse>>,
+                        t: Throwable
+                    ) {
+                        Log.e("SpaceFragment", "내 정보 조회 실패", t)
+                    }
+                })
 
                 // TODO: 사진 / 댓글 API 결과로 교체
             } catch (e: Exception) {
@@ -106,17 +135,27 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         }
 
         dialogBinding.btnExit.setOnClickListener {
-            dialog.dismiss()
+            lifecycleScope.launch {
+                try {
+                    if (isOwner) {
+                        // 방장 → 스페이스 삭제 API
+                        RetrofitClient.workspaceService.deleteWorkspace(spaceId)
+                    } else {
+                        // 일반 멤버 → 나가기 API
+                        workspaceMemberService.leaveWorkspace(spaceId)
+                    }
 
-            // 홈 Fragment로 전환
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fcv_main, HomeFragment())
-                .commit()
+                    dialog.dismiss()
 
-            // BottomNavigationView 선택 상태를 홈으로 변경
-            requireActivity()
-                .findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bnv_main)
-                .selectedItemId = R.id.menu_home
+                    // 이전 화면(리터치 스페이스)으로 돌아가기
+                    if (isAdded) {
+                        parentFragmentManager.popBackStack()
+                    }
+
+                } catch (e: Exception) {
+                    Log.e("SpaceFragment", "나가기/삭제 API 실패", e)
+                }
+            }
         }
 
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
@@ -272,7 +311,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         lifecycleScope.launch {
             try {
                 val response = workspacePhotoService
-                    .getComments(spaceId, photo.photoId)
+                    .getComments(spaceId, photo.photoId.toLong())
 
                 if (response.code == "SUCCESS" && response.data != null) {
                     chatDatas.clear()
@@ -307,30 +346,22 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         }
     }
 
-    private fun showChangeDialog() {
-        val dialogBinding = DialogChangeSpaceBinding.inflate(layoutInflater)
-        val builder = MaterialAlertDialogBuilder(requireContext())
-            .setView(dialogBinding.root)
-        val dialog = builder.create()
+    private fun showChangeDialog(spaceId: Long) {
+        Log.d("SpaceFragment", "수정할 스페이스 ID: $spaceId")
 
-        dialog.setCanceledOnTouchOutside(true)
+        val dialog = EditSpaceDialogFragment.newInstance(
+            spaceId = spaceId,
+            spaceName = binding.tvTitle.text.toString(),
+            memberIds = emptyList()
+        )
 
-        dialogBinding.ivClose.setOnClickListener {
-            dialog.dismiss()
+        // 수정 완료 후 자동 갱신
+        dialog.setOnEditCompleteListener {
+            loadSpaceFromApi()   // 제목 다시 불러오기
         }
 
-        dialogBinding.mainText.setOnClickListener {
-            dialog.dismiss()
-        }
-
-        dialog.window?.setBackgroundDrawableResource(R.color.transparent)
-
-        dialog.show()
+        dialog.show(parentFragmentManager, "EditSpaceDialog")
     }
-
-    // initDummyPhotos() // 더미 사진 데이터 함수는 임시로 유지 (주석처리)
-
-    // initDummyChats() // 더미 댓글 데이터 함수는 임시로 유지 (주석처리)
 
     // 사진 삭제 모달 함수
     private fun showDeletePhotoDialog(onConfirm: () -> Unit) {

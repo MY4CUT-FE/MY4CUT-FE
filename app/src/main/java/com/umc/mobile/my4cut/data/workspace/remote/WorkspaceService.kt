@@ -3,7 +3,7 @@ package com.umc.mobile.my4cut.data.workspace.remote
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceCreateRequestDto
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceInfoResponseDto
-import com.umc.mobile.my4cut.data.workspace.model.WorkspaceUpdateRequest
+import com.umc.mobile.my4cut.data.workspace.model.WorkspaceUpdateRequestDto
 import retrofit2.http.*
 
 interface WorkspaceService {
@@ -28,7 +28,7 @@ interface WorkspaceService {
     @PATCH("workspaces/{workspaceId}")
     suspend fun updateWorkspace(
         @Path("workspaceId") workspaceId: Long,
-        @Body request: WorkspaceUpdateRequest
+        @Body request: WorkspaceUpdateRequestDto
     ): BaseResponse<WorkspaceInfoResponseDto>
 
     /** 워크스페이스 삭제 */
