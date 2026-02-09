@@ -10,18 +10,19 @@ import retrofit2.http.Part
 interface MediaService {
 
     /**
-     * 미디어 파일 업로드
-     * POST /media/upload
+     * 미디어 파일 bulk 업로드
+     * POST /media/upload/bulk
      */
     @Multipart
-    @POST("media/upload")
-    fun uploadMedia(
-        @Part file: MultipartBody.Part
-    ): Call<BaseResponse<MediaUploadResponse>>
+    @POST("media/upload/bulk")
+    suspend fun uploadMediaBulk(
+        @Part files: List<MultipartBody.Part>
+    ): BaseResponse<List<MediaBulkUploadItem>>
 }
 
-// 업로드 응답
-data class MediaUploadResponse(
+// Bulk 업로드 응답 아이템
+data class MediaBulkUploadItem(
     val fileId: Int,
-    val fileUrl: String
+    val fileKey: String,
+    val viewUrl: String
 )
