@@ -18,7 +18,7 @@ interface Day4CutService {
     @POST("day4cut")
     suspend fun createDay4Cut(
         @Body request: CreateDay4CutRequest
-    ): BaseResponse<String>
+    ): BaseResponse<CreateDay4CutResponse>
 
     /**
      * 월별 기록 날짜 + 대표 이미지 조회
@@ -55,4 +55,11 @@ data class Day4CutImage(
     val mediaFileId: Int,
     @SerializedName("isThumbnail")
     val isThumbnail: Boolean
+)
+
+/* ===== Response DTO ===== */
+
+// 하루네컷 생성 응답
+data class CreateDay4CutResponse(
+    val success: Boolean
 )

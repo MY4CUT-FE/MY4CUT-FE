@@ -15,6 +15,7 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import coil.load
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.day4cut.model.CalendarStatusResponse
@@ -45,6 +46,7 @@ class HomeFragment : Fragment() {
 
     // ✅ 캘린더 데이터 (날짜별 기록 여부)
     private val recordedDates = mutableSetOf<Int>() // 기록이 있는 날짜 저장
+    private val thumbnailUrls = mutableMapOf<Int, String>() // 날짜별 썸네일 URL 저장
 
     private val startCalendarForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -78,6 +80,10 @@ class HomeFragment : Fragment() {
         setupDateBanner()
         setupWelcomeText()
         setupClickListeners()
+
+        // ✅ 초기 UI 설정
+        setupWeekCalendar() // 주간 캘린더 먼저 그리기
+        updateContentState(selectedDate) // 날짜 표시
 
         // ✅ API 데이터 로드
         loadCalendarData()
@@ -114,23 +120,29 @@ class HomeFragment : Fragment() {
                 val response = RetrofitClient.day4CutService.getCalendarStatus(year, month)
 
                 withContext(Dispatchers.Main) {
-                    if (response.code == "SUCCESS" || response.code == "200") {
-                        val calendarData = response.data
-                        if (calendarData != null) {
-                            Log.d("HomeFragment", "✅ Calendar loaded: ${calendarData.dates.size} dates")
+                    Log.d("HomeFragment", "📨 Calendar Response:")
+                    Log.d("HomeFragment", "   ├─ code: ${response.code}")
+                    Log.d("HomeFragment", "   ├─ message: ${response.message}")
+                    Log.d("HomeFragment", "   └─ data: ${response.data}")
 
-                            // 기록이 있는 날짜 저장
-                            recordedDates.clear()
-                            calendarData.dates.forEach { date ->
-                                recordedDates.add(date.day)
+                    val calendarData = response.data
+                    if (calendarData != null) {
+                        Log.d("HomeFragment", "✅ Calendar loaded: ${calendarData.dates.size} dates")
+
+                        // 기록이 있는 날짜 저장
+                        recordedDates.clear()
+                        thumbnailUrls.clear()
+                        calendarData.dates.forEach { date ->
+                            recordedDates.add(date.day)
+                            date.thumbnailUrl?.let { url ->
+                                thumbnailUrls[date.day] = url
                             }
-
-                            setupWeekCalendar() // 주간 캘린더 다시 그리기
-                        } else {
-                            Log.e("HomeFragment", "❌ Calendar data is null")
+                            Log.d("HomeFragment", "   ├─ Day ${date.day}: ${date.thumbnailUrl?.take(50) ?: "no thumbnail"}")
                         }
+
+                        setupWeekCalendar() // 주간 캘린더 다시 그리기
                     } else {
-                        Log.e("HomeFragment", "❌ Calendar load failed: ${response.message}")
+                        Log.e("HomeFragment", "⚠️ Calendar data is null")
                     }
                 }
             } catch (e: Exception) {
@@ -152,17 +164,27 @@ class HomeFragment : Fragment() {
                 val response = RetrofitClient.day4CutService.getDay4CutDetail(dateString)
 
                 withContext(Dispatchers.Main) {
-                    if (response.code == "SUCCESS" || response.code == "200") {
-                        val day4cut = response.data
-                        if (day4cut != null) {
-                            Log.d("HomeFragment", "✅ Day4cut loaded: ${day4cut.id}")
-                            showFilledState(day4cut)
-                        } else {
-                            Log.d("HomeFragment", "⚠️ No data for this date")
-                            showEmptyState()
+                    Log.d("HomeFragment", "📨 Day4Cut Response:")
+                    Log.d("HomeFragment", "   ├─ code: ${response.code}")
+                    Log.d("HomeFragment", "   ├─ message: ${response.message}")
+                    Log.d("HomeFragment", "   └─ data: ${response.data}")
+
+                    // ⚠️ 이미지 URL 디버깅
+                    response.data?.let { day4cut ->
+                        Log.d("HomeFragment", "🖼️ Image URLs debugging:")
+                        Log.d("HomeFragment", "   ├─ viewUrls type: ${day4cut.viewUrls?.javaClass?.simpleName ?: "null"}")
+                        Log.d("HomeFragment", "   ├─ viewUrls size: ${day4cut.viewUrls?.size ?: 0}")
+                        day4cut.viewUrls?.forEachIndexed { index, url ->
+                            Log.d("HomeFragment", "   ├─ [$index]: $url")
                         }
+                    }
+
+                    val day4cut = response.data
+                    if (day4cut != null) {
+                        Log.d("HomeFragment", "✅ Day4cut loaded: ${day4cut.id}")
+                        showFilledState(day4cut)
                     } else {
-                        Log.d("HomeFragment", "⚠️ No record for this date: ${response.message}")
+                        Log.d("HomeFragment", "⚠️ No data for this date")
                         showEmptyState()
                     }
                 }
@@ -181,9 +203,52 @@ class HomeFragment : Fragment() {
         binding.clEmptyState.visibility = View.GONE
         binding.llFilledState.visibility = View.VISIBLE
 
-        // TODO: 실제 이미지와 내용 표시 (추후 구현)
-        // binding.ivDay4CutImage.load(day4cut.fileUrl.firstOrNull())
-        // binding.tvContent.text = day4cut.content
+        // 이미지 표시 - viewUrls의 첫 번째 이미지 (썸네일) 사용
+        val imageUrl = day4cut.viewUrls?.firstOrNull()
+        if (imageUrl != null) {
+            Log.d("HomeFragment", "📸 Loading image with Coil: ${imageUrl.take(80)}")
+            // Coil로 이미지 로드 (placeholder 제거)
+            binding.ivHomePhoto.load(imageUrl) {
+                crossfade(true)
+                error(R.drawable.img_ex_photo)  // 로드 실패 시만 기본 이미지 표시
+            }
+        } else {
+            // 이미지가 없으면 기본 이미지 표시
+            Log.d("HomeFragment", "⚠️ No viewUrls for day ${selectedDate.dayOfMonth}")
+            binding.ivHomePhoto.setImageResource(R.drawable.img_ex_photo)
+        }
+
+        // 일기 내용 표시 (줄바꿈으로 분리)
+        val content = day4cut.content ?: ""
+        val lines = content.split("\n")
+
+        when {
+            lines.isEmpty() || content.isBlank() -> {
+                binding.tvDiaryLine1.text = ""
+                binding.tvDiaryLine2.text = ""
+            }
+            lines.size == 1 -> {
+                binding.tvDiaryLine1.text = lines[0]
+                binding.tvDiaryLine2.text = ""
+            }
+            else -> {
+                binding.tvDiaryLine1.text = lines[0]
+                binding.tvDiaryLine2.text = lines.drop(1).joinToString("\n")
+            }
+        }
+
+        // 이모지 아이콘 표시
+        val moodIcon = when (day4cut.emojiType) {
+            "HAPPY" -> R.drawable.img_mood_happy
+            "ANGRY" -> R.drawable.img_mood_angry
+            "TIRED" -> R.drawable.img_mood_tired
+            "SAD" -> R.drawable.img_mood_sad
+            "CALM" -> R.drawable.img_mood_calm
+            else -> R.drawable.img_mood_happy // 기본값
+        }
+        binding.ivMoodIcon.setImageResource(moodIcon)
+
+        Log.d("HomeFragment", "✅ Filled state displayed - content: ${content.take(30)}, emoji: ${day4cut.emojiType}, images: ${day4cut.viewUrls?.size ?: 0}")
     }
 
     // ✅ 기록이 없는 경우 표시
@@ -271,6 +336,8 @@ class HomeFragment : Fragment() {
     }
 
     private fun refreshCalendarData() {
+        setupWeekCalendar() // 주간 캘린더 다시 그리기
+        updateContentState(selectedDate) // 날짜 업데이트
         loadCalendarData() // 캘린더 데이터 다시 로드
         loadDay4CutData(selectedDate) // 선택된 날짜 데이터 로드
     }
