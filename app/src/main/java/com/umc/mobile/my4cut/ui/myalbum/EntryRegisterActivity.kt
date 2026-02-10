@@ -8,13 +8,16 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.lifecycle.lifecycleScope
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
@@ -24,8 +27,16 @@ import com.umc.mobile.my4cut.databinding.ActivityEntryRegisterBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoAddBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoSliderBinding
 import com.google.android.material.card.MaterialCardView
+import com.umc.mobile.my4cut.data.day4cut.remote.CreateDay4CutRequest
+import com.umc.mobile.my4cut.data.day4cut.remote.Day4CutImage
 import com.umc.mobile.my4cut.databinding.ActivityEntryRegister2Binding
 import com.umc.mobile.my4cut.databinding.ItemPhotoSlider2Binding
+import com.umc.mobile.my4cut.network.RetrofitClient
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 import kotlin.math.abs
 
 class EntryRegisterActivity : AppCompatActivity() {
@@ -37,6 +48,9 @@ class EntryRegisterActivity : AppCompatActivity() {
 
     private var isDiaryExpanded = false
     private var selectedMoodIndex = 0
+
+    private var selectedDate: String = ""
+    private var isEditMode = false // 수정 모드 여부
 
     private val pickMultipleMedia = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(50)) { uris ->
         if (uris.isNotEmpty()) {
@@ -51,61 +65,131 @@ class EntryRegisterActivity : AppCompatActivity() {
         binding = ActivityEntryRegister2Binding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setupDateData()
-        setupCalendarData()
+        selectedDate = intent.getStringExtra("SELECTED_DATE") ?: "2026-01-01"
+        val rawDate = selectedDate.replace("-", ".")
+        binding.tvDateCapsule.text = rawDate
+
+        fetchExistingDay4Cut()
+
         setupClickListeners()
         setupPhotoPicker()
         setupDiaryLogic()
         setupMoodSelection()
     }
 
-    private fun setupDateData() {
-        val dateString = intent.getStringExtra("SELECTED_DATE") ?: "2026.01.01"
-        binding.tvDateCapsule.text = dateString
-    }
+    // [GET] 기존 기록 조회
+    private fun fetchExistingDay4Cut() {
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.day4CutService.getDay4CutDetail(selectedDate)
+                if (response.code == "D2001") {
+                    isEditMode = true
+                    val data = response.data
 
-    private fun setupCalendarData() {
-        val data = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getSerializableExtra("SELECTED_DATA", CalendarData::class.java)
-        } else {
-            intent.getSerializableExtra("SELECTED_DATA") as? CalendarData
-        }
+                    // 내용 채우기
+                    binding.etDiary.setText(data?.content)
 
-        data?.let {
-            binding.etDiary.setText(it.memo)
-            binding.etDiary.setSelection(binding.etDiary.text?.length ?: 0)
+                    // 이모지 복원
+                    val emojiMapInv = mapOf("CALM" to 1, "TIRED" to 2, "HAPPY" to 3, "ANGRY" to 4, "SAD" to 5)
+                    selectedMoodIndex = emojiMapInv[data?.emojiType] ?: 0
+                    if (selectedMoodIndex > 0) {
+                        updateMoodUI(listOf(binding.ivMood1, binding.ivMood2, binding.ivMood3, binding.ivMood4, binding.ivMood5), selectedMoodIndex - 1)
+                    }
 
-            val uris = it.imageUris.map { uriString -> Uri.parse(uriString) }
-            selectedImageUris.addAll(uris)
-
-            updatePhotoState()
+                    // 사진 처리: 수정 시 사진은 '전체 교체' 방식이므로
+                    // 기존 사진 정보를 어떻게 관리할지(그대로 둘지, 새로 갤러리를 열지) 결정해야 합니다.
+                    // 만약 기존 사진을 수정 없이 유지하고 싶다면 해당 URL을 Uri로 변환하거나
+                    // 사용자가 사진을 새로 추가하도록 유도해야 합니다.
+                }
+            } catch (e: Exception) {
+                isEditMode = false
+                Log.d("DEBUG", "기존 기록 없음 (신규 생성 모드)")
+            }
         }
     }
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener { finish() }
         binding.btnComplete.setOnClickListener {
-            val dateString = intent.getStringExtra("SELECTED_DATE")
-            val calendarData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                intent.getSerializableExtra("SELECTED_DATA", CalendarData::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                intent.getSerializableExtra("SELECTED_DATA") as? CalendarData
-            }
-
-            val intent = Intent(this, MainActivity::class.java).apply {
-                // MainActivity에게 프래그먼트 전환이 필요함을 알리는 신호
-                putExtra("TARGET_FRAGMENT", "ENTRY_DETAIL")
-                putExtra("selected_date", dateString)
-                putExtra("calendar_data", calendarData)
-
-                // 중요: MainActivity가 새로 생성되는 게 아니라 기존 것을 재사용하도록 설정
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            }
-
-            startActivity(intent)
-            finish()
+            saveDay4Cut()
         }
+    }
+
+    private fun saveDay4Cut() {
+        lifecycleScope.launch {
+            try {
+                // 0. 로딩 바 표시 (필요시)
+                // binding.btnComplete.isEnabled = false
+
+                // 1. 이미지 업로드 (기존에 작성하신 prepareMultipartList 활용)
+                val multipartFiles = prepareMultipartList(selectedImageUris)
+                val uploadResponse = RetrofitClient.imageService.uploadImagesMedia(multipartFiles)
+
+                if (uploadResponse.isSuccessful) {
+                    // 2. Request Body 조립
+                    val uploadedImages = uploadResponse.body()?.data ?: emptyList()
+
+                    val imageList = uploadedImages.mapIndexed { index, data ->
+                        Day4CutImage(
+                            mediaFileId = data.fileId,
+                            isThumbnail = (index == 0) // 첫 번째 사진을 썸네일로 지정
+                        )
+                    }
+
+                    val emojiMap = mapOf(1 to "CALM", 2 to "TIRED", 3 to "HAPPY", 4 to "ANGRY", 5 to "SAD")
+                    val request = CreateDay4CutRequest(
+                        date = selectedDate,
+                        content = binding.etDiary.text.toString(),
+                        emojiType = emojiMap[selectedMoodIndex] ?: "HAPPY",
+                        images = imageList
+                    )
+
+                    // 3. 모드에 따라 API 분기
+                    val response = if (isEditMode) {
+                        RetrofitClient.day4CutService.updateDay4Cut(request) // PATCH
+                    } else {
+                        RetrofitClient.day4CutService.createDay4Cut(request) // POST
+                    }
+
+                    if (response.code == "D1001" || response.code == "D1002") {
+                        navigateToDetail(selectedDate)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("API_ERROR", "저장 실패: ${e.message}")
+                binding.btnComplete.isEnabled = true
+            }
+        }
+    }
+
+    private fun navigateToDetail(date: String) {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            putExtra("TARGET_FRAGMENT", "ENTRY_DETAIL")
+            putExtra("selected_date", date)
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    private fun prepareMultipartList(uris: List<Uri>): List<MultipartBody.Part> {
+        val multipartList = mutableListOf<MultipartBody.Part>()
+        val contentResolver = this.contentResolver
+
+        uris.forEach { uri ->
+            // 1. Uri에서 파일을 읽어 임시 파일 생성
+            val inputStream = contentResolver.openInputStream(uri)
+            val file = File(this.cacheDir, "upload_${System.currentTimeMillis()}.jpg")
+            file.outputStream().use { inputStream?.copyTo(it) }
+
+            // 2. RequestBody 생성 (MediaType은 이미지 타입에 맞게)
+            val requestFile = file.asRequestBody(contentResolver.getType(uri)?.toMediaTypeOrNull())
+
+            // 3. 서버 파라미터명인 "files"로 Part 생성
+            val part = MultipartBody.Part.createFormData("files", file.name, requestFile)
+            multipartList.add(part)
+        }
+        return multipartList
     }
 
     private fun setupPhotoPicker() {

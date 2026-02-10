@@ -2,11 +2,15 @@ package com.umc.mobile.my4cut.ui.myalbum
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.umc.mobile.my4cut.databinding.ActivityCalendarPicker2Binding
 import com.umc.mobile.my4cut.databinding.ActivityCalendarPickerBinding
+import com.umc.mobile.my4cut.network.RetrofitClient
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 class CalendarPickerActivity : AppCompatActivity() {
@@ -26,7 +30,6 @@ class CalendarPickerActivity : AppCompatActivity() {
             insets
         }
 
-        // binding.myCalendar.setDayLayout(R.layout.calendar_day_layout)
         binding.myCalendar.setHeaderVisible(false)
 
         setupCalendar()
@@ -35,16 +38,37 @@ class CalendarPickerActivity : AppCompatActivity() {
 
     private fun setupCalendar() {
         val today = LocalDate.now()
+        val currentYear = today.year
+        val currentMonth = today.monthValue
 
-        val calendarDataList = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            intent.getSerializableExtra("CALENDAR_DATA", ArrayList::class.java) as? ArrayList<CalendarData>
-        } else {
-            intent.getSerializableExtra("CALENDAR_DATA") as? ArrayList<CalendarData>
-        }
+        lifecycleScope.launch {
+            try {
+                // 월별 기록 날짜 + 대표 이미지 조회 API 호출
+                val response =
+                    RetrofitClient.day4CutService.getCalendarStatus(currentYear, currentMonth)
 
-        calendarDataList?.let {
-            dummyDates = it
-            binding.myCalendar.setDatesWithData(dummyDates)
+                if (response.code == "D2000") {
+                    val calendarStatusList = response.data?.dates ?: emptyList()
+
+                    // 3. 받아온 데이터를 캘린더 뷰가 이해할 수 있는 CalendarData 형태로 변환
+                    // (서버 응답 객체를 CalendarData 리스트로 매핑하는 과정)
+                    val mappedDates = calendarStatusList.map { status ->
+                        val formattedDate = LocalDate.of(currentYear, currentMonth, status.day)
+                        CalendarData(
+                            date = formattedDate, // "2026-02-09" -> LocalDate
+                            imageUris = arrayListOf(status.thumbnailUrl ?: "")
+                        )
+                    }.toCollection(ArrayList())
+
+                    dummyDates.clear()
+                    dummyDates.addAll(mappedDates)
+
+                    // 4. 캘린더에 데이터 설정 (점이 찍히거나 이미지가 표시됨)
+                    binding.myCalendar.setDatesWithData(dummyDates)
+                }
+            } catch (e: Exception) {
+                Log.e("API_ERROR", "캘린더 상태 조회 실패: ${e.message}")
+            }
         }
     }
 
@@ -53,17 +77,10 @@ class CalendarPickerActivity : AppCompatActivity() {
 
         // 데이터가 들어있는 날짜면 데이터를 전달
         binding.btnNext.setOnClickListener {
-            val intent = Intent(this, EntryRegisterActivity::class.java)
-            val selectedDateStr = binding.myCalendar.getSelectedDateFormatted()
-            val selectedData = dummyDates.find { data ->
-                val dataDateStr = String.format("%d.%d.%d",
-                    data.date.year, data.date.monthValue, data.date.dayOfMonth)
-
-                dataDateStr == selectedDateStr
+            val selectedDateStr = binding.myCalendar.getSelectedDateFormatted() // "2026-02-09" 형태
+            val intent = Intent(this, EntryRegisterActivity::class.java).apply {
+                putExtra("SELECTED_DATE", selectedDateStr)
             }
-
-            intent.putExtra("SELECTED_DATE", selectedDateStr)
-            intent.putExtra("SELECTED_DATA", selectedData)
 
             startActivity(intent)
         }

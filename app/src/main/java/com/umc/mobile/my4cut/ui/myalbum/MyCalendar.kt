@@ -100,11 +100,11 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
         binding.mcCustom.notifyCalendarChanged()
     }
 
-    // 선택된 날짜를 "yyyy년 MM월 dd일" 형태로 반환
+    // 선택된 날짜를 "yyyy년-MM월-dd일" 형태로 반환
     // 달력 클릭 후 받는 연월일 형태를 수정하려면 이 함수를 수정
     fun getSelectedDateFormatted(): String {
         return selectedDate?.let {
-            "${it.year}.${it.monthValue}.${it.dayOfMonth}"
+            "${it.year}-${it.monthValue}-${it.dayOfMonth}"
         } ?: "${currentMonth.year}.${currentMonth.monthValue}"
     }
 

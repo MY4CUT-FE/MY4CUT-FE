@@ -80,7 +80,7 @@ class CalendarChildFragment : Fragment() {
     private fun setupClickListeners() {
         binding.myCalendar.setOnUploadClickListener {
             val intent = Intent(requireContext(), CalendarPickerActivity::class.java)
-            // 현재 달력에서 선택된 날짜 문자열 (예: "2026.2.7")
+            // 현재 달력에서 선택된 날짜 문자열 (예: "2026-2-7")
             val selectedDateText = binding.myCalendar.getSelectedDateFormatted()
 
             intent.putExtra("SELECTED_DATE", selectedDateText)
@@ -96,10 +96,8 @@ class CalendarChildFragment : Fragment() {
             if (data != null) {
                 val entryDetailFragment = EntryDetailFragment().apply {
                     arguments = Bundle().apply {
-                        // 화면 상단 표시용 (예: 2026.2.7)
                         putString("SELECTED_DATE", dateText)
-                        // API 상세 조회용 (예: 2026-02-07)
-                        putString("API_DATE", binding.myCalendar.getSelectedDateApiFormat())
+                        putString("API_DATE", dateText)
                     }
                 }
                 (requireActivity() as? MainActivity)?.changeFragment(entryDetailFragment)

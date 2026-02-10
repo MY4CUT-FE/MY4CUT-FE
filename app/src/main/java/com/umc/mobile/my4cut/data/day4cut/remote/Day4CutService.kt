@@ -6,6 +6,7 @@ import com.umc.mobile.my4cut.data.day4cut.model.CalendarStatusResponse
 import com.umc.mobile.my4cut.data.day4cut.model.Day4CutDetailResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Query
 
@@ -38,6 +39,14 @@ interface Day4CutService {
     suspend fun getDay4CutDetail(
         @Query("date") date: String // "2026-02-07" 형식
     ): BaseResponse<Day4CutDetailResponse>
+
+    /**
+     * 하루네컷 수정 (PATCH)
+     */
+    @PATCH("day4cut")
+    suspend fun updateDay4Cut(
+        @Body request: CreateDay4CutRequest
+    ): BaseResponse<CreateDay4CutResponse>
 }
 
 /* ===== Request DTO ===== */
