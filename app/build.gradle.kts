@@ -127,4 +127,6 @@ dependencies {
 
     // 새로고침
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
 }

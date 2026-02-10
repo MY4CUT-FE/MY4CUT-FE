@@ -198,23 +198,19 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // ✅ 기록이 있는 경우 표시
     private fun showFilledState(day4cut: Day4CutDetailResponse) {
         binding.clEmptyState.visibility = View.GONE
         binding.llFilledState.visibility = View.VISIBLE
 
-        // 이미지 표시 - viewUrls의 첫 번째 이미지 (썸네일) 사용
-        val imageUrl = day4cut.viewUrls?.firstOrNull()
+        val imageUrl = thumbnailUrls[selectedDate.dayOfMonth] ?: day4cut.viewUrls?.firstOrNull()
         if (imageUrl != null) {
-            Log.d("HomeFragment", "📸 Loading image with Coil: ${imageUrl.take(80)}")
-            // Coil로 이미지 로드 (placeholder 제거)
+            Log.d("HomeFragment", "Loading thumbnail with Coil: ${imageUrl.take(80)}")
             binding.ivHomePhoto.load(imageUrl) {
                 crossfade(true)
-                error(R.drawable.img_ex_photo)  // 로드 실패 시만 기본 이미지 표시
+                error(R.drawable.img_ex_photo)
             }
         } else {
-            // 이미지가 없으면 기본 이미지 표시
-            Log.d("HomeFragment", "⚠️ No viewUrls for day ${selectedDate.dayOfMonth}")
+            Log.d("HomeFragment", "No thumbnail for day ${selectedDate.dayOfMonth}")
             binding.ivHomePhoto.setImageResource(R.drawable.img_ex_photo)
         }
 
@@ -297,6 +293,10 @@ class HomeFragment : Fragment() {
             }
 
             dayViewBinding.root.setOnClickListener {
+                if (date.isAfter(LocalDate.now())) {
+                    Toast.makeText(requireContext(), "오늘 이후 날짜에는 하루네컷을 업로드할 수 없어요.", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
                 selectedDate = date
                 refreshCalendarData()
             }
