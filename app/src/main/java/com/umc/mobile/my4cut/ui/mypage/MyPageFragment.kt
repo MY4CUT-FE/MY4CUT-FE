@@ -20,13 +20,13 @@ import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.auth.local.TokenManager
-import com.umc.mobile.my4cut.data.auth.model.TokenResult
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 import com.umc.mobile.my4cut.databinding.FragmentMyPageBinding
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.intro.IntroActivity
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
+import kotlinx.coroutines.runBlocking
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -39,7 +39,8 @@ class MyPageFragment : Fragment() {
     private val editProfileLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
-                loadMyPage()
+                // ✅ onResume에서 자동으로 새로고침되므로 여기서는 생략
+                Log.d("MyPageFragment", "Profile edit completed")
             }
         }
 
@@ -55,25 +56,39 @@ class MyPageFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initClickListener()
+        // ✅ onViewCreated에서는 호출하지 않음 (onResume에서 호출됨)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d("MyPageFragment", "📱 onResume - refreshing profile")
+        // ✅ 화면이 보일 때마다 프로필 새로고침
         loadMyPage()
     }
 
     private fun loadMyPage() {
+        Log.d("MyPageFragment", "🔄 Loading profile data...")
         RetrofitClient.userService.getMyPage()
             .enqueue(object : Callback<BaseResponse<UserMeResponse>> {
                 override fun onResponse(
                     call: Call<BaseResponse<UserMeResponse>>,
                     response: Response<BaseResponse<UserMeResponse>>
                 ) {
+                    Log.d("MyPageFragment", "📨 Response: ${response.code()}")
                     val data = response.body()?.data
                     if (response.isSuccessful && data != null) {
+                        Log.d("MyPageFragment", "✅ Profile loaded: ${data.nickname}, imageUrl=${data.profileImageViewUrl?.take(50)}")
                         bindMyPage(data)
                         saveUserPrefs(data)
+                        // ✅ 이번 달 사진 총 개수 계산
+                        loadMonthlyPhotoCount()
                     } else {
+                        Log.e("MyPageFragment", "❌ Failed to load profile")
                         Toast.makeText(requireContext(), "정보를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
                     }
                 }
                 override fun onFailure(call: Call<BaseResponse<UserMeResponse>>, t: Throwable) {
+                    Log.e("MyPageFragment", "💥 Network error", t)
                     Toast.makeText(requireContext(), "네트워크 오류", Toast.LENGTH_SHORT).show()
                 }
             })
@@ -84,13 +99,15 @@ class MyPageFragment : Fragment() {
         binding.tvLoginMethod.text = if (data.loginType == "KAKAO") "카카오 로그인" else "이메일 로그인"
         binding.tvCodeValue.text = data.friendCode
 
+        Log.d("MyPageFragment", "🖼️ Loading profile image: ${data.profileImageViewUrl?.take(80)}")
         Glide.with(binding.ivProfile)
-            .load(data.profileImageUrl)
+            .load(data.profileImageViewUrl)
             .placeholder(R.drawable.img_profile_default)
+            .error(R.drawable.img_profile_default)
             .circleCrop()
             .into(binding.ivProfile)
 
-        setupUsageText(data.thisMonthDay4CutCount)
+        // ✅ setupUsageText는 loadMonthlyPhotoCount에서 호출
     }
 
     private fun saveUserPrefs(data: UserMeResponse) {
@@ -155,8 +172,6 @@ class MyPageFragment : Fragment() {
 
         Log.d("WithdrawTest", "AccessToken이 확인됨. 즉시 탈퇴 요청 시작")
 
-        // 갱신 로직을 거치지 않고 바로 RetrofitClient.authService를 사용하여 탈퇴 API 호출
-        // RetrofitClient.authService는 인터셉터가 자동으로 AccessToken을 붙여줍니다.
         RetrofitClient.authService.withdraw().enqueue(object : Callback<BaseResponse<String>> {
             override fun onResponse(call: Call<BaseResponse<String>>, response: Response<BaseResponse<String>>) {
                 if (response.isSuccessful) {
@@ -164,7 +179,6 @@ class MyPageFragment : Fragment() {
                     handleWithdrawSuccess()
                 } else {
                     Log.e("WithdrawTest", "❌ 탈퇴 실패 코드: ${response.code()}")
-                    // 만약 여기서 401이 난다면 그때만 토큰이 만료된 것이므로 재로그인 유도
                     if (response.code() == 401) {
                         Toast.makeText(requireContext(), "세션이 만료되었습니다. 다시 로그인해주세요.", Toast.LENGTH_SHORT).show()
                         clearUserPrefs()
@@ -182,21 +196,6 @@ class MyPageFragment : Fragment() {
         })
     }
 
-    // 실제 탈퇴 API 호출 부분 분리
-    private fun executeWithdrawRequest() {
-        RetrofitClient.authService.withdraw().enqueue(object : Callback<BaseResponse<String>> {
-            override fun onResponse(call: Call<BaseResponse<String>>, response: Response<BaseResponse<String>>) {
-                if (response.isSuccessful) {
-                    handleWithdrawSuccess()
-                } else {
-                    handleWithdrawError(response.code())
-                }
-            }
-            override fun onFailure(call: Call<BaseResponse<String>>, t: Throwable) {
-                handleNetworkError(t)
-            }
-        })
-    }
     private fun handleWithdrawSuccess() {
         Toast.makeText(requireContext(), "회원 탈퇴가 완료되었습니다.", Toast.LENGTH_SHORT).show()
         clearUserPrefs()
@@ -221,7 +220,7 @@ class MyPageFragment : Fragment() {
     }
 
     private fun clearUserPrefs() {
-        TokenManager.clear(requireContext()) // TokenManager 로그아웃 처리
+        TokenManager.clear(requireContext())
         requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
             .edit().clear().apply()
     }
@@ -229,5 +228,74 @@ class MyPageFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    /**
+     * ✅ 이번 달 사진 총 개수 계산 (각 날짜별 상세 조회)
+     */
+    private fun loadMonthlyPhotoCount() {
+        val now = java.time.LocalDate.now()
+        val year = now.year
+        val month = now.monthValue
+
+        Log.d("MyPageFragment", "📊 Loading monthly photo count for $year-$month")
+
+        Thread {
+            try {
+                kotlinx.coroutines.runBlocking {
+                    // 1. GET /day4cut/calendar - 기록된 날짜 목록 가져오기
+                    val calendarResponse = RetrofitClient.day4CutService.getCalendarStatus(year, month)
+
+                    if (calendarResponse.code == "C2001" && calendarResponse.data != null) {
+                        val recordedDates = calendarResponse.data.dates
+
+                        if (recordedDates.isEmpty()) {
+                            Log.d("MyPageFragment", "✅ No photos this month")
+                            updatePhotoCount(0)
+                            return@runBlocking
+                        }
+
+                        Log.d("MyPageFragment", "📅 Found ${recordedDates.size} recorded dates")
+
+                        // 2. 각 날짜별로 GET /day4cut?date=yyyy-MM-dd 호출
+                        var totalPhotoCount = 0
+
+                        for (dayItem in recordedDates) {
+                            val dateString = String.format("%04d-%02d-%02d", year, month, dayItem.day)
+
+                            try {
+                                val detailResponse = RetrofitClient.day4CutService.getDay4CutDetail(dateString)
+
+                                if (detailResponse.code == "C2001" && detailResponse.data != null) {
+                                    val photoCount = detailResponse.data.viewUrls?.size ?: 0
+                                    totalPhotoCount += photoCount
+                                    Log.d("MyPageFragment", "  📸 $dateString: $photoCount photos")
+                                }
+                            } catch (e: Exception) {
+                                Log.e("MyPageFragment", "❌ Failed to load $dateString", e)
+                            }
+                        }
+
+                        Log.d("MyPageFragment", "✅ Total photos this month: $totalPhotoCount")
+                        updatePhotoCount(totalPhotoCount)
+                    } else {
+                        Log.e("MyPageFragment", "❌ Failed to load calendar")
+                        updatePhotoCount(0)
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e("MyPageFragment", "💥 Failed to calculate photo count", e)
+                updatePhotoCount(0)
+            }
+        }.start()
+    }
+
+    private fun updatePhotoCount(count: Int) {
+        requireActivity().runOnUiThread {
+            if (_binding != null) {
+                this@MyPageFragment.setupUsageText(count)
+            }
+        }
     }
 }
