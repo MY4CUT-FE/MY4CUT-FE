@@ -27,15 +27,22 @@ class MySpaceFragment : Fragment() {
     private val expireHandler = Handler(Looper.getMainLooper())
     private val expireCheckRunnable = object : Runnable {
         override fun run() {
-            val beforeSize = spaces.size
-            removeExpiredSpaces()
-            if (spaces.size != beforeSize) {
-                updateSpaceUi()
-            }
-            // Check again after 1 minute (60,000 ms)
+            // 만료 자동 삭제 로직 비활성화 (서버 기준으로만 관리)
+            updateSpaceUi()
             expireHandler.postDelayed(this, 60_000)
         }
     }
+
+    // Handler & Runnable for periodic API refresh
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val refreshRunnable = object : Runnable {
+        override fun run() {
+            loadSpacesFromApi()
+            // Refresh every 30 seconds
+            refreshHandler.postDelayed(this, 30_000)
+        }
+    }
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -122,8 +129,6 @@ class MySpaceFragment : Fragment() {
         val parent = binding.layoutSpaceItems as FrameLayout
         parent.removeAllViews()
 
-        removeExpiredSpaces()
-
         spaces.take(4).forEachIndexed { index, space ->
             val view = inflateCircleByIndex(index, parent, space)
             val (x, y) = getOffsetByIndex(index)
@@ -202,19 +207,14 @@ class MySpaceFragment : Fragment() {
     }
 
     private fun removeExpiredSpaces() {
-        val now = System.currentTimeMillis()
-        val iterator = spaces.iterator()
-        while (iterator.hasNext()) {
-            if (iterator.next().expiredAt <= now) {
-                iterator.remove()
-            }
-        }
+        // 서버에서 만료 관리하므로 클라이언트에서 삭제하지 않음
     }
 
     override fun onStart() {
         super.onStart()
         expireHandler.post(expireCheckRunnable)
         loadSpacesFromApi()
+        refreshHandler.postDelayed(refreshRunnable, 30_000)
     }
 
     private fun loadSpacesFromApi() {
@@ -222,39 +222,58 @@ class MySpaceFragment : Fragment() {
             try {
                 val response = RetrofitClient.workspaceService.getMyWorkspaces()
 
-                if (response.code == "SUCCESS" && response.data != null) {
+                android.util.Log.d("SPACE_API", "전체 response = $response")
+                android.util.Log.d("SPACE_API", "code = ${response.code}")
+                android.util.Log.d("SPACE_API", "data = ${response.data}")
+
+                if (response.data != null) {
                     spaces.clear()
                     spaces.addAll(
                         response.data.map {
+                            android.util.Log.d("SPACE_API", "workspace item = $it")
+                            android.util.Log.d(
+                                "SPACE_API",
+                                "workspace ownerId=${it.ownerId}, id=${it.id}, name=${it.name}, expiresAt=${it.expiresAt}, memberCount=${it.memberCount}"
+                            )
                             Space(
                                 id = it.id,
                                 name = it.name,
-                                // 서버 응답에 멤버 수 정보가 없으므로 임시값 사용 (추후 API 확장 시 교체)
-                                currentMember = 1,
+                                currentMember = it.memberCount ?: 1,
                                 maxMember = 10,
                                 createdAt = parseIsoToMillis(it.createdAt),
                                 expiredAt = parseIsoToMillis(it.expiresAt)
                             )
                         }
                     )
+
+                    android.util.Log.d("SPACE_API", "spaces.size = ${spaces.size}")
                     updateSpaceUi()
+                } else {
+                    android.util.Log.e("SPACE_API", "response.data is null")
                 }
             } catch (e: Exception) {
-                // TODO: 필요 시 에러 처리 (Toast 등)
+                android.util.Log.e("SPACE_API", "API 호출 실패", e)
             }
         }
     }
 
     private fun parseIsoToMillis(iso: String): Long {
         return try {
-            java.time.OffsetDateTime.parse(iso).toInstant().toEpochMilli()
+            // 서버 시간이 timezone 없이 내려오기 때문에 LocalDateTime으로 파싱 후
+            // 시스템 기본 timezone을 적용해서 millis로 변환
+            val localDateTime = java.time.LocalDateTime.parse(iso)
+            val zoned = localDateTime.atZone(java.time.ZoneId.systemDefault())
+            zoned.toInstant().toEpochMilli()
         } catch (e: Exception) {
-            0L
+            android.util.Log.e("SPACE_API", "날짜 파싱 실패: $iso", e)
+            // 파싱 실패 시 바로 만료 처리되지 않도록 현재 시각 + 1일을 기본값으로 사용
+            System.currentTimeMillis() + (24L * 60 * 60 * 1000)
         }
     }
 
     override fun onStop() {
         super.onStop()
         expireHandler.removeCallbacks(expireCheckRunnable)
+        refreshHandler.removeCallbacks(refreshRunnable)
     }
 }

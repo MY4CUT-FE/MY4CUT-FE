@@ -1,14 +1,12 @@
 package com.umc.mobile.my4cut
 
+import com.umc.mobile.my4cut.ui.space.SpaceFragment
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import com.umc.mobile.my4cut.databinding.ActivityMainBinding
 import com.umc.mobile.my4cut.ui.home.HomeFragment
@@ -17,7 +15,6 @@ import com.umc.mobile.my4cut.ui.myalbum.CalendarMainFragment
 import com.umc.mobile.my4cut.ui.myalbum.EntryDetailFragment
 import com.umc.mobile.my4cut.ui.mypage.MyPageFragment
 import com.umc.mobile.my4cut.ui.retouch.RetouchFragment
-import com.umc.mobile.my4cut.ui.space.SpaceFragment
 
 class MainActivity : AppCompatActivity() {
 

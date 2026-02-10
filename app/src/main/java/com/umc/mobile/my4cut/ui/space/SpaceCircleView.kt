@@ -50,7 +50,7 @@ class SpaceCircleView @JvmOverloads constructor(
         // 만료까지 남은 일수 계산
         val remainDays =
             ((space.expiredAt - System.currentTimeMillis()) / (1000 * 60 * 60 * 24))
-                .coerceAtLeast(0)
+                .coerceIn(0, 6)
 
         tvExpire.text = "만료까지 ${remainDays}일"
     }

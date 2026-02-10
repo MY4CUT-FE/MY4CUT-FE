@@ -86,7 +86,7 @@
         android:id="@+id/tvMyCode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="dkfj29m30"
+        android:text="ABCD12"
         android:textSize="14sp"
         android:textColor="#1A1A1A"
         android:fontFamily="@font/suit_bold"
@@ -108,7 +108,7 @@
             android:id="@+id/ivProfile"
             android:layout_width="64dp"
             android:layout_height="64dp"
-            android:src="@drawable/ic_profile"
+            android:src="@drawable/ic_profile_cat"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>

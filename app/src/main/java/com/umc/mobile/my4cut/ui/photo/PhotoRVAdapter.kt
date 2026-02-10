@@ -16,8 +16,8 @@ class PhotoRVAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(photo: PhotoData) {
-            binding.ivPhoto.setImageResource(photo.photoImageRes)
-            binding.ivUserIcon.setImageResource(photo.userImageRes)
+            photo.photoImageRes?.let { binding.ivPhoto.setImageResource(it) }
+            photo.userImageRes?.let { binding.ivUserIcon.setImageResource(it) }
             binding.tvUserName.text = photo.userName
             binding.tvDateTime.text = photo.dateTime
             binding.tvCommentCount.text = photo.commentCount.toString()

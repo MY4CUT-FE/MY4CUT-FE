@@ -51,4 +51,19 @@ object TokenManager {
             .clear()
             .apply()
     }
+
+    fun getUserId(context: Context): Long? {
+        val token = getAccessToken(context) ?: return null
+
+        return try {
+            val payload = token.split(".")[1]
+            val decodedBytes = android.util.Base64.decode(payload, android.util.Base64.URL_SAFE)
+            val json = String(decodedBytes)
+
+            val subValue = org.json.JSONObject(json).getString("sub")
+            subValue.toLong()
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

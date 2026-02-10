@@ -124,4 +124,7 @@ dependencies {
     implementation("io.coil-kt:coil:2.5.0")
 
     implementation("androidx.exifinterface:exifinterface:1.3.7")
+
+    // 새로고침
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 }

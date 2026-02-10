@@ -13,6 +13,7 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
+            android:id="@+id/back"
             android:layout_width="9dp"
             android:layout_height="17dp"
             android:layout_marginStart="20dp"
@@ -59,7 +60,7 @@
         android:id="@+id/layoutMembers"
         android:layout_width="21dp"
         android:layout_height="21dp"
-        android:src="@drawable/ic_profile"
+        android:src="@drawable/ic_profile_cat"
         app:layout_constraintTop_toBottomOf="@id/layoutHeader"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

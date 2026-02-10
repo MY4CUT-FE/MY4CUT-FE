@@ -2,8 +2,11 @@ package com.umc.mobile.my4cut.ui.friend
 
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.data.friend.model.FriendRequestCreateDto
+import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -37,6 +40,9 @@ class AddFriendDialogFragment : DialogFragment() {
     /** 검색에 사용한 친구 코드 저장 */
     private var searchedFriendCode: String? = null
 
+    /** 내 친구 코드 저장 */
+    private var myFriendCode: String? = null
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -52,6 +58,7 @@ class AddFriendDialogFragment : DialogFragment() {
 
         initView()
         initClickListeners()
+        loadMyCode()
         binding.tvMyCode.paintFlags =
             binding.tvMyCode.paintFlags or Paint.UNDERLINE_TEXT_FLAG
     }
@@ -91,9 +98,36 @@ class AddFriendDialogFragment : DialogFragment() {
         }
     }
 
+    /** 내 코드 조회 */
+    private fun loadMyCode() {
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.userService.getMyPage().execute()
+                }
+
+                val me = response.body()?.data
+                if (response.isSuccessful && me?.friendCode != null) {
+                    myFriendCode = me.friendCode
+                    binding.tvMyCode.text = me.friendCode
+                } else {
+                    Toast.makeText(requireContext(), "내 코드를 불러오지 못했어요", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "내 코드를 불러오지 못했어요", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     /** 친구 검색 */
     private fun searchFriend() {
         val inputCode = binding.etFriendCode.text.toString().trim()
+
+        // 자기 자신 코드 입력 방지
+        if (inputCode == myFriendCode) {
+            Toast.makeText(requireContext(), "자기 자신은 친구신청할 수 없어요", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         if (inputCode.isEmpty()) {
             binding.etFriendCode.error = "코드를 입력해주세요"

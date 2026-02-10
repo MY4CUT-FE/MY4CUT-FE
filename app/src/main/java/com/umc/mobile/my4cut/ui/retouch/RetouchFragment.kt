@@ -26,7 +26,17 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
             startActivity(intent)
         }
 
-        // 자식 Fragment 삽입 (MySpace / Friends)
+        // 최초 로드
+        loadChildFragments()
+
+        // 아래로 당겨 새로고침
+        binding.swipeRefresh.setOnRefreshListener {
+            loadChildFragments()
+            binding.swipeRefresh.isRefreshing = false
+        }
+    }
+
+    private fun loadChildFragments() {
         childFragmentManager.beginTransaction()
             .replace(R.id.containerMySpace, MySpaceFragment())
             .replace(R.id.containerFriends, FriendsFragment())

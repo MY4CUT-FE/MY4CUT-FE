@@ -3,8 +3,8 @@ package com.umc.mobile.my4cut.data.photo.remote
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.photo.model.CommentCreateRequest
 import com.umc.mobile.my4cut.data.photo.model.CommentDto
-import com.umc.mobile.my4cut.data.photo.model.PhotoDto
-import okhttp3.MultipartBody
+import com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoResponseDto
+import com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoUploadRequestDto
 import retrofit2.http.*
 
 interface WorkspacePhotoService {
@@ -13,15 +13,14 @@ interface WorkspacePhotoService {
     @GET("workspaces/{workspaceId}/photos")
     suspend fun getPhotos(
         @Path("workspaceId") workspaceId: Long
-    ): BaseResponse<List<PhotoDto>>
+    ): BaseResponse<List<WorkspacePhotoResponseDto>>
 
-    /** 사진 업로드 */
-    @Multipart
+    /** 사진 업로드 (mediaId 등록 방식) */
     @POST("workspaces/{workspaceId}/photos")
-    suspend fun uploadPhoto(
+    suspend fun uploadPhotos(
         @Path("workspaceId") workspaceId: Long,
-        @Part image: MultipartBody.Part
-    ): BaseResponse<PhotoDto>
+        @Body request: WorkspacePhotoUploadRequestDto
+    ): BaseResponse<List<WorkspacePhotoResponseDto>>
 
     /** 댓글 목록 조회 */
     @GET("workspaces/{workspaceId}/photos/{photoId}/comments")

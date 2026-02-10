@@ -41,7 +41,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_marginStart="10dp"
-            android:src="@drawable/ic_profile"
+            android:src="@drawable/ic_profile_cat"
             app:layout_constraintStart_toEndOf="@id/ivStar"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
