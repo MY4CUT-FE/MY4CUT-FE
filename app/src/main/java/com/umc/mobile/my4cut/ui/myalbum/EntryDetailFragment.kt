@@ -44,6 +44,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.time.LocalDate
 import kotlin.math.abs
 
 // ✅ ImageItem을 Fragment 외부로 이동
@@ -135,9 +136,22 @@ class EntryDetailFragment : Fragment() {
                             ))
                         }
 
-                        typicalImageIndex = 0
+                        val dateObj = LocalDate.parse(apiDate)
+                        val statusResponse = RetrofitClient.day4CutService.getCalendarStatus(
+                            dateObj.year, dateObj.monthValue
+                        )
 
-                        updatePhotoState()
+                        if (statusResponse.code == "C2001") {
+                            // 해당 날짜의 데이터를 찾음
+                            val dayStatus = statusResponse.data?.dates?.find { it.day == dateObj.dayOfMonth }
+                            val serverThumbnailUrl = dayStatus?.thumbnailUrl
+
+                            // 리스트 중 서버 썸네일 URL과 일치하는 인덱스 찾기
+                            val foundIndex = data.viewUrls?.indexOf(serverThumbnailUrl) ?: 0
+                            typicalImageIndex = if (foundIndex != -1) foundIndex else 0
+
+                            updatePhotoState()
+                        }
                     }
                 } else {
                     Log.e("EntryDetail", "❌ Failed to load: ${response.code} - ${response.message}")

@@ -5,15 +5,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    >
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
     <TextView
         android:id="@+id/calendarDayText"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_marginTop="5dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
         android:gravity="center"
         android:includeFontPadding="false"
+        android:layout_marginTop="5dp"
         android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -24,11 +25,11 @@
         android:id="@+id/viewDataDot"
         android:layout_width="4dp"
         android:layout_height="4dp"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="6dp"
         android:background="@drawable/shape_dot"
         android:visibility="visible"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="@id/calendarDayText"
+        app:layout_constraintStart_toStartOf="@id/calendarDayText"
+        app:layout_constraintTop_toBottomOf="@id/calendarDayText"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

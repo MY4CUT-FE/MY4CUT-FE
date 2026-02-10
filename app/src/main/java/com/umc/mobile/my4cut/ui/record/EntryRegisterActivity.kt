@@ -358,10 +358,10 @@ class EntryRegisterActivity : AppCompatActivity() {
 
         val emojiType = when (selectedMoodIndex) {
             1 -> "HAPPY"
-            2 -> "ANGRY"
+            2 -> "CALM"
             3 -> "TIRED"
-            4 -> "SAD"
-            5 -> "CALM"
+            4 -> "ANGRY"
+            5 -> "SAD"
             else -> "HAPPY"
         }
 
@@ -463,13 +463,15 @@ class EntryRegisterActivity : AppCompatActivity() {
     private fun updateMoodUI(views: List<ImageView>, selectedIndex: Int) {
         views.forEachIndexed { index, imageView ->
             if (index == selectedIndex) {
+                imageView.setBackgroundResource(R.drawable.bg_mood_selected)
                 imageView.alpha = 1.0f
-                imageView.scaleX = 1.2f
-                imageView.scaleY = 1.2f
+                // imageView.scaleX = 1.2f
+                // mageView.scaleY = 1.2f
             } else {
+                imageView.background = null
                 imageView.alpha = 0.4f
-                imageView.scaleX = 1.0f
-                imageView.scaleY = 1.0f
+                // imageView.scaleX = 1.0f
+                // imageView.scaleY = 1.0f
             }
         }
     }

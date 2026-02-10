@@ -87,8 +87,13 @@ class MyCalendarMain @JvmOverloads constructor(
 
     fun getSelectedDateFormatted(): String {
         return selectedDate?.let {
-            "${it.year}-${it.monthValue}-${it.dayOfMonth}"
+            "${it.year}.${it.monthValue}.${it.dayOfMonth}"
         } ?: "${currentMonth.year}.${currentMonth.monthValue}"
+    }
+
+    fun getSelectedDateApiFormat(): String? {
+        // LocalDate의 toString()은 기본적으로 "YYYY-MM-DD" 형식을 반환합니다.
+        return selectedDate?.toString()
     }
 
     init {

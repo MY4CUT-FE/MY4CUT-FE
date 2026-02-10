@@ -16,9 +16,9 @@ import androidx.cardview.widget.CardView
 import androidx.core.view.children
 import com.bumptech.glide.Glide
 import com.umc.mobile.my4cut.R
-import com.umc.mobile.my4cut.databinding.CalendarDayLayoutBinding
+import com.umc.mobile.my4cut.databinding.CalendarDayLayout2Binding
 import com.umc.mobile.my4cut.databinding.CalendarDayMainBinding
-import com.umc.mobile.my4cut.databinding.ViewCustomCalendarBinding
+import com.umc.mobile.my4cut.databinding.ViewCustomCalendar2Binding
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.DayPosition
@@ -40,8 +40,8 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
     private val TAG = this::class.simpleName
-    private val binding: ViewCustomCalendarBinding =
-        ViewCustomCalendarBinding.inflate(LayoutInflater.from(context), this, true)
+    private val binding: ViewCustomCalendar2Binding =
+        ViewCustomCalendar2Binding.inflate(LayoutInflater.from(context), this, true)
 
     private var selectedDate: LocalDate? = null
     private var currentMonth = YearMonth.now()
@@ -104,7 +104,7 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
     // 달력 클릭 후 받는 연월일 형태를 수정하려면 이 함수를 수정
     fun getSelectedDateFormatted(): String {
         return selectedDate?.let {
-            "${it.year}-${it.monthValue}-${it.dayOfMonth}"
+            "${it.year}.${it.monthValue}.${it.dayOfMonth}"
         } ?: "${currentMonth.year}.${currentMonth.monthValue}"
     }
 
@@ -266,11 +266,7 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
                     // 선택된 날짜 스타일 적용 (미래 날짜가 아닌 경우만)
                     if (selectedDate == data.date && !isFutureDate) {
                         // 원형 배경 설정
-                        container.textView.background = GradientDrawable().apply {
-                            shape = GradientDrawable.OVAL
-                            setColor(Color.parseColor("#FE927F"))
-                            setSize(80, 80)
-                        }
+                        container.textView.setBackgroundResource(R.drawable.bg_calendar_selected)
 
                         // 선택된 날짜는 흰색 텍스트
                         container.textView.setTextColor(Color.WHITE)
@@ -321,7 +317,7 @@ class DayViewContainer(view: View, layoutRes: Int) : ViewContainer(view) {
             dataDot = null
             cardImage = b.cardImage
         } else {
-            val b = CalendarDayLayoutBinding.bind(view)
+            val b = CalendarDayLayout2Binding.bind(view)
             textView = b.calendarDayText
             dayImage = null // 일반 레이아웃에는 이미지가 없을 경우
             dataDot = b.viewDataDot

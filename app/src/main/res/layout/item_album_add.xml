@@ -8,6 +8,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_margin="4dp"
         app:layout_constraintDimensionRatio="1:1"
         android:backgroundTint="#F2F2F2"
         android:background="@drawable/bg_dotted_border"
