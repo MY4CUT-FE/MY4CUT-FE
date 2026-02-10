@@ -4,8 +4,8 @@ import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.user.model.*
 import okhttp3.MultipartBody
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.http.Body
-import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.PATCH
@@ -23,10 +23,11 @@ interface UserService {
         @Body request: NicknameRequest
     ): Call<BaseResponse<UserMeResponse>>
 
-    /** 프로필 이미지 변경 */
+    /** ✅ 프로필 이미지 변경 (multipart/form-data로 파일 업로드) */
+    @Multipart
     @PATCH("users/me/image")
-    fun updateProfileImage(
-        @Body request: ProfileImageRequest
-    ): Call<BaseResponse<UserMeResponse>>
+    suspend fun updateProfileImageMultipart(
+        @Part file: MultipartBody.Part
+    ): Response<BaseResponse<ProfileImageResponse>>
 
 }
