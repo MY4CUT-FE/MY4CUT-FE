@@ -1,6 +1,6 @@
 package com.umc.mobile.my4cut.data.invitation.model
 
-data class WorkspaceInviteRequest(
+data class WorkspaceInviteRequestDto(
     val workspaceId: Long,
-    val inviteeId: Long
+    val userIds: List<Long>
 )

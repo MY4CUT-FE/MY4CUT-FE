@@ -1,9 +1,11 @@
 package com.umc.mobile.my4cut.ui.myalbum
 
 import android.animation.ArgbEvaluator
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.Matrix
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -12,49 +14,70 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.exifinterface.media.ExifInterface
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
-import com.umc.mobile.my4cut.R
-import com.umc.mobile.my4cut.databinding.ItemPhotoAddBinding
-import com.umc.mobile.my4cut.databinding.ItemPhotoSliderBinding
+import coil.load
 import com.google.android.material.card.MaterialCardView
-import kotlin.math.abs
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.lifecycle.lifecycleScope
-import com.bumptech.glide.Glide
-import com.umc.mobile.my4cut.MainActivity
-import com.umc.mobile.my4cut.databinding.DialogExitBinding
-import com.umc.mobile.my4cut.databinding.FragmentEntryDetailBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.MainActivity
+import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.day4cut.remote.Day4CutImage
+import com.umc.mobile.my4cut.data.day4cut.remote.UpdateDay4CutRequest
 import com.umc.mobile.my4cut.databinding.DialogExit2Binding
+import com.umc.mobile.my4cut.databinding.FragmentEntryDetailBinding
+import com.umc.mobile.my4cut.databinding.ItemPhotoAddBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoSlider2Binding
+import com.umc.mobile.my4cut.network.RetrofitClient
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import kotlin.math.abs
+
+// ✅ ImageItem을 Fragment 외부로 이동
+data class ImageItem(
+    val uri: String,       // URI 또는 URL
+    val isNew: Boolean     // 새로 추가된 이미지인지
+)
 
 class EntryDetailFragment : Fragment() {
     private lateinit var binding: FragmentEntryDetailBinding
 
     private var apiDate: String? = null
-    private var selectedImageUris = mutableListOf<String>()
     private var selectedDate: String? = null
 
+    private var imageItems = mutableListOf<ImageItem>()
     private var isEditMode = false
 
-    private var originalImageUris = mutableListOf<String>()
+    private var originalImageItems = mutableListOf<ImageItem>()
     private var originalContent: String = ""
-    private var typicalImageUri: String? = null
+    private var originalEmojiType: String = "HAPPY"
+    private var typicalImageIndex: Int = 0
 
-    // 갤러리 호출
-    private val pickMultipleMedia = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(50)) { uris ->
+    private val pickMultipleMedia = registerForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(50)
+    ) { uris ->
         if (uris.isNotEmpty()) {
-            uris.forEach { selectedImageUris.add(it.toString()) }
+            uris.forEach { uri ->
+                imageItems.add(ImageItem(
+                    uri = uri.toString(),
+                    isNew = true
+                ))
+            }
             updatePhotoState()
-            // 사진이 추가되면 가장 마지막에 추가된 사진 쪽으로 이동
-            binding.vpPhotoSlider.currentItem = selectedImageUris.size - 1
+            binding.vpPhotoSlider.currentItem = imageItems.size - 1
         }
     }
 
@@ -70,59 +93,96 @@ class EntryDetailFragment : Fragment() {
         selectedDate = arguments?.getString("SELECTED_DATE") ?: "2026.01.01"
         binding.tvDateCapsule.text = selectedDate
 
+        // ✅ 초기 상태: 읽기 모드
+        setEditMode(false)
+
         setupClickListeners()
         setupDiaryLogic()
 
-//        if (apiDate != null) fetchDay4CutDetail()
+        if (apiDate != null) {
+            fetchDay4CutDetail()
+        }
     }
 
-//    private fun fetchDay4CutDetail() {
-//        viewLifecycleOwner.lifecycleScope.launch {
-//            try {
-//                val response = RetrofitClient.day4CutService.getDay4CutDetail(apiDate!!)
-//                if (response.code == "SUCCESS") {
-//                    response.data?.let { data ->
-//                        binding.etDiary.setText(data.content ?: "")
-//
-//                        selectedImageUris.clear()
-//                        data.fileUrl?.let { selectedImageUris.addAll(it) }
-//
-//                        if (selectedImageUris.isNotEmpty()) {
-//                            typicalImageUri = selectedImageUris[0] // 첫 번째를 대표 이미지로 임시 설정
-//                        }
-//                        updatePhotoState()
-//                    }
-//                }
-//            } catch (e: Exception) {
-//                Log.e("API_ERROR", "조회 실패: ${e.message}")
-//            }
-//        }
-//    }
+    private fun fetchDay4CutDetail() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                Log.d("EntryDetail", "📖 Fetching detail for date: $apiDate")
+
+                val response = RetrofitClient.day4CutService.getDay4CutDetail(apiDate!!)
+
+                Log.d("EntryDetail", "📨 Response: code=${response.code}, message=${response.message}")
+
+                // ✅ isSuccess 제거, code 체크만 사용
+                if (response.code == "C2001") {
+                    response.data?.let { data ->
+                        Log.d("EntryDetail", "✅ Data loaded:")
+                        Log.d("EntryDetail", "   ├─ content: ${data.content}")
+                        Log.d("EntryDetail", "   ├─ emojiType: ${data.emojiType}")
+                        Log.d("EntryDetail", "   └─ images: ${data.viewUrls?.size ?: 0}")
+
+                        binding.etDiary.setText(data.content ?: "")
+                        originalContent = data.content ?: ""
+
+                        originalEmojiType = data.emojiType ?: "HAPPY"
+                        setEmojiByType(originalEmojiType)
+
+                        imageItems.clear()
+                        data.viewUrls?.forEach { url ->
+                            imageItems.add(ImageItem(
+                                uri = url,
+                                isNew = false
+                            ))
+                        }
+
+                        typicalImageIndex = 0
+
+                        updatePhotoState()
+                    }
+                } else {
+                    Log.e("EntryDetail", "❌ Failed to load: ${response.code} - ${response.message}")
+                    Toast.makeText(requireContext(), "데이터를 불러올 수 없습니다", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("EntryDetail", "💥 Failed to fetch detail", e)
+                Toast.makeText(requireContext(), "조회 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener {
-            (requireActivity() as? MainActivity)?.changeFragment(CalendarMainFragment())
+            // ✅ Activity면 finish(), Fragment면 popBackStack()
+            if (activity != null) {
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+            }
         }
 
         binding.btnEdit.setOnClickListener {
-            originalImageUris.clear()
-            originalImageUris.addAll(selectedImageUris)
+            originalImageItems.clear()
+            originalImageItems.addAll(imageItems.map { it.copy() })
             originalContent = binding.etDiary.text.toString()
+
             setEditMode(true)
 
-            binding.vpPhotoSlider.setCurrentItem(selectedImageUris.size, true)
+            binding.vpPhotoSlider.setCurrentItem(imageItems.size, true)
         }
 
         binding.btnCancel.setOnClickListener {
-            selectedImageUris.clear()
-            selectedImageUris.addAll(originalImageUris)
+            imageItems.clear()
+            imageItems.addAll(originalImageItems.map { it.copy() })
             binding.etDiary.setText(originalContent)
+            setEmojiByType(originalEmojiType)
+
             setEditMode(false)
         }
 
         binding.btnComplete.setOnClickListener {
-            setEditMode(false)
-            // RetrofitClient.day4CutService.updateDay4Cut..
+            if (imageItems.isEmpty()) {
+                showDeleteConfirmDialog()
+            } else {
+                updateDay4Cut()
+            }
         }
     }
 
@@ -134,14 +194,13 @@ class EntryDetailFragment : Fragment() {
         binding.btnComplete.visibility = if (isEditing) View.VISIBLE else View.GONE
         binding.tvTextCount.visibility = if (isEditing) View.VISIBLE else View.GONE
 
+        // ✅ EditText 활성화/비활성화
+        binding.etDiary.isEnabled = isEditing
+        binding.etDiary.isFocusable = isEditing
+        binding.etDiary.isFocusableInTouchMode = isEditing
+
         // 편집 모드에 따라 어댑터 재생성 (추가 버튼 노출 여부 때문)
         updatePhotoState()
-    }
-
-    private fun setupPhotoPicker() {
-        binding.clPhotoEmpty.setOnClickListener {
-            launchPhotoPicker()
-        }
     }
 
     private fun launchPhotoPicker() {
@@ -149,10 +208,10 @@ class EntryDetailFragment : Fragment() {
     }
 
     private fun updatePhotoState() {
-        if (selectedImageUris.isNotEmpty() || isEditMode) {
+        if (imageItems.isNotEmpty() || isEditMode) {
             binding.clPhotoEmpty.visibility = View.GONE
             binding.vpPhotoSlider.visibility = View.VISIBLE
-            binding.vpPhotoSlider.adapter = PhotoPagerAdapter(selectedImageUris)
+            binding.vpPhotoSlider.adapter = PhotoPagerAdapter(imageItems)
 
             binding.vpPhotoSlider.apply {
                 offscreenPageLimit = 1
@@ -169,7 +228,6 @@ class EntryDetailFragment : Fragment() {
                     val r = 1 - abs(position)
                     page.scaleY = 0.85f + r * 0.15f
 
-                    // 테두리 색상 변경
                     val photoCard = page.findViewById<MaterialCardView>(R.id.cv_photo_card)
                     val addCard = page.findViewById<MaterialCardView>(R.id.cv_add_card)
                     val targetCard = photoCard ?: addCard
@@ -185,9 +243,7 @@ class EntryDetailFragment : Fragment() {
                     if (addIcon != null && addCard != null) {
                         if (position > 0) {
                             val cardWidth = if (addCard.width > 0) addCard.width.toFloat() else 1000f
-
                             val moveDistance = (cardWidth / 2f) - (addIcon.width / 2f) - 20f
-
                             addIcon.translationX = -position * moveDistance
                         } else {
                             addIcon.translationX = 0f
@@ -196,14 +252,9 @@ class EntryDetailFragment : Fragment() {
                 }
                 setPageTransformer(transform)
             }
-
-            binding.btnComplete.isEnabled = true
-            binding.btnComplete.alpha = 1.0f
         } else {
             binding.clPhotoEmpty.visibility = View.VISIBLE
             binding.vpPhotoSlider.visibility = View.GONE
-            binding.btnComplete.isEnabled = false
-            binding.btnComplete.alpha = 0.5f
         }
     }
 
@@ -218,7 +269,302 @@ class EntryDetailFragment : Fragment() {
         })
     }
 
-    private fun showExitDialog(position: Int) {
+    private fun setEmojiByType(type: String) {
+        val emojiRes = when (type) {
+            "HAPPY" -> R.drawable.img_mood_happy
+            "ANGRY" -> R.drawable.img_mood_angry
+            "TIRED" -> R.drawable.img_mood_tired
+            "SAD" -> R.drawable.img_mood_sad
+            "CALM" -> R.drawable.img_mood_calm
+            else -> R.drawable.img_mood_happy
+        }
+        binding.ivMood1.setImageResource(emojiRes)
+    }
+
+    private fun getCurrentEmojiType(): String {
+        return originalEmojiType
+    }
+
+    private fun compressImage(uri: Uri): File? {
+        return try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri) ?: return null
+
+            val originalBitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+
+            if (originalBitmap == null) {
+                Log.e("EntryDetail", "❌ Failed to decode bitmap from URI: $uri")
+                return null
+            }
+
+            val rotatedBitmap = rotateImageIfRequired(uri, originalBitmap)
+            val resizedBitmap = resizeBitmap(rotatedBitmap, 1920)
+
+            val outputStream = ByteArrayOutputStream()
+            resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+            val compressedBytes = outputStream.toByteArray()
+
+            val tempFile = File(requireContext().cacheDir, "compressed_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(tempFile).use { fos ->
+                fos.write(compressedBytes)
+            }
+
+            if (rotatedBitmap != originalBitmap) {
+                originalBitmap.recycle()
+            }
+            resizedBitmap.recycle()
+
+            Log.d("EntryDetail", "✅ Image compressed: ${tempFile.length() / 1024}KB")
+
+            tempFile
+        } catch (e: Exception) {
+            Log.e("EntryDetail", "❌ Image compression failed", e)
+            null
+        }
+    }
+
+    /**
+     * ✅ 서버 URL에서 이미지 다운로드 후 압축
+     */
+    private suspend fun downloadAndCompressImage(url: String): File? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val connection = java.net.URL(url).openConnection()
+                connection.connect()
+
+                val inputStream = connection.getInputStream()
+                val originalBitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream.close()
+
+                if (originalBitmap == null) {
+                    Log.e("EntryDetail", "❌ Failed to decode bitmap from URL: $url")
+                    return@withContext null
+                }
+
+                val resizedBitmap = resizeBitmap(originalBitmap, 1920)
+
+                val outputStream = ByteArrayOutputStream()
+                resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+                val compressedBytes = outputStream.toByteArray()
+
+                val tempFile = File(requireContext().cacheDir, "downloaded_${System.currentTimeMillis()}.jpg")
+                FileOutputStream(tempFile).use { fos ->
+                    fos.write(compressedBytes)
+                }
+
+                originalBitmap.recycle()
+                resizedBitmap.recycle()
+
+                Log.d("EntryDetail", "✅ Image downloaded and compressed: ${tempFile.length() / 1024}KB")
+
+                tempFile
+            } catch (e: Exception) {
+                Log.e("EntryDetail", "❌ Image download failed", e)
+                null
+            }
+        }
+    }
+
+    private fun rotateImageIfRequired(uri: Uri, bitmap: Bitmap): Bitmap {
+        return try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri) ?: return bitmap
+            val exif = ExifInterface(inputStream)
+            inputStream.close()
+
+            val orientation = exif.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_UNDEFINED
+            )
+
+            when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> rotateBitmap(bitmap, 90f)
+                ExifInterface.ORIENTATION_ROTATE_180 -> rotateBitmap(bitmap, 180f)
+                ExifInterface.ORIENTATION_ROTATE_270 -> rotateBitmap(bitmap, 270f)
+                else -> bitmap
+            }
+        } catch (e: Exception) {
+            Log.e("EntryDetail", "Failed to read EXIF", e)
+            bitmap
+        }
+    }
+
+    private fun rotateBitmap(bitmap: Bitmap, degrees: Float): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(degrees)
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    }
+
+    private fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+
+        if (width <= maxSize && height <= maxSize) {
+            return bitmap
+        }
+
+        val ratio = minOf(
+            maxSize.toFloat() / width,
+            maxSize.toFloat() / height
+        )
+
+        val newWidth = (width * ratio).toInt()
+        val newHeight = (height * ratio).toInt()
+
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+    }
+
+    private fun updateDay4Cut() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                Log.d("EntryDetail", "")
+                Log.d("EntryDetail", "🔄 UPDATE PROCESS STARTED")
+                Log.d("EntryDetail", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+                val fileParts = mutableListOf<MultipartBody.Part>()
+
+                for ((index, item) in imageItems.withIndex()) {
+                    Log.d("EntryDetail", "📤 Processing image ${index + 1}/${imageItems.size}")
+
+                    val compressedFile = if (item.isNew) {
+                        // ✅ 새 이미지: URI에서 압축
+                        Log.d("EntryDetail", "   ├─ New image (local URI)")
+                        val uri = Uri.parse(item.uri)
+                        compressImage(uri)
+                    } else {
+                        // ✅ 기존 이미지: URL에서 다운로드 후 압축
+                        Log.d("EntryDetail", "   ├─ Existing image (server URL)")
+                        downloadAndCompressImage(item.uri)
+                    }
+
+                    if (compressedFile == null) {
+                        Log.e("EntryDetail", "❌ Image ${index + 1} compression failed")
+                        throw Exception("이미지 ${index + 1} 압축 실패")
+                    }
+
+                    val requestBody = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
+                    val part = MultipartBody.Part.createFormData("files", compressedFile.name, requestBody)
+                    fileParts.add(part)
+                }
+
+                Log.d("EntryDetail", "📤 Uploading ${fileParts.size} images via /media/upload/bulk")
+
+                val uploadResponse = withContext(Dispatchers.IO) {
+                    RetrofitClient.mediaService.uploadMediaBulk(fileParts)
+                }
+
+                Log.d("EntryDetail", "📨 Upload response: code=${uploadResponse.code}")
+
+                // ✅ C2001 또는 C2011 모두 성공
+                if (uploadResponse.code != "C2001" && uploadResponse.code != "C2011") {
+                    throw Exception("이미지 업로드 실패: ${uploadResponse.message}")
+                }
+
+                val uploadedFiles = uploadResponse.data ?: throw Exception("업로드 응답 데이터 없음")
+
+                val images = uploadedFiles.mapIndexed { index, file ->
+                    Day4CutImage(
+                        mediaFileId = file.fileId,
+                        isThumbnail = (index == typicalImageIndex)
+                    )
+                }
+
+                Log.d("EntryDetail", "📊 Uploaded fileIds: ${uploadedFiles.map { it.fileId }}")
+
+                val request = UpdateDay4CutRequest(
+                    date = apiDate!!,
+                    content = binding.etDiary.text.toString().ifBlank { null },
+                    emojiType = getCurrentEmojiType(),
+                    images = images
+                )
+
+                Log.d("EntryDetail", "📝 Updating Day4Cut...")
+                Log.d("EntryDetail", "Request: $request")
+
+                val updateResponse = withContext(Dispatchers.IO) {
+                    RetrofitClient.day4CutService.updateDay4Cut(request)
+                }
+
+                Log.d("EntryDetail", "📨 Update response: code=${updateResponse.code}")
+
+                // ✅ isSuccess 제거
+                if (updateResponse.code == "C2001") {
+                    Log.d("EntryDetail", "")
+                    Log.d("EntryDetail", "🎉 DAY4CUT UPDATED SUCCESSFULLY")
+                    Log.d("EntryDetail", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+                    withContext(Dispatchers.Main) {
+                        requireContext().cacheDir.listFiles()?.filter {
+                            it.name.startsWith("compressed_")
+                        }?.forEach { it.delete() }
+
+                        Toast.makeText(requireContext(), "수정되었습니다!", Toast.LENGTH_SHORT).show()
+
+                        originalImageItems.clear()
+                        originalImageItems.addAll(imageItems.map { it.copy() })
+                        originalContent = binding.etDiary.text.toString()
+
+                        setEditMode(false)
+                    }
+                } else {
+                    throw Exception("수정 실패: ${updateResponse.message}")
+                }
+
+            } catch (e: Exception) {
+                Log.e("EntryDetail", "💥 UPDATE FAILED", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "수정 실패: ${e.message}", Toast.LENGTH_LONG).show()
+
+                    requireContext().cacheDir.listFiles()?.filter {
+                        it.name.startsWith("compressed_")
+                    }?.forEach { it.delete() }
+                }
+            }
+        }
+    }
+
+    private fun showDeleteConfirmDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("기록 삭제")
+            .setMessage("모든 사진을 삭제하면 이 날짜의 기록이 모두 삭제됩니다. 계속하시겠습니까?")
+            .setPositiveButton("삭제") { _, _ ->
+                deleteDay4Cut()
+            }
+            .setNegativeButton("취소", null)
+            .show()
+    }
+
+    private fun deleteDay4Cut() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                Log.d("EntryDetail", "🗑️ Deleting Day4Cut for date: $apiDate")
+
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.day4CutService.deleteDay4Cut(apiDate!!)
+                }
+
+                Log.d("EntryDetail", "📨 Delete response: code=${response.code}")
+
+                // ✅ isSuccess 제거
+                if (response.code == "C2001") {
+                    Log.d("EntryDetail", "✅ Day4Cut deleted successfully")
+
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(requireContext(), "기록이 삭제되었습니다", Toast.LENGTH_SHORT).show()
+                        (requireActivity() as? MainActivity)?.changeFragment(CalendarChildFragment())
+                    }
+                } else {
+                    throw Exception("삭제 실패: ${response.message}")
+                }
+            } catch (e: Exception) {
+                Log.e("EntryDetail", "💥 DELETE FAILED", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "삭제 실패: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    private fun showPhotoDeleteDialog(position: Int) {
         val dialogBinding = DialogExit2Binding.inflate(layoutInflater)
         val builder = MaterialAlertDialogBuilder(requireContext())
             .setView(dialogBinding.root)
@@ -231,15 +577,13 @@ class EntryDetailFragment : Fragment() {
         }
 
         dialogBinding.btnExit.setOnClickListener {
-            if (position < selectedImageUris.size) {
-                val removedUri = selectedImageUris[position]
-                selectedImageUris.removeAt(position)
+            if (position < imageItems.size) {
+                imageItems.removeAt(position)
 
-                // 대표 사진 관리 로직
-                if (removedUri == typicalImageUri && selectedImageUris.isNotEmpty()) {
-                    typicalImageUri = selectedImageUris[0]
-                } else if (selectedImageUris.isEmpty()) {
-                    typicalImageUri = null
+                if (position == typicalImageIndex) {
+                    typicalImageIndex = 0
+                } else if (position < typicalImageIndex) {
+                    typicalImageIndex--
                 }
 
                 updatePhotoState()
@@ -249,12 +593,10 @@ class EntryDetailFragment : Fragment() {
         }
 
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
         dialog.show()
     }
 
-    // 어댑터는 내부 클래스로 유지하되, LayoutInflater 호출 시 context 주의
-    inner class PhotoPagerAdapter(private val imageUris: List<String>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    inner class PhotoPagerAdapter(private val items: List<ImageItem>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         private val TYPE_PHOTO = 0
         private val TYPE_ADD = 1
@@ -275,33 +617,36 @@ class EntryDetailFragment : Fragment() {
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             if (getItemViewType(position) == TYPE_PHOTO) {
                 val photoHolder = holder as PhotoViewHolder
-                val currentUri = imageUris[position]
+                val item = items[position]
 
+                // ✅ 편집 모드일 때만 삭제/썸네일 버튼 표시
                 if (isEditMode) {
                     photoHolder.binding.ivDelete.visibility = View.VISIBLE
+                    photoHolder.binding.ivTypical.visibility = View.VISIBLE
                 } else {
                     photoHolder.binding.ivDelete.visibility = View.GONE
+                    photoHolder.binding.ivTypical.visibility = View.GONE  // ✅ 읽기 모드에서 숨김
                 }
 
-                if (typicalImageUri == null && position == 0) typicalImageUri = currentUri
-                val isTypical = currentUri == typicalImageUri
+                val isTypical = position == typicalImageIndex
                 photoHolder.binding.ivTypical.setImageResource(
                     if (isTypical) R.drawable.ic_typical_on else R.drawable.ic_typical_off
                 )
 
-                Glide.with(photoHolder.binding.ivPhoto.context)
-                    .load(currentUri)
-                    .into(photoHolder.binding.ivPhoto)
+                photoHolder.binding.ivPhoto.load(item.uri) {
+                    crossfade(true)
+                    error(R.drawable.img_ex_photo)
+                }
 
                 photoHolder.binding.ivTypical.setOnClickListener {
                     if (isEditMode) {
-                        typicalImageUri = currentUri
+                        typicalImageIndex = holder.bindingAdapterPosition
                         notifyDataSetChanged()
                     }
                 }
 
                 photoHolder.binding.ivDelete.setOnClickListener {
-                    showExitDialog(holder.bindingAdapterPosition)
+                    showPhotoDeleteDialog(holder.bindingAdapterPosition)
                 }
             } else {
                 val addHolder = holder as AddViewHolder
@@ -312,11 +657,11 @@ class EntryDetailFragment : Fragment() {
         }
 
         override fun getItemCount(): Int {
-            return if (isEditMode) imageUris.size + 1 else imageUris.size
+            return if (isEditMode) items.size + 1 else items.size
         }
 
         override fun getItemViewType(position: Int): Int {
-            return if (isEditMode && position == imageUris.size) TYPE_ADD else TYPE_PHOTO
+            return if (isEditMode && position == items.size) TYPE_ADD else TYPE_PHOTO
         }
     }
 }

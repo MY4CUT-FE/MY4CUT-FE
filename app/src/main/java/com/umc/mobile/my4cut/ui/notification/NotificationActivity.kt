@@ -36,12 +36,23 @@ class NotificationActivity : AppCompatActivity() {
             try {
                 val response = RetrofitClient.notificationService.getNotifications()
                 Log.d("NotificationAPI", "responseData=" + response.data)
+                // Log each notification DTO in detail to inspect null fields
+                response.data?.forEach { dto ->
+                    Log.d(
+                        "NotificationRaw",
+                        "notificationId=${dto.notificationId}, type=${dto.type}, senderNickname=${dto.senderNickname}, workspaceName=${dto.workspaceName}, message=${dto.message}"
+                    )
+                }
 
                 if (response.code.startsWith("C2") && response.data != null) {
 
                     val uiList = response.data.map { dto ->
+                        Log.d(
+                            "NotificationDebug",
+                            "type=${dto.type}, referenceId=${dto.referenceId}, notificationId=${dto.notificationId}, senderNickname=${dto.senderNickname}, workspaceName=${dto.workspaceName}, message=${dto.message}"
+                        )
                         NotificationData(
-                            id = dto.id,
+                            id = dto.referenceId ?: dto.notificationId,
                             type = dto.type,
                             iconResId = when (dto.type) {
                                 "WORKSPACE_INVITE" -> R.drawable.ic_noti_invite
@@ -56,15 +67,18 @@ class NotificationActivity : AppCompatActivity() {
                                 else -> dto.type
                             },
                             content = when (dto.type) {
-                                "FRIEND_REQUEST" -> "친구 요청이 도착했습니다."
-                                "WORKSPACE_INVITE" -> "스페이스 초대가 도착했습니다."
-                                "MEDIA_COMMENT" -> "새 댓글이 등록되었습니다."
-                                else -> "새 알림이 도착했습니다."
+                                "WORKSPACE_INVITE" -> {
+                                    val sender = dto.senderNickname ?: "누군가"
+                                    val workspace = dto.workspaceName ?: "워크스페이스"
+                                    "${sender}님이 ${workspace}에 초대했습니다."
+                                }
+                                "FRIEND_REQUEST" -> dto.message ?: "친구 요청이 도착했습니다."
+                                else -> dto.message ?: "알림이 도착했습니다."
                             },
-                            time = formatTimeAgo(dto.createdAt),
+                            time = dto.createdAt?.let { formatTimeAgo(it) } ?: "방금 전",
                             hasButtons = dto.type == "FRIEND_REQUEST" || dto.type == "WORKSPACE_INVITE"
                         )
-                    }
+                    }.toMutableList()
 
                     val adapter = NotificationAdapter(
                         uiList,
@@ -81,7 +95,11 @@ class NotificationActivity : AppCompatActivity() {
                                         }
                                     }
                                     Toast.makeText(this@NotificationActivity, "수락 처리되었습니다.", Toast.LENGTH_SHORT).show()
-                                    setupRecyclerView()
+                                    val index = uiList.indexOf(item)
+                                    if (index != -1) {
+                                        uiList.removeAt(index)
+                                        binding.rvNotification.adapter?.notifyItemRemoved(index)
+                                    }
                                 } catch (e: Exception) {
                                     Toast.makeText(this@NotificationActivity, "수락 실패: ${e.message}", Toast.LENGTH_SHORT).show()
                                 }
@@ -100,7 +118,11 @@ class NotificationActivity : AppCompatActivity() {
                                         }
                                     }
                                     Toast.makeText(this@NotificationActivity, "거절 처리되었습니다.", Toast.LENGTH_SHORT).show()
-                                    setupRecyclerView()
+                                    val index = uiList.indexOf(item)
+                                    if (index != -1) {
+                                        uiList.removeAt(index)
+                                        binding.rvNotification.adapter?.notifyItemRemoved(index)
+                                    }
                                 } catch (e: Exception) {
                                     Toast.makeText(this@NotificationActivity, "거절 실패: ${e.message}", Toast.LENGTH_SHORT).show()
                                 }

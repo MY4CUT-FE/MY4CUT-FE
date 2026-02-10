@@ -255,13 +255,11 @@ class MyCalendarMain @JvmOverloads constructor(
 
                     val onClickListener = View.OnClickListener {
                         if (data.position == DayPosition.MonthDate && !isFutureDate) {
-                            if (selectedDate != data.date) {
-                                val oldDate = selectedDate
-                                selectedDate = data.date
-                                oldDate?.let { mcCustom.notifyDateChanged(it) }
-                                mcCustom.notifyDateChanged(data.date)
-                                onDateSelectedListener?.invoke(getSelectedDateFormatted(), dayData)
-                            }
+                            val oldDate = selectedDate
+                            selectedDate = data.date
+                            oldDate?.let { mcCustom.notifyDateChanged(it) }
+                            mcCustom.notifyDateChanged(data.date)
+                            onDateSelectedListener?.invoke(getSelectedDateFormatted(), dayData)
                         }
                     }
                     container.textView.setOnClickListener(onClickListener)

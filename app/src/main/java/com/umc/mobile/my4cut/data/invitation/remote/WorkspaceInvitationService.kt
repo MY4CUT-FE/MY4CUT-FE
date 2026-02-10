@@ -2,7 +2,7 @@ package com.umc.mobile.my4cut.data.invitation.remote
 
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInvitationDto
-import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequest
+import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
 import retrofit2.http.*
 
 interface WorkspaceInvitationService {
@@ -10,7 +10,7 @@ interface WorkspaceInvitationService {
     /** 멤버 초대 */
     @POST("workspaces/invitations")
     suspend fun inviteMember(
-        @Body request: WorkspaceInviteRequest
+        @Body request: WorkspaceInviteRequestDto
     ): BaseResponse<Unit>
 
     /** 초대 수락 */

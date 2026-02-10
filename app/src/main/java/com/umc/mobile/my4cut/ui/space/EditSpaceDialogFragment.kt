@@ -15,16 +15,18 @@ import android.widget.PopupWindow
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.umc.mobile.my4cut.ui.friend.Friend
-import com.umc.mobile.my4cut.data.friend.remote.FriendServiceApi
 import com.umc.mobile.my4cut.R
-import com.umc.mobile.my4cut.databinding.DialogCreateSpaceBinding
 import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import android.widget.Toast
+import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.workspace.model.WorkspaceUpdateRequestDto
+import com.umc.mobile.my4cut.databinding.DialogChangeSpaceBinding
 
 class EditSpaceDialogFragment : DialogFragment() {
 
-    private var _binding: DialogCreateSpaceBinding? = null
+    private var _binding: DialogChangeSpaceBinding? = null
     private val binding get() = _binding!!
 
     private var popupWindow: PopupWindow? = null
@@ -59,7 +61,7 @@ class EditSpaceDialogFragment : DialogFragment() {
         savedInstanceState: Bundle?
     ): View {
         dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        _binding = DialogCreateSpaceBinding.inflate(inflater, container, false)
+        _binding = DialogChangeSpaceBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -86,9 +88,11 @@ class EditSpaceDialogFragment : DialogFragment() {
 
         /** 수정 완료 */
         binding.mainText.text = "확인"
+        binding.mainText.isClickable = true
+        binding.mainText.isFocusable = true
+
         binding.mainText.setOnClickListener {
             updateSpace()
-            dismiss()
         }
     }
 
@@ -123,15 +127,17 @@ class EditSpaceDialogFragment : DialogFragment() {
             getMode = { FriendsMode.NORMAL },
             isSelected = { id: Long -> selectedFriendIds.contains(id) },
             onFriendClick = { friend ->
-                if (selectedFriendIds.contains(friend.userId)) {
-                    selectedFriendIds.remove(friend.userId)
-                    selectedFriends.removeAll { it.userId == friend.userId }
+                val id = friend.friendId
+                if (selectedFriendIds.contains(id)) {
+                    selectedFriendIds.remove(id)
+                    selectedFriends.removeAll { it.friendId == id }
                 } else {
-                    selectedFriendIds.add(friend.userId)
+                    selectedFriendIds.add(id)
                     selectedFriends.add(friend)
                 }
+
                 updateFriendSummary()
-                friendsAdapter.notifyDataSetChanged()
+                submitDialogFriends()
             },
             onFavoriteClick = {
                 it.isFavorite = !it.isFavorite
@@ -146,26 +152,42 @@ class EditSpaceDialogFragment : DialogFragment() {
             adapter = friendsAdapter
         }
 
+        // 드롭다운 최소/최대 높이 제한 (CreateSpace와 동일)
+        val maxHeightDp = 280
+        val minHeightDp = 50
+        val density = resources.displayMetrics.density
+        val maxHeightPx = (maxHeightDp * density).toInt()
+        val minHeightPx = (minHeightDp * density).toInt()
+
+        popupBinding.root.minimumHeight = minHeightPx
+        val params = popupBinding.rvFriends.layoutParams
+        params.height = maxHeightPx
+        popupBinding.rvFriends.layoutParams = params
+        popupBinding.rvFriends.isNestedScrollingEnabled = true
+
         popupWindow = PopupWindow(
             popupBinding.root,
             binding.layoutFriendSelect.width,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
+            maxHeightPx,
             true
         ).apply {
             isOutsideTouchable = true
             isFocusable = true
             elevation = 0f
+
             setOnDismissListener {
                 binding.layoutFriendSelect
                     .setBackgroundResource(R.drawable.bg_dropdown_closed)
             }
         }
 
-        popupWindow?.showAsDropDown(binding.layoutFriendSelect)
+        popupWindow?.showAsDropDown(binding.layoutFriendSelect, 0, -1)
         submitDialogFriends()
     }
 
     private fun submitDialogFriends() {
+        if (!::friendsAdapter.isInitialized) return
+
         val favorites = friendList.filter { it.isFavorite }
         val normals = friendList.filter { !it.isFavorite }
 
@@ -183,10 +205,28 @@ class EditSpaceDialogFragment : DialogFragment() {
 
     /** 수정 로직 */
     private fun updateSpace() {
-        val newName = binding.etSpaceName.text.toString()
-        Log.d("EditSpace", "name=$newName")
-        selectedFriends.forEach {
-            Log.d("EditSpace", "member=${it.nickname}")
+        val newName = binding.etSpaceName.text.toString().trim()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.workspaceService.updateWorkspace(
+                    workspaceId = spaceId,
+                    request = WorkspaceUpdateRequestDto(
+                        name = newName
+                    )
+                )
+                Toast.makeText(requireContext(), "스페이스가 수정되었습니다", Toast.LENGTH_SHORT).show()
+
+                // 수정 완료 후 화면 갱신 콜백 호출
+                onEditCompleteListener?.invoke()
+
+                // 다이얼로그 닫기
+                dismiss()
+
+            } catch (e: Exception) {
+                Log.e("EditSpace", "스페이스 수정 실패", e)
+                Toast.makeText(requireContext(), "스페이스 수정에 실패했습니다", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -205,7 +245,7 @@ class EditSpaceDialogFragment : DialogFragment() {
     private fun loadFriendsFromApi() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val response = FriendServiceApi.service.getFriends()
+                val response = RetrofitClient.friendService.getFriends()
                 val data = response.data ?: return@launch
 
                 friendList.clear()
@@ -218,7 +258,8 @@ class EditSpaceDialogFragment : DialogFragment() {
                             friendId = it.friendId,
                             userId = it.userId,
                             nickname = it.nickname,
-                            isFavorite = it.isFavorite
+                            isFavorite = it.isFavorite,
+                            profileImageUrl = it.profileImageUrl
                         )
                     }
                 )
@@ -226,15 +267,18 @@ class EditSpaceDialogFragment : DialogFragment() {
                 // 기존 스페이스 멤버 미리 선택
                 friendList.forEach { friend ->
                     if (originalMemberIds.contains(friend.userId)) {
-                        selectedFriendIds.add(friend.userId)
+                        selectedFriendIds.add(friend.friendId)
                         selectedFriends.add(friend)
                     }
                 }
 
                 updateFriendSummary()
-                submitDialogFriends()
+                if (::friendsAdapter.isInitialized) {
+                    submitDialogFriends()
+                }
             } catch (e: Exception) {
                 Log.e("EditSpace", "친구 목록 API 실패", e)
+                Toast.makeText(requireContext(), "친구 목록을 불러오지 못했습니다", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -244,7 +288,7 @@ class EditSpaceDialogFragment : DialogFragment() {
         dialog?.window?.apply {
             setLayout(
                 (resources.displayMetrics.widthPixels * 0.9).toInt(),
-                ViewGroup.LayoutParams.WRAP_CONTENT,
+                (resources.displayMetrics.heightPixels * 0.74).toInt()
             )
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         }
@@ -277,5 +321,11 @@ class EditSpaceDialogFragment : DialogFragment() {
                 }
             }
         }
+    }
+
+    private var onEditCompleteListener: (() -> Unit)? = null
+
+    fun setOnEditCompleteListener(listener: () -> Unit) {
+        onEditCompleteListener = listener
     }
 }

@@ -7,6 +7,7 @@ import com.umc.mobile.my4cut.ui.friend.Friend
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.ItemFriendBinding
 import com.umc.mobile.my4cut.databinding.ItemFriendHeaderBinding
+import com.bumptech.glide.Glide
 
 class FriendsAdapter(
     private val getMode: () -> FriendsMode,
@@ -112,6 +113,13 @@ class FriendsAdapter(
 
             // 닉네임
             binding.tvNickname.text = friend.nickname
+
+            // 프로필 이미지 (URL 로드)
+            Glide.with(binding.root.context)
+                .load(friend.profileImageUrl)
+                .placeholder(R.drawable.ic_profile_cat)
+                .error(R.drawable.ic_profile_cat)
+                .into(binding.ivProfile)
 
             // 즐겨찾기 별
             binding.ivStar.setImageResource(

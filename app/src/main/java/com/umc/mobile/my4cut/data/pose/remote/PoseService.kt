@@ -39,7 +39,7 @@ interface PoseService {
     @POST("poses/{id}/bookmarks")
     fun addBookmark(
         @Path("id") poseId: Int
-    ): Call<BaseResponse<String>>
+    ): Call<BaseResponse<Any>>  // ✅ String → Any로 변경
 
     /**
      * 포즈 즐겨찾기 해제
@@ -48,5 +48,5 @@ interface PoseService {
     @DELETE("poses/{id}/bookmarks")
     fun removeBookmark(
         @Path("id") poseId: Int
-    ): Call<BaseResponse<String>>
+    ): Call<BaseResponse<Any>>  // ✅ String → Any로 변경
 }

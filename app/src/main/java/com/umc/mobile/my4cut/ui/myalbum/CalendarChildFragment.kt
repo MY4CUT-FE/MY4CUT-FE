@@ -18,8 +18,6 @@ import java.time.LocalDate
 class CalendarChildFragment : Fragment() {
     private lateinit var binding: FragmentCalendarChildBinding
 
-    private var dummyDates: ArrayList<CalendarData> = arrayListOf()
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentCalendarChildBinding.inflate(inflater, container, false)
         return binding.root
@@ -32,75 +30,83 @@ class CalendarChildFragment : Fragment() {
         val year = binding.myCalendar.getCurrentYear()
         val month = binding.myCalendar.getCurrentMonth()
 
-        // fetchCalendarData(year, month)
-        setupCalendar()
+        fetchCalendarData(year, month)
 
         setupClickListeners()
     }
 
-//    private fun fetchCalendarData(year: Int, month: Int) {
-//        viewLifecycleOwner.lifecycleScope.launch {
-//            try {
-//                val response = RetrofitClient.day4CutService.getCalendarStatus(year, month)
-//                if (response.code == "SUCCESS") {
-//                    // 서버 응답 데이터를 CalendarData 리스트로 변환 (대표사진 포함)
-//                    val calendarDataList = response.data?.dates?.map { item ->
-//                        CalendarData(
-//                            date = LocalDate.of(year, month, item.day),
-//                            imageUris = if (item.thumbnailUrl != null) listOf(item.thumbnailUrl) else emptyList(),
-//                            memo = ""
-//                        )
-//                    } ?: emptyList()
-//
-//                    // 달력에 데이터 전달 -> 이미지 렌더링
-//                    binding.myCalendar.setDatesWithData(calendarDataList)
-//                }
-//            } catch (e: Exception) {
-//                Log.e("API_ERROR", "달력 로드 실패: ${e.message}")
-//            }
-//        }
-//    }
+    override fun onResume() {
+        super.onResume()
+        val year = binding.myCalendar.getCurrentYear()
+        val month = binding.myCalendar.getCurrentMonth()
+        fetchCalendarData(year, month)
+    }
 
-    private fun setupCalendar() {
-        // 1. 테스트용 임의 데이터 생성 (오늘, 어제, 그저께 등)
-        val today = LocalDate.now()
-        val path1 = "android.resource://${requireContext().packageName}/${R.drawable.image1}"
-        val path2 = "android.resource://${requireContext().packageName}/${R.drawable.image2}"
-        val path3 = "android.resource://${requireContext().packageName}/${R.drawable.image3}"
+    private fun fetchCalendarData(year: Int, month: Int) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                Log.d("CalendarChild", "Fetching calendar data: $year-$month")
 
-        dummyDates = arrayListOf(
-            CalendarData(today, listOf(path1, path2), "오늘 찍은 네컷사진"),
-            CalendarData(today.minusDays(2), listOf(path2, path3), "사진도 찍고 기록한 날")
-        )
+                val response = RetrofitClient.day4CutService.getCalendarStatus(year, month)
 
-        // 2. 달력에 데이터 전달
-        binding.myCalendar.setDatesWithData(dummyDates)
+                Log.d("CalendarChild", "Response: code=${response.code}, message=${response.message}")
+
+                if (response.code == "C2001") {
+                    val calendarDataList = response.data?.dates?.map { item ->
+                        CalendarData(
+                            date = LocalDate.of(year, month, item.day),
+                            imageUris = if (item.thumbnailUrl != null) listOf(item.thumbnailUrl) else emptyList(),
+                            memo = ""
+                        )
+                    } ?: emptyList()
+
+                    Log.d("CalendarChild", "Calendar data loaded: ${calendarDataList.size} days with records")
+
+                    binding.myCalendar.setDatesWithData(calendarDataList)
+                } else {
+                    Log.e("CalendarChild", "API failed: ${response.code} - ${response.message}")
+                }
+            } catch (e: Exception) {
+                Log.e("CalendarChild", "Calendar load failed", e)
+            }
+        }
     }
 
     private fun setupClickListeners() {
+        // Upload button click
         binding.myCalendar.setOnUploadClickListener {
             val intent = Intent(requireContext(), CalendarPickerActivity::class.java)
-            // 현재 달력에서 선택된 날짜 문자열 (예: "2026-2-7")
-            val selectedDateText = binding.myCalendar.getSelectedDateFormatted()
 
-            intent.putExtra("SELECTED_DATE", selectedDateText)
+            // Pass current year and month to CalendarPickerActivity
+            val year = binding.myCalendar.getCurrentYear()
+            val month = binding.myCalendar.getCurrentMonth()
+
+            intent.putExtra("YEAR", year)
+            intent.putExtra("MONTH", month)
 
             startActivity(intent)
         }
 
+        // Month change listener
         binding.myCalendar.setOnMonthChangeListener { year, month ->
-            // fetchCalendarData(year, month)
+            fetchCalendarData(year, month)
         }
 
+        // Date selection listener
         binding.myCalendar.setOnDateSelectedListener { dateText, data ->
             if (data != null) {
                 val entryDetailFragment = EntryDetailFragment().apply {
                     arguments = Bundle().apply {
                         putString("SELECTED_DATE", dateText)
-                        putString("API_DATE", dateText)
+                        putString("API_DATE", binding.myCalendar.getSelectedDateApiFormat())
                     }
                 }
-                (requireActivity() as? MainActivity)?.changeFragment(entryDetailFragment)
+
+                // ✅ 백스택에 추가하여 뒤로가기 가능하도록
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(R.id.fcv_main, entryDetailFragment)
+                    .addToBackStack(null)
+                    .commit()
             }
         }
     }
