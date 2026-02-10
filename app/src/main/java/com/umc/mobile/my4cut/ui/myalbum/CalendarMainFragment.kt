@@ -1,5 +1,6 @@
 package com.umc.mobile.my4cut.ui.myalbum
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,6 +12,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.umc.mobile.my4cut.databinding.FragmentCalendarMainBinding
 import com.umc.mobile.my4cut.databinding.ViewTabCustomBinding
 import com.google.android.material.tabs.TabLayoutMediator
+import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 
 class CalendarMainFragment : Fragment() {
     lateinit var binding: FragmentCalendarMainBinding
@@ -35,6 +37,10 @@ class CalendarMainFragment : Fragment() {
         }
 
         setupTabs()
+
+        binding.ivNotification.setOnClickListener {
+            startActivity(Intent(requireContext(), NotificationActivity::class.java))
+        }
     }
 
     private fun setupTabs() {

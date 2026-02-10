@@ -11,6 +11,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
+import coil.size.Scale
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
@@ -270,12 +272,12 @@ class AlbumDetailFragment : Fragment() {
             if (holder is PhotoViewHolder) {
                 val photo = photos[position]
 
-                // 서버에서 받은 fileUrl을 사용하여 이미지 로드
-                Glide.with(holder.binding.ivAlbumCover.context)
-                    .load(photo.viewUrl)
-                    .placeholder(R.color.gray_300)
-                    .centerCrop()
-                    .into(holder.binding.ivAlbumCover)
+                // 서버에서 받은 viewUrl을 사용하여 이미지 로드
+                holder.binding.ivAlbumCover.load(photo.viewUrl) {
+                    crossfade(true) // 부드러운 전환 효과
+                    placeholder(R.color.gray_300) // 로딩 중 이미지
+                    scale(Scale.FILL)
+                }
             } else if (holder is AddViewHolder) {
                 holder.itemView.setOnClickListener { onAddClick() }
             }

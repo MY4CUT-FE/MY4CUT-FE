@@ -29,7 +29,7 @@ class MainActivity : AppCompatActivity() {
         initBottomNavigation(savedInstanceState)
 
         // 외부에서 들어온 인텐트가 있는지 확인 (예: 앨범 상세 보기 등)
-        checkIntent(intent)
+        // checkIntent(intent)
     }
 
 
@@ -41,27 +41,50 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+
+        checkMoveToDetail(intent)
+
         // 액티비티가 이미 켜져 있는 상태에서 새로운 인텐트를 받았을 때 처리
-        checkIntent(intent)
+        // checkIntent(intent)
     }
 
-    // 인텐트 처리 로직 (EntryDetailFragment 이동 등)
-    private fun checkIntent(intent: Intent?) {
-        val target = intent?.getStringExtra("TARGET_FRAGMENT")
-        if (target == "ENTRY_DETAIL") {
-            val dateString = intent.getStringExtra("selected_date")
-            val calendarData = intent.getSerializableExtra("calendar_data") as? CalendarData
+    private fun checkMoveToDetail(intent: Intent?) {
+        val shouldMove = intent?.getBooleanExtra("MOVE_TO_DETAIL", false) ?: false
+        if (shouldMove) {
+            val apiDate = intent?.getStringExtra("API_DATE")
+            val selectedDate = intent?.getStringExtra("SELECTED_DATE")
 
-            val fragment = EntryDetailFragment().apply {
+            val detailFragment = EntryDetailFragment().apply {
                 arguments = Bundle().apply {
-                    putString("selected_date", dateString)
-                    putSerializable("calendar_data", calendarData)
+                    putString("API_DATE", apiDate)
+                    putString("SELECTED_DATE", selectedDate)
                 }
             }
-            // 상세 화면으로 프래그먼트 교체
-            changeFragment(fragment)
+
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fcv_main, detailFragment)
+                .addToBackStack(null)
+                .commit()
         }
     }
+
+//    // 인텐트 처리 로직 (EntryDetailFragment 이동 등)
+//    private fun checkIntent(intent: Intent?) {
+//        val target = intent?.getStringExtra("TARGET_FRAGMENT")
+//        if (target == "ENTRY_DETAIL") {
+//            val dateString = intent.getStringExtra("selected_date")
+//            val calendarData = intent.getSerializableExtra("calendar_data") as? CalendarData
+//
+//            val fragment = EntryDetailFragment().apply {
+//                arguments = Bundle().apply {
+//                    putString("selected_date", dateString)
+//                    putSerializable("calendar_data", calendarData)
+//                }
+//            }
+//            // 상세 화면으로 프래그먼트 교체
+//            changeFragment(fragment)
+//        }
+//    }
 
     private fun initBottomNavigation(savedInstanceState: Bundle?) {
         // 아이콘 원래 색상 적용 (Tint 해제)
@@ -128,7 +151,7 @@ class MainActivity : AppCompatActivity() {
     // 프래그먼트 교체 헬퍼 함수
     fun changeFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fcv_main, fragment) // 주의: activity_main.xml의 ID가 fcv_main인지 확인하세요!
+            .replace(R.id.fcv_main, fragment)
             .commitAllowingStateLoss()
     }
 

@@ -93,9 +93,10 @@
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingBottom="20dp"
-        android:clipToPadding="false"
+        android:clipToPadding="true"
+        android:clipChildren="true"
         android:overScrollMode="never"
-        app:cv_dayViewResource="@layout/calendar_day_layout"
+        app:cv_dayViewResource="@layout/calendar_day_layout2"
         app:cv_monthHeaderResource="@layout/calendar_day_titles_container" />
 
 </LinearLayout>

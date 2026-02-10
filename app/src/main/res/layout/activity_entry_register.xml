@@ -238,7 +238,8 @@
                     android:layout_marginTop="18dp"
                     android:layout_marginStart="10dp"
                     android:background="@drawable/bg_dashed_mood_speech"
-                    android:gravity="center"
+                    android:gravity="start|center_vertical"
+                    android:paddingStart="13dp"
                     android:orientation="horizontal"
                     android:clipToPadding="false"
                     android:clipChildren="false"
@@ -248,37 +249,37 @@
 
                     <ImageView
                         android:id="@+id/iv_mood_1"
-                        android:layout_width="48dp"
+                        android:layout_width="45dp"
                         android:layout_height="48dp"
-                        android:layout_margin="4dp"
+                        android:layout_margin="2dp"
                         android:src="@drawable/img_mood_happy" />
 
                     <ImageView
                         android:id="@+id/iv_mood_2"
-                        android:layout_width="48dp"
+                        android:layout_width="45dp"
                         android:layout_height="48dp"
-                        android:layout_margin="4dp"
+                        android:layout_margin="2dp"
                         android:src="@drawable/img_mood_calm" />
 
                     <ImageView
                         android:id="@+id/iv_mood_3"
-                        android:layout_width="48dp"
+                        android:layout_width="45dp"
                         android:layout_height="48dp"
-                        android:layout_margin="4dp"
+                        android:layout_margin="2dp"
                         android:src="@drawable/img_mood_exciting" />
 
                     <ImageView
                         android:id="@+id/iv_mood_4"
-                        android:layout_width="48dp"
+                        android:layout_width="45dp"
                         android:layout_height="48dp"
-                        android:layout_margin="4dp"
+                        android:layout_margin="2dp"
                         android:src="@drawable/img_mood_angry" />
 
                     <ImageView
                         android:id="@+id/iv_mood_5"
-                        android:layout_width="48dp"
+                        android:layout_width="45dp"
                         android:layout_height="48dp"
-                        android:layout_margin="4dp"
+                        android:layout_margin="2dp"
                         android:src="@drawable/img_mood_sad" />
                 </LinearLayout>
 

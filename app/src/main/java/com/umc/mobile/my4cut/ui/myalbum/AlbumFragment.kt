@@ -66,9 +66,9 @@ class AlbumFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response = RetrofitClient.albumService.getAlbums()
-                    albumList.clear()
-                    response.data?.let { albumList.addAll(it) }
-                    albumAdapter.notifyDataSetChanged()
+                albumList.clear()
+                response.data?.let { albumList.addAll(it) }
+                albumAdapter.notifyDataSetChanged()
             } catch (e: Exception) {
                 Log.e("API_ERROR", "목록 조회 실패: ${e.message}")
             }

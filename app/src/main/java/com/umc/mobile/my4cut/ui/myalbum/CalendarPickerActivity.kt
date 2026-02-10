@@ -12,9 +12,12 @@ import com.umc.mobile.my4cut.databinding.ActivityCalendarPicker2Binding
 import com.umc.mobile.my4cut.network.RetrofitClient
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class CalendarPickerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityCalendarPicker2Binding
+
+    private var currentSelectedDateStr: String = ""
 
     // ✅ 등록된 날짜 저장
     private val registeredDates = mutableSetOf<LocalDate>()
@@ -31,6 +34,16 @@ class CalendarPickerActivity : AppCompatActivity() {
         }
 
         binding.myCalendar.setHeaderVisible(false)
+
+        // 초기값은 오늘 날짜로 세팅 ("2026.02.10")
+        currentSelectedDateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
+
+        // 캘린더 날짜 클릭 리스너 추가
+        binding.myCalendar.setOnDateSelectedListener { dateText ->
+            // 사용자가 날짜를 누를 때마다 변수 갱신
+            currentSelectedDateStr = dateText
+            Log.d("CalendarPicker", "📅 Selected date updated: $currentSelectedDateStr")
+        }
 
         // ✅ Intent로 받은 년/월 정보
         val year = intent.getIntExtra("YEAR", LocalDate.now().year)
@@ -49,6 +62,8 @@ class CalendarPickerActivity : AppCompatActivity() {
                 val response = RetrofitClient.day4CutService.getCalendarStatus(year, month)
 
                 if (response.code == "C2001") {
+                    registeredDates.clear()
+
                     val calendarDataList = response.data?.dates?.map { item ->
                         val date = LocalDate.of(year, month, item.day)
                         registeredDates.add(date)  // ✅ 등록된 날짜 저장
@@ -66,11 +81,13 @@ class CalendarPickerActivity : AppCompatActivity() {
                     binding.myCalendar.setDatesWithData(calendarDataList)
                 } else {
                     Log.e("CalendarPicker", "❌ API failed: ${response.code}")
+                    registeredDates.clear()
                     // 실패 시 빈 리스트
                     binding.myCalendar.setDatesWithData(emptyList())
                 }
             } catch (e: Exception) {
                 Log.e("CalendarPicker", "💥 Failed to load calendar", e)
+                registeredDates.clear()
                 binding.myCalendar.setDatesWithData(emptyList())
             }
         }
@@ -81,8 +98,10 @@ class CalendarPickerActivity : AppCompatActivity() {
 
         // ✅ 다음 버튼 클릭 시 체크
         binding.btnNext.setOnClickListener {
-            val selectedDateStr = binding.myCalendar.getSelectedDateFormatted()
+            val selectedDateStr = currentSelectedDateStr
             val selectedDate = parseDateFromFormatted(selectedDateStr)
+
+            Log.d("CalendarPicker", "Checking: $selectedDate inside $registeredDates")
 
             // ✅ 1. 이미 등록된 날짜 체크
             if (registeredDates.contains(selectedDate)) {

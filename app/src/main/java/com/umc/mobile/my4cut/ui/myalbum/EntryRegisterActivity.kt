@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
 import com.google.android.material.card.MaterialCardView
+import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.day4cut.remote.CreateDay4CutRequest
 import com.umc.mobile.my4cut.data.day4cut.remote.Day4CutImage
@@ -80,7 +81,7 @@ class EntryRegisterActivity : AppCompatActivity() {
     }
 
     private fun setupDateData() {
-        val dateString = intent.getStringExtra("SELECTED_DATE") ?: "2026.01.01"
+        val dateString = intent.getStringExtra("SELECTED_DATE") ?: "2026-01-01"
         binding.tvDateCapsule.text = dateString
     }
 
@@ -198,13 +199,16 @@ class EntryRegisterActivity : AppCompatActivity() {
 
                         Toast.makeText(this@EntryRegisterActivity, "저장되었습니다!", Toast.LENGTH_SHORT).show()
 
-                        // ✅ CalendarPickerActivity와 함께 종료하고 캘린더로 복귀
-                        setResult(RESULT_OK)
+                        // FLAG_ACTIVITY_CLEAR_TOP을 쓰면 스택에 쌓인 이전 Activity들을 정리하며 MainActivity로 돌아갑니다.
+                        val intent = Intent(this@EntryRegisterActivity, MainActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            putExtra("MOVE_TO_DETAIL", true)
+                            putExtra("API_DATE", apiDate)
+                            putExtra("SELECTED_DATE", dateString)
+                        }
 
-                        // CalendarPickerActivity도 함께 종료
-                        val intent = Intent()
-                        intent.putExtra("CLOSE_ALL", true)
-                        setResult(RESULT_OK, intent)
+                        startActivity(intent)
+
                         finish()
                     }
                 } else {
@@ -214,7 +218,7 @@ class EntryRegisterActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("EntryRegister", "💥 SAVE FAILED", e)
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@EntryRegisterActivity, "저장 실패: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@EntryRegisterActivity, "${e.message}", Toast.LENGTH_LONG).show()
 
                     // 임시 파일 정리
                     cacheDir.listFiles()?.filter {
@@ -339,10 +343,10 @@ class EntryRegisterActivity : AppCompatActivity() {
     private fun getEmojiType(): String {
         return when (selectedMoodIndex) {
             1 -> "HAPPY"
-            2 -> "ANGRY"
+            2 -> "CALM"
             3 -> "TIRED"
-            4 -> "SAD"
-            5 -> "CALM"
+            4 -> "ANGRY"
+            5 -> "SAD"
             else -> "HAPPY"
         }
     }
