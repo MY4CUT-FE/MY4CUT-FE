@@ -1,5 +1,8 @@
 package com.umc.mobile.my4cut.ui.space
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoUploadRequestDto
 
 import com.umc.mobile.my4cut.data.photo.remote.WorkspacePhotoService
@@ -26,13 +29,18 @@ import com.umc.mobile.my4cut.databinding.FragmentSpaceBinding
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import android.util.Log
+import androidx.exifinterface.media.ExifInterface
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.photo.PhotoDialogFragment
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.ByteArrayOutputStream
+import java.io.FileOutputStream
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -156,6 +164,95 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
             // 그래도 실패하면 T 기준으로 잘라서 최소한 날짜/시간만 표시
             dateTime.substringBefore(".").replace("T", " ")
         }
+    }
+
+    /**
+     * 이미지 압축
+     */
+    private fun compressImage(uri: Uri): File? {
+        return try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri) ?: return null
+
+            val originalBitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+
+            if (originalBitmap == null) {
+                Log.e("EntryRegister", "❌ Failed to decode bitmap from URI: $uri")
+                return null
+            }
+
+            val rotatedBitmap = rotateImageIfRequired(uri, originalBitmap)
+            val resizedBitmap = resizeBitmap(rotatedBitmap, 1920)
+
+            val outputStream = ByteArrayOutputStream()
+            resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+            val compressedBytes = outputStream.toByteArray()
+
+            val tempFile = File(requireContext().cacheDir, "compressed_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(tempFile).use { fos ->
+                fos.write(compressedBytes)
+            }
+
+            if (rotatedBitmap != originalBitmap) {
+                originalBitmap.recycle()
+            }
+            resizedBitmap.recycle()
+
+            Log.d("EntryRegister", "✅ Image compressed: ${tempFile.length() / 1024}KB")
+
+            tempFile
+        } catch (e: Exception) {
+            Log.e("EntryRegister", "❌ Image compression failed", e)
+            null
+        }
+    }
+
+    private fun rotateImageIfRequired(uri: Uri, bitmap: Bitmap): Bitmap {
+        return try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri) ?: return bitmap
+            val exif = ExifInterface(inputStream)
+            inputStream.close()
+
+            val orientation = exif.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_UNDEFINED
+            )
+
+            when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> rotateBitmap(bitmap, 90f)
+                ExifInterface.ORIENTATION_ROTATE_180 -> rotateBitmap(bitmap, 180f)
+                ExifInterface.ORIENTATION_ROTATE_270 -> rotateBitmap(bitmap, 270f)
+                else -> bitmap
+            }
+        } catch (e: Exception) {
+            Log.e("EntryRegister", "Failed to read EXIF", e)
+            bitmap
+        }
+    }
+
+    private fun rotateBitmap(bitmap: Bitmap, degrees: Float): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(degrees)
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    }
+
+    private fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+
+        if (width <= maxSize && height <= maxSize) {
+            return bitmap
+        }
+
+        val ratio = minOf(
+            maxSize.toFloat() / width,
+            maxSize.toFloat() / height
+        )
+
+        val newWidth = (width * ratio).toInt()
+        val newHeight = (height * ratio).toInt()
+
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
     }
 
     private fun loadPhotosFromApi() {
@@ -315,36 +412,49 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     private fun uploadImageToServer(uri: Uri) {
         lifecycleScope.launch {
             try {
-                // URI → File 변환 (간단한 방식)
-                val inputStream = requireContext().contentResolver.openInputStream(uri)
-                val tempFile = File.createTempFile("upload", ".jpg", requireContext().cacheDir)
-                tempFile.outputStream().use { fileOut ->
-                    inputStream?.copyTo(fileOut)
+                Log.d("SpaceFragment", "🔄 이미지 압축 및 업로드 시작")
+
+                // 1. [수정] 아까 정의한 compressImage 함수를 사용하여 압축된 파일을 가져옴
+                val compressedFile = compressImage(uri)
+
+                if (compressedFile == null) {
+                    Log.e("SpaceFragment", "❌ 이미지 압축 실패")
+                    return@launch
                 }
 
-                val requestFile = tempFile.asRequestBody("image/*".toMediaTypeOrNull())
+                Log.d("SpaceFragment", "📤 압축 완료: ${compressedFile.length() / 1024}KB")
+
+                // 2. [수정] 압축된 파일을 RequestBody로 변환
+                // 서버 용량 제한(413 에러)을 피하기 위해 image/jpeg 타입 명시
+                val requestFile = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
                 val multipart = MultipartBody.Part.createFormData(
-                    "files",
-                    tempFile.name,
+                    "files", // 서버 파라미터명 (EntryRegister와 동일하게 "files")
+                    compressedFile.name,
                     requestFile
                 )
 
-                // 1. Media 업로드
-                val uploadResponse = RetrofitClient.mediaService.uploadMediaBulk(
-                    listOf(multipart)
-                )
+                // 3. Media 업로드 (Bulk)
+                val uploadResponse = withContext(Dispatchers.IO) {
+                    RetrofitClient.mediaService.uploadMediaBulk(listOf(multipart))
+                }
 
                 val mediaIds = uploadResponse.data?.map { it.fileId.toLong() } ?: emptyList()
-                if (mediaIds.isEmpty()) return@launch
+                if (mediaIds.isEmpty()) {
+                    Log.e("SpaceFragment", "❌ 업로드된 미디어 ID가 없습니다.")
+                    return@launch
+                }
 
-                // 2. Workspace Photo 등록
+                // 4. Workspace Photo 등록
                 workspacePhotoService.uploadPhotos(
                     spaceId,
                     WorkspacePhotoUploadRequestDto(mediaIds = mediaIds)
                 )
 
-                // 3. 목록 다시 불러오기
-                loadPhotosFromApi()
+                // 5. 성공 시 목록 다시 불러오기 및 캐시 삭제
+                withContext(Dispatchers.Main) {
+                    loadPhotosFromApi()
+                    compressedFile.delete()
+                }
 
             } catch (e: Exception) {
                 Log.e("SpaceFragment", "이미지 업로드 실패", e)

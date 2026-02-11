@@ -495,8 +495,14 @@ class EntryRegisterActivity : AppCompatActivity() {
 
                 // ✅ 썸네일 클릭 이벤트
                 photoHolder.binding.ivTypical.setOnClickListener {
-                    typicalImageIndex = holder.bindingAdapterPosition
-                    notifyDataSetChanged()
+                    val oldIndex = typicalImageIndex
+                    val newIndex = holder.bindingAdapterPosition
+
+                    if (oldIndex != newIndex) {
+                        typicalImageIndex = newIndex
+                        notifyItemChanged(oldIndex)
+                        notifyItemChanged(newIndex)
+                    }
                 }
             } else {
                 val addHolder = holder as AddViewHolder
