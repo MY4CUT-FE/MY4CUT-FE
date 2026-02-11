@@ -99,8 +99,8 @@ class IntroActivity : AppCompatActivity() {
         val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
             if (error != null) {
                 Log.e("KakaoLogin", "카카오 로그인 실패", error)
+                Toast.makeText(this, "로그인 실패: ${error.message}", Toast.LENGTH_LONG).show()
             } else if (token != null) {
-                Log.d("KakaoLogin", "accessToken = ${token.accessToken}")
                 sendKakaoTokenToServer(token.accessToken)
             }
         }

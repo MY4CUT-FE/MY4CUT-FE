@@ -35,9 +35,47 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // ✅ 카카오 로그인 키 해시 확인 (개발 중에만 사용, 배포 시 제거)
+        printKeyHash()
+
         initClickListener()
         initTextWatchers()
         initPasswordToggle()
+    }
+
+    /**
+     * 🔑 카카오 로그인을 위한 키 해시 출력
+     * 로그캣에서 "KeyHash" 필터로 확인 후 카카오 개발자 콘솔에 등록
+     */
+    private fun printKeyHash() {
+        try {
+            val packageInfo = packageManager.getPackageInfo(
+                packageName,
+                android.content.pm.PackageManager.GET_SIGNATURES
+            )
+
+            for (signature in packageInfo.signatures) {
+                val md = java.security.MessageDigest.getInstance("SHA")
+                md.update(signature.toByteArray())
+                val keyHash = android.util.Base64.encodeToString(
+                    md.digest(),
+                    android.util.Base64.NO_WRAP
+                )
+
+                Log.d("KeyHash", "========================================")
+                Log.d("KeyHash", "🔑 카카오 키 해시:")
+                Log.d("KeyHash", keyHash)
+                Log.d("KeyHash", "========================================")
+                Log.d("KeyHash", "위 키 해시를 카카오 개발자 콘솔에 등록하세요:")
+                Log.d("KeyHash", "1. https://developers.kakao.com 접속")
+                Log.d("KeyHash", "2. 내 애플리케이션 → 앱 설정 → 플랫폼 → Android")
+                Log.d("KeyHash", "3. 키 해시 입력란에 위 값 붙여넣기")
+                Log.d("KeyHash", "4. 저장 버튼 클릭")
+                Log.d("KeyHash", "========================================")
+            }
+        } catch (e: Exception) {
+            Log.e("KeyHash", "❌ 키 해시 확인 실패", e)
+        }
     }
 
     private fun initClickListener() {
