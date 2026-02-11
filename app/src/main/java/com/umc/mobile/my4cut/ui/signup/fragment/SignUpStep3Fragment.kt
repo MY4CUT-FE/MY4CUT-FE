@@ -71,20 +71,58 @@ class SignUpStep3Fragment : Fragment() {
                         response: Response<BaseResponse<Any>>
                     ) {
                         Log.d("SignUp", "http=${response.code()}")
-                        Log.d("SignUp", "raw=${response.errorBody()?.string()}")
+
+                        val errorBody = try {
+                            response.errorBody()?.string()
+                        } catch (e: Exception) {
+                            null
+                        }
+                        Log.d("SignUp", "raw=$errorBody")
                         Log.d("SignUp", "headers=${response.headers()}")
 
                         val body = response.body()
                         Log.d("SignUp", "body=$body")
 
-                        if (response.isSuccessful && body != null && body.code.startsWith("C20")) {
-                            autoLogin()
-                        } else {
-                            Toast.makeText(
-                                requireContext(),
-                                body?.message ?: "회원가입 실패",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                        when (response.code()) {
+                            200, 201 -> {
+                                // ✅ 회원가입 성공
+                                if (body != null && body.code.startsWith("C20")) {
+                                    autoLogin()
+                                } else {
+                                    Toast.makeText(
+                                        requireContext(),
+                                        body?.message ?: "회원가입 실패",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                            409 -> {
+                                // ❌ 이메일 중복 (활성 계정 또는 탈퇴 계정)
+                                Toast.makeText(
+                                    requireContext(),
+                                    "이미 가입된 이메일입니다",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                // 이메일 입력 화면으로 돌아가기
+                                parentFragmentManager.popBackStack()
+                            }
+                            410 -> {
+                                // ⚠️ 탈퇴한 계정 (서버가 410을 반환하는 경우)
+                                Toast.makeText(
+                                    requireContext(),
+                                    "탈퇴한 계정입니다. 고객센터에 문의해주세요.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                parentFragmentManager.popBackStack()
+                            }
+                            else -> {
+                                // 기타 오류
+                                Toast.makeText(
+                                    requireContext(),
+                                    body?.message ?: "회원가입 실패 (${response.code()})",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                     }
 
@@ -103,7 +141,7 @@ class SignUpStep3Fragment : Fragment() {
         }
     }
 
-   // 자동 로그인
+    // 자동 로그인
     private fun autoLogin() {
         val loginRequest = LoginRequest(
             email = emailStr,
