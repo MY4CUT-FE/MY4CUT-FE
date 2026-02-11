@@ -2,6 +2,8 @@ package com.umc.mobile.my4cut.ui.space
 
 import android.content.Context
 import android.util.AttributeSet
+import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,18 +27,18 @@ class SpaceCircleView @JvmOverloads constructor(
 
         removeAllViews()
 
-        spaces.forEach { space ->
+        spaces.forEachIndexed { index, space ->
             val itemView = LayoutInflater.from(context)
                 .inflate(R.layout.item_space_circle, this, false)
 
-            bindSpace(itemView, space)
+            bindSpace(itemView, space, index)
             addView(itemView)
         }
 
         requestLayout()
     }
 
-    private fun bindSpace(view: View, space: Space) {
+    private fun bindSpace(view: View, space: Space, index: Int) {
         val tvName = view.findViewById<TextView>(R.id.tvSpaceName)
         val tvMember = view.findViewById<TextView>(R.id.tvMemberCount)
         val tvExpire = view.findViewById<TextView>(R.id.tvExpire)

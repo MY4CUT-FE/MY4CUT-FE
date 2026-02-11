@@ -319,7 +319,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
         }
 
         // 드롭다운 최소/최대 높이 제한
-        val maxHeightDp = 280
+        val maxHeightDp = 240
         val minHeightDp = 50
         val density = resources.displayMetrics.density
         val maxHeightPx = (maxHeightDp * density).toInt()

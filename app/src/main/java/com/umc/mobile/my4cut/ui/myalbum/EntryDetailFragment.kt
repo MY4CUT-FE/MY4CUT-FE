@@ -654,8 +654,15 @@ class EntryDetailFragment : Fragment() {
 
                 photoHolder.binding.ivTypical.setOnClickListener {
                     if (isEditMode) {
-                        typicalImageIndex = holder.bindingAdapterPosition
-                        notifyDataSetChanged()
+                        val oldIndex = typicalImageIndex
+                        val newIndex = holder.bindingAdapterPosition
+
+                        if (oldIndex != newIndex) {
+                            typicalImageIndex = newIndex
+                            // 전체를 갱신하지 말고, 이전 대표와 현재 대표 사진의 아이콘만 갱신
+                            notifyItemChanged(oldIndex)
+                            notifyItemChanged(newIndex)
+                        }
                     }
                 }
 

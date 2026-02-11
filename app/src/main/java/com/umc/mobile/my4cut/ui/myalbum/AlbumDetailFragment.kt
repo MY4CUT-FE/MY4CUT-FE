@@ -1,5 +1,8 @@
 package com.umc.mobile.my4cut.ui.myalbum
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -8,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -38,7 +42,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileOutputStream
 
 class AlbumDetailFragment : Fragment() {
     private lateinit var binding: FragmentAlbumDetailBinding
@@ -84,19 +90,105 @@ class AlbumDetailFragment : Fragment() {
         val contentResolver = requireContext().contentResolver
 
         uris.forEach { uri ->
-            // 1. Uri에서 파일을 읽어 임시 파일 생성
-            val inputStream = contentResolver.openInputStream(uri)
-            val file = File(requireContext().cacheDir, "upload_${System.currentTimeMillis()}.jpg")
-            file.outputStream().use { inputStream?.copyTo(it) }
+            // 1. 이미지를 압축하여 임시 파일로 생성 (EntryDetail에서 쓴 로직 활용)
+            val compressedFile = compressImage(uri)
 
-            // 2. RequestBody 생성 (MediaType은 이미지 타입에 맞게)
-            val requestFile = file.asRequestBody(contentResolver.getType(uri)?.toMediaTypeOrNull())
+            if (compressedFile != null) {
+                // 2. 압축된 파일로 RequestBody 생성
+                val requestFile = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
 
-            // 3. 서버 파라미터명인 "files"로 Part 생성
-            val part = MultipartBody.Part.createFormData("files", file.name, requestFile)
-            multipartList.add(part)
+                // 3. 서버 파라미터명인 "files"로 Part 생성
+                val part = MultipartBody.Part.createFormData("files", compressedFile.name, requestFile)
+                multipartList.add(part)
+            }
         }
         return multipartList
+    }
+
+    private fun compressImage(uri: Uri): File? {
+        return try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri) ?: return null
+
+            val originalBitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+
+            if (originalBitmap == null) {
+                Log.e("EntryDetail", "❌ Failed to decode bitmap from URI: $uri")
+                return null
+            }
+
+            val rotatedBitmap = rotateImageIfRequired(uri, originalBitmap)
+            val resizedBitmap = resizeBitmap(rotatedBitmap, 1920)
+
+            val outputStream = ByteArrayOutputStream()
+            resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+            val compressedBytes = outputStream.toByteArray()
+
+            val tempFile = File(requireContext().cacheDir, "compressed_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(tempFile).use { fos ->
+                fos.write(compressedBytes)
+            }
+
+            if (rotatedBitmap != originalBitmap) {
+                originalBitmap.recycle()
+            }
+            resizedBitmap.recycle()
+
+            Log.d("EntryDetail", "✅ Image compressed: ${tempFile.length() / 1024}KB")
+
+            tempFile
+        } catch (e: Exception) {
+            Log.e("EntryDetail", "❌ Image compression failed", e)
+            null
+        }
+    }
+
+    private fun rotateImageIfRequired(uri: Uri, bitmap: Bitmap): Bitmap {
+        return try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri) ?: return bitmap
+            val exif = ExifInterface(inputStream)
+            inputStream.close()
+
+            val orientation = exif.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_UNDEFINED
+            )
+
+            when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> rotateBitmap(bitmap, 90f)
+                ExifInterface.ORIENTATION_ROTATE_180 -> rotateBitmap(bitmap, 180f)
+                ExifInterface.ORIENTATION_ROTATE_270 -> rotateBitmap(bitmap, 270f)
+                else -> bitmap
+            }
+        } catch (e: Exception) {
+            Log.e("EntryDetail", "Failed to read EXIF", e)
+            bitmap
+        }
+    }
+
+    private fun rotateBitmap(bitmap: Bitmap, degrees: Float): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(degrees)
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    }
+
+    private fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+
+        if (width <= maxSize && height <= maxSize) {
+            return bitmap
+        }
+
+        val ratio = minOf(
+            maxSize.toFloat() / width,
+            maxSize.toFloat() / height
+        )
+
+        val newWidth = (width * ratio).toInt()
+        val newHeight = (height * ratio).toInt()
+
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
     }
 
     // [GET] 앨범 상세 정보 조회
