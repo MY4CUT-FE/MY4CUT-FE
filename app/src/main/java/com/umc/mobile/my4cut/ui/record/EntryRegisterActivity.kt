@@ -27,7 +27,7 @@ import com.umc.mobile.my4cut.data.day4cut.remote.CreateDay4CutRequest
 import com.umc.mobile.my4cut.data.day4cut.remote.Day4CutImage
 import com.umc.mobile.my4cut.databinding.ActivityEntryRegister2Binding
 import com.umc.mobile.my4cut.databinding.ItemPhotoAddBinding
-import com.umc.mobile.my4cut.databinding.ItemPhotoSliderBinding
+import com.umc.mobile.my4cut.databinding.ItemPhotoSlider2Binding
 import com.umc.mobile.my4cut.network.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -47,6 +47,9 @@ class EntryRegisterActivity : AppCompatActivity() {
     private var selectedImageUris = mutableListOf<Uri>()
     private var isDiaryExpanded = false
     private var selectedMoodIndex = 1
+
+    // ✅ 썸네일로 지정할 이미지 인덱스 (기본값: 0)
+    private var typicalImageIndex = 0
 
     private val uploadedMediaIds = mutableListOf<Int>()
 
@@ -368,7 +371,7 @@ class EntryRegisterActivity : AppCompatActivity() {
         val images = uploadedMediaIds.mapIndexed { index, mediaId ->
             Day4CutImage(
                 mediaFileId = mediaId,
-                isThumbnail = (index == 0)
+                isThumbnail = (index == typicalImageIndex)  // ✅ 사용자가 선택한 썸네일 인덱스 사용
             )
         }
 
@@ -481,12 +484,12 @@ class EntryRegisterActivity : AppCompatActivity() {
         private val TYPE_PHOTO = 0
         private val TYPE_ADD = 1
 
-        inner class PhotoViewHolder(val binding: ItemPhotoSliderBinding) : RecyclerView.ViewHolder(binding.root)
+        inner class PhotoViewHolder(val binding: ItemPhotoSlider2Binding) : RecyclerView.ViewHolder(binding.root)
         inner class AddViewHolder(val binding: ItemPhotoAddBinding) : RecyclerView.ViewHolder(binding.root)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             return if (viewType == TYPE_PHOTO) {
-                val binding = ItemPhotoSliderBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                val binding = ItemPhotoSlider2Binding.inflate(LayoutInflater.from(parent.context), parent, false)
                 PhotoViewHolder(binding)
             } else {
                 val binding = ItemPhotoAddBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -498,6 +501,18 @@ class EntryRegisterActivity : AppCompatActivity() {
             if (getItemViewType(position) == TYPE_PHOTO) {
                 val photoHolder = holder as PhotoViewHolder
                 photoHolder.binding.ivPhoto.setImageURI(imageUris[position])
+
+                // ✅ 썸네일 아이콘 표시
+                val isTypical = position == typicalImageIndex
+                photoHolder.binding.ivTypical.setImageResource(
+                    if (isTypical) R.drawable.ic_typical_on else R.drawable.ic_typical_off
+                )
+
+                // ✅ 썸네일 아이콘 클릭 이벤트
+                photoHolder.binding.ivTypical.setOnClickListener {
+                    typicalImageIndex = holder.bindingAdapterPosition
+                    notifyDataSetChanged()
+                }
             } else {
                 val addHolder = holder as AddViewHolder
                 addHolder.itemView.setOnClickListener {
