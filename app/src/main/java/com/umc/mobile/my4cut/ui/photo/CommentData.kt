@@ -1,9 +1,10 @@
 package com.umc.mobile.my4cut.ui.photo
 
-data class ChatData(
+data class CommentData(
     val commentId: Long,
-    val profileImg: Int,
+    val profileImgUrl: String? = null,
     val userName: String,
     val time: String,
-    val content: String
+    val content: String,
+    val isMine: Boolean
 )

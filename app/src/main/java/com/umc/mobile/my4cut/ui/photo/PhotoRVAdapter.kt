@@ -4,9 +4,10 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.umc.mobile.my4cut.databinding.ItemPhotoBinding
+import com.bumptech.glide.Glide
 
 class PhotoRVAdapter(
-    private val photoList: List<PhotoData>
+    private val photoList: MutableList<PhotoData>
 ) : RecyclerView.Adapter<PhotoRVAdapter.PhotoViewHolder>() {
 
     var onItemClickListener: ((PhotoData) -> Unit)? = null
@@ -16,8 +17,19 @@ class PhotoRVAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(photo: PhotoData) {
-            photo.photoImageRes?.let { binding.ivPhoto.setImageResource(it) }
-            photo.userImageRes?.let { binding.ivUserIcon.setImageResource(it) }
+            Glide.with(binding.ivPhoto.context)
+                .load(photo.photoUrl)
+                .placeholder(com.umc.mobile.my4cut.R.drawable.image1)
+                .error(com.umc.mobile.my4cut.R.drawable.image1)
+                .into(binding.ivPhoto)
+
+            Glide.with(binding.ivUserIcon.context)
+                .load(photo.userProfileUrl)
+                .circleCrop()
+                .placeholder(com.umc.mobile.my4cut.R.drawable.ic_profile_cat)
+                .error(com.umc.mobile.my4cut.R.drawable.ic_profile_cat)
+                .into(binding.ivUserIcon)
+
             binding.tvUserName.text = photo.userName
             binding.tvDateTime.text = photo.dateTime
             binding.tvCommentCount.text = photo.commentCount.toString()
@@ -42,4 +54,10 @@ class PhotoRVAdapter(
     }
 
     override fun getItemCount(): Int = photoList.size
+
+    fun updatePhotos(newPhotos: List<PhotoData>) {
+        photoList.clear()
+        photoList.addAll(newPhotos)
+        notifyDataSetChanged()
+    }
 }
