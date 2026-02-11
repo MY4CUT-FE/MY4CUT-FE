@@ -81,6 +81,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentSpaceBinding.bind(view)
+        binding.btnChange.visibility = View.GONE
 
         photoAdapter = PhotoRVAdapter(photoDatas)
         binding.rvPhotoList.adapter = photoAdapter
@@ -135,6 +136,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                         isOwner = (data.ownerId?.toLong() == myUserId)
 
                         Log.d("SpaceFragment", "isOwner=$isOwner ownerId=${data.ownerId} myUserId=$myUserId")
+                        binding.btnChange.visibility = if (isOwner) View.VISIBLE else View.GONE
                     }
 
                     override fun onFailure(
