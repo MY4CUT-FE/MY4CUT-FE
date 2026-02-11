@@ -154,11 +154,8 @@ class MySpaceFragment : Fragment() {
                 tvName?.text = space.name
                 tvMember?.text = "${space.currentMember}/${space.maxMember}"
 
-                val remainDays =
-                    ((space.expiredAt - System.currentTimeMillis()) / (1000 * 60 * 60 * 24))
-                        .coerceAtLeast(0)
-
-                findViewById<TextView>(R.id.tvExpire)?.text = "만료까지 ${remainDays}일"
+                val timeText = formatRelativeTime(space.createdAt)
+                findViewById<TextView>(R.id.tvExpire)?.text = timeText
 
                 // 원 크기(120, 100, 90, 80)에 맞춰서 비율대로 줄여줍니다.
                 val (nameSize, detailSize, expireSize, iconSizeDp) = when (index) {
@@ -298,6 +295,24 @@ class MySpaceFragment : Fragment() {
             android.util.Log.e("SPACE_API", "날짜 파싱 실패: $iso", e)
             // 파싱 실패 시 바로 만료 처리되지 않도록 현재 시각 + 1일을 기본값으로 사용
             System.currentTimeMillis() + (24L * 60 * 60 * 1000)
+        }
+    }
+
+    private fun formatRelativeTime(timeMillis: Long): String {
+        val diff = System.currentTimeMillis() - timeMillis
+        val minutes = diff / (1000 * 60)
+        val hours = diff / (1000 * 60 * 60)
+        val days = diff / (1000 * 60 * 60 * 24)
+
+        return when {
+            minutes < 1 -> "방금 전"
+            minutes < 60 -> "${minutes}분 전"
+            hours < 24 -> "${hours}시간 전"
+            days < 7 -> "${days}일 전"
+            else -> {
+                val formatter = java.text.SimpleDateFormat("yyyy/MM/dd HH:mm", java.util.Locale.getDefault())
+                formatter.format(java.util.Date(timeMillis))
+            }
         }
     }
 

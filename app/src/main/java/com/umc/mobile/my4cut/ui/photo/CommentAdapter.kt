@@ -3,22 +3,19 @@ package com.umc.mobile.my4cut.ui.photo
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.umc.mobile.my4cut.R
-import com.bumptech.glide.Glide
 
-class ChatRVAdapter(
+class CommentAdapter(
     private var items: List<CommentData>,
     private val onDeleteClick: (CommentData) -> Unit
-) : RecyclerView.Adapter<ChatRVAdapter.ViewHolder>() {
+) : RecyclerView.Adapter<CommentAdapter.ViewHolder>() {
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val ivProfile: ImageView = view.findViewById(R.id.ivCommentProfile)
-        val tvUserName: TextView = view.findViewById(R.id.tvCommentName)
-        val tvTime: TextView = view.findViewById(R.id.tvCommentTime)
+        val tvName: TextView = view.findViewById(R.id.tvCommentName)
         val tvContent: TextView = view.findViewById(R.id.tvCommentContent)
+        val tvTime: TextView = view.findViewById(R.id.tvCommentTime)
         val tvDelete: TextView = view.findViewById(R.id.tvCommentDelete)
     }
 
@@ -28,30 +25,18 @@ class ChatRVAdapter(
         return ViewHolder(view)
     }
 
-    override fun getItemCount(): Int = items.size
+    override fun getItemCount() = items.size
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
 
-        holder.tvUserName.text = item.userName
-        holder.tvTime.text = item.time
+        holder.tvName.text = item.userName
         holder.tvContent.text = item.content
+        holder.tvTime.text = item.time
 
-        // 프로필 이미지 (URL - 상대경로 대응)
-        val imageUrl = item.profileImgUrl?.let {
-            if (it.startsWith("http")) it else "https://api.my4cut.shop$it"
-        }
-
-        Glide.with(holder.itemView)
-            .load(imageUrl)
-            .placeholder(R.drawable.ic_profile_cat)
-            .error(R.drawable.ic_profile_cat)
-            .circleCrop()
-            .into(holder.ivProfile)
-
-        // 삭제 버튼 표시 (null 안전 처리)
+        // 내 댓글일 때만 삭제 표시
         holder.tvDelete.visibility =
-            if (item.isMine == true) View.VISIBLE else View.GONE
+            if (item.isMine) View.VISIBLE else View.GONE
 
         holder.tvDelete.setOnClickListener {
             onDeleteClick(item)
