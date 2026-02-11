@@ -46,22 +46,26 @@ class NotificationActivity : AppCompatActivity() {
 
                 if (response.code.startsWith("C2") && response.data != null) {
 
-                    val uiList = response.data.map { dto ->
+                    val uiList = response.data
+                        .filter { dto -> dto.isRead != true }
+                        .map { dto ->
                         Log.d(
                             "NotificationDebug",
                             "type=${dto.type}, referenceId=${dto.referenceId}, notificationId=${dto.notificationId}, senderNickname=${dto.senderNickname}, workspaceName=${dto.workspaceName}, message=${dto.message}"
                         )
                         NotificationData(
-                            id = dto.referenceId ?: dto.notificationId,
+                            id = dto.notificationId,
+                            referenceId = dto.referenceId ?: dto.notificationId,
                             type = dto.type,
                             iconResId = when (dto.type) {
                                 "WORKSPACE_INVITE" -> R.drawable.ic_noti_invite
                                 "FRIEND_REQUEST" -> R.drawable.ic_noti_friend_add
+                                "FRIEND_ACCEPTED" -> R.drawable.ic_noti_people
                                 "MEDIA_COMMENT" -> R.drawable.ic_noti_comment
                                 else -> R.drawable.ic_noti_people
                             },
                             category = when (dto.type) {
-                                "FRIEND_REQUEST" -> "친구"
+                                "FRIEND_REQUEST", "FRIEND_ACCEPTED" -> "친구"
                                 "WORKSPACE_INVITE" -> "초대"
                                 "MEDIA_COMMENT" -> "댓글"
                                 else -> dto.type
@@ -88,12 +92,13 @@ class NotificationActivity : AppCompatActivity() {
                                     Log.d("NotificationClick", "ACCEPT type=${item.type}, id=${item.id}")
                                     when (item.type) {
                                         "FRIEND_REQUEST" -> {
-                                            RetrofitClient.friendService.acceptFriendRequest(item.id)
+                                            RetrofitClient.friendService.acceptFriendRequest(item.referenceId)
                                         }
                                         "WORKSPACE_INVITE" -> {
-                                            RetrofitClient.workspaceInvitationService.acceptInvitation(item.id)
+                                            RetrofitClient.workspaceInvitationService.acceptInvitation(item.referenceId)
                                         }
                                     }
+                                    RetrofitClient.notificationService.readNotification(item.id)
                                     Toast.makeText(this@NotificationActivity, "수락 처리되었습니다.", Toast.LENGTH_SHORT).show()
                                     val index = uiList.indexOf(item)
                                     if (index != -1) {
@@ -111,12 +116,13 @@ class NotificationActivity : AppCompatActivity() {
                                     Log.d("NotificationClick", "DECLINE type=${item.type}, id=${item.id}")
                                     when (item.type) {
                                         "FRIEND_REQUEST" -> {
-                                            RetrofitClient.friendService.rejectFriendRequest(item.id)
+                                            RetrofitClient.friendService.rejectFriendRequest(item.referenceId)
                                         }
                                         "WORKSPACE_INVITE" -> {
-                                            RetrofitClient.workspaceInvitationService.rejectInvitation(item.id)
+                                            RetrofitClient.workspaceInvitationService.rejectInvitation(item.referenceId)
                                         }
                                     }
+                                    RetrofitClient.notificationService.readNotification(item.id)
                                     Toast.makeText(this@NotificationActivity, "거절 처리되었습니다.", Toast.LENGTH_SHORT).show()
                                     val index = uiList.indexOf(item)
                                     if (index != -1) {
