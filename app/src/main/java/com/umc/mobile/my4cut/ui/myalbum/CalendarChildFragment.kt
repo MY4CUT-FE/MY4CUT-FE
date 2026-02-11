@@ -95,20 +95,18 @@ class CalendarChildFragment : Fragment() {
         // Date selection listener
         binding.myCalendar.setOnDateSelectedListener { dateText, data ->
             if (data != null) {
-                binding.root.postDelayed({
-                    val entryDetailFragment = EntryDetailFragment().apply {
-                        arguments = Bundle().apply {
-                            putString("SELECTED_DATE", dateText)
-                            putString("API_DATE", binding.myCalendar.getSelectedDateApiFormat())
-                        }
+                val entryDetailFragment = EntryDetailFragment().apply {
+                    arguments = Bundle().apply {
+                        putString("SELECTED_DATE", dateText)
+                        putString("API_DATE", binding.myCalendar.getSelectedDateApiFormat())
                     }
+                }
 
-                    // ✅ 백스택에 추가하여 뒤로가기 가능하도록
-                    requireActivity().supportFragmentManager.beginTransaction()
-                        .replace(R.id.fcv_main, entryDetailFragment)
-                        .addToBackStack(null)
-                        .commit()
-                }, 150)
+                // ✅ 백스택에 추가하여 뒤로가기 가능하도록
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(R.id.fcv_main, entryDetailFragment)
+                    .addToBackStack(null)
+                    .commit()
             }
         }
     }

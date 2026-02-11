@@ -44,7 +44,15 @@ class MyCalendarMain @JvmOverloads constructor(
     private val binding: ViewCustomCalendarMainBinding =
         ViewCustomCalendarMainBinding.inflate(LayoutInflater.from(context), this, true)
 
-    private var selectedDate: LocalDate? = null
+    companion object {
+        // 앱이 실행되는 동안(혹은 프로세스가 살아있는 동안) 마지막 선택 날짜를 기억함
+        private var lastSelectedDate: LocalDate? = null
+    }
+
+    private var selectedDate: LocalDate?
+        get() = lastSelectedDate
+        set(value) { lastSelectedDate = value }
+
     private var currentMonth = YearMonth.now()
     private var onDateSelectedListener: ((String, CalendarData?) -> Unit)? = null
     private var onMonthChangeListener: ((Int, Int) -> Unit)? = null
@@ -131,18 +139,14 @@ class MyCalendarMain @JvmOverloads constructor(
                 event.action == MotionEvent.ACTION_MOVE
             }
 
-            val today = LocalDate.now()
-            selectedDate = today
-            val todayData = datesWithDataMap[today]
-
-            binding.mcCustom.post {
-                binding.mcCustom.notifyDateChanged(today)
-                onDateSelectedListener?.invoke(getSelectedDateFormatted(), todayData)
-            }
-
             val startMonth = currentMonth.minusMonths(100)
             val endMonth = currentMonth.plusMonths(100)
             val daysOfWeek: List<DayOfWeek> = daysOfWeek()
+
+            val today = LocalDate.now()
+            if (selectedDate == null) {
+                selectedDate = today
+            }
 
             mcCustom.setup(startMonth, endMonth, daysOfWeek.first())
             if (!didInitialScroll) {
@@ -153,6 +157,10 @@ class MyCalendarMain @JvmOverloads constructor(
             mcCustom.monthScrollListener = { month ->
                 currentMonth = month.yearMonth
                 updateYearMonthText()
+            }
+
+            selectedDate?.let {
+                mcCustom.notifyDateChanged(it)
             }
 
             mcCustom.monthHeaderBinder = object : MonthHeaderFooterBinder<MainMonthViewContainer> {
@@ -203,7 +211,7 @@ class MyCalendarMain @JvmOverloads constructor(
                     container.textView.text = data.date.dayOfMonth.toString()
 
                     val dayData = datesWithDataMap[data.date]
-                    val isSelected = selectedDate == data.date
+                    val isSelected = lastSelectedDate == data.date
                     val firstImage = dayData?.imageUris?.firstOrNull()
                     val isToday = data.date == LocalDate.now()
                     val isFutureDate = data.date.isAfter(LocalDate.now())
@@ -228,7 +236,7 @@ class MyCalendarMain @JvmOverloads constructor(
                     }
 
                     // 테두리 처리
-                    if (isToday) {
+                    if (isSelected) {
                         container.cardImage.strokeWidth = 4
                         container.cardImage.strokeColor = Color.parseColor("#FE927F")
                     } else {
@@ -256,15 +264,19 @@ class MyCalendarMain @JvmOverloads constructor(
                         container.textView.gravity = Gravity.CENTER
                     } else {
                         container.textView.background = null
+                        container.textView.setTextColor(Color.BLACK)
                     }
 
                     val onClickListener = View.OnClickListener {
                         if (data.position == DayPosition.MonthDate && !isFutureDate) {
-                            val oldDate = selectedDate
-                            selectedDate = data.date
+                            val oldDate = lastSelectedDate
+                            lastSelectedDate = data.date
                             oldDate?.let { mcCustom.notifyDateChanged(it) }
                             mcCustom.notifyDateChanged(data.date)
-                            onDateSelectedListener?.invoke(getSelectedDateFormatted(), dayData)
+                            container.view.postDelayed({
+                                // 여기서 dayData가 null이 아니면 상세화면 이동 로직이 실행될 것입니다.
+                                onDateSelectedListener?.invoke(getSelectedDateFormatted(), dayData)
+                            }, 100)
                         }
                     }
                     container.textView.setOnClickListener(onClickListener)
