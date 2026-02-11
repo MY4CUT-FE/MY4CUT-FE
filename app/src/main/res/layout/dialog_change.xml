@@ -55,7 +55,7 @@
         android:layout_marginBottom="20dp"
         android:background="@drawable/shape_edittext_border"
         android:padding="15dp"
-        android:hint="앨범 1"
+        android:hint="입력하기"
         android:textSize="14sp"
         android:fontFamily="@font/suit_bold"
         android:textColor="#1A1A1A"

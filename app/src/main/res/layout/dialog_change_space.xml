@@ -58,7 +58,7 @@
         android:background="@drawable/shape_edittext_border"
         android:fontFamily="@font/suit_bold"
         android:padding="15dp"
-        android:hint="스페이스 이름"
+        android:hint="입력하기"
         android:textColor="#1A1A1A"
         android:textColorHint="#D9D9D9"
         android:textSize="16sp"
