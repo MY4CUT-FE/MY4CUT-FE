@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.umc.mobile.my4cut.R
@@ -137,23 +138,52 @@ class MySpaceFragment : Fragment() {
     }
 
     private fun inflateCircleByIndex(index: Int, parent: FrameLayout, space: Space): View {
-        val sizeDp = listOf(120, 100, 90, 80)[index]
+        val sizeDp = listOf(120, 100, 80, 67)[index]
 
         return LayoutInflater.from(requireContext())
             .inflate(R.layout.item_space_circle, parent, false).apply {
                 val sizePx = dpToPx(sizeDp)
                 layoutParams = FrameLayout.LayoutParams(sizePx, sizePx)
 
-                // ----- 데이터 바인딩 -----
-                findViewById<TextView>(R.id.tvSpaceName)?.text = space.name
-                findViewById<TextView>(R.id.tvMemberCount)?.text =
-                    "${space.currentMember}/${space.maxMember}"
+                // ----- 기존 데이터 바인딩 -----
+                val tvName = findViewById<TextView>(R.id.tvSpaceName)
+                val tvMember = findViewById<TextView>(R.id.tvMemberCount)
+                val tvExpire = findViewById<TextView>(R.id.tvExpire)
+                val ivMemberIcon = findViewById<ImageView>(R.id.ivMemberIcon)
+
+                tvName?.text = space.name
+                tvMember?.text = "${space.currentMember}/${space.maxMember}"
 
                 val remainDays =
                     ((space.expiredAt - System.currentTimeMillis()) / (1000 * 60 * 60 * 24))
                         .coerceAtLeast(0)
 
                 findViewById<TextView>(R.id.tvExpire)?.text = "만료까지 ${remainDays}일"
+
+                // 원 크기(120, 100, 90, 80)에 맞춰서 비율대로 줄여줍니다.
+                val (nameSize, detailSize, expireSize, iconSizeDp) = when (index) {
+                    0 -> arrayOf(15f, 11f, 9f, 12f)  // 120dp 원 (가장 큼)
+                    1 -> arrayOf(13f, 10f, 8f, 10f)  // 100dp 원
+                    2 -> arrayOf(10f, 8f, 5f, 8f)   // 90dp 원
+                    3 -> arrayOf(8f, 7f, 4f, 7f)  // 80dp 원 (가장 작음)
+                    else -> arrayOf(12f, 9f, 8f, 10f)
+                }
+
+                // SP 단위로 적용 (로그로 확인해 보세요!)
+                android.util.Log.d("TEXT_SIZE", "Index: $index, NameSize: $nameSize")
+
+                post {
+                    tvName?.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, nameSize)
+                    tvMember?.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, detailSize)
+                    tvExpire?.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, expireSize)
+
+                    val iconPx = dpToPx((iconSizeDp as Float).toInt())
+                    ivMemberIcon?.layoutParams?.let { params ->
+                        params.width = iconPx
+                        params.height = iconPx
+                        ivMemberIcon.layoutParams = params
+                    }
+                }
 
                 // ExpireCircleView에 생성/만료 정보 전달
                 findViewById<ExpireCircleView>(R.id.expireCircle)
@@ -181,9 +211,9 @@ class MySpaceFragment : Fragment() {
     private fun getOffsetByIndex(index: Int): Pair<Float, Float> =
         listOf(
             Pair(0.3f, -0.3f),    // 0: 우상
-            Pair(-0.45f, -0.1f),  // 1: 좌
-            Pair(-0.15f, 0.5f),   // 2: 하
-            Pair(0.5f, 0.35f)     // 3: 우하
+            Pair(-0.44f, -0.1f),  // 1: 좌
+            Pair(-0.12f, 0.44f),   // 2: 하
+            Pair(0.39f, 0.35f)     // 3: 우하
         )[index]
 
     private fun addNewSpace(

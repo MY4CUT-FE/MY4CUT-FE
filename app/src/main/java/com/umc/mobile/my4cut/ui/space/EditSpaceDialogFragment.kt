@@ -153,7 +153,7 @@ class EditSpaceDialogFragment : DialogFragment() {
         }
 
         // 드롭다운 최소/최대 높이 제한 (CreateSpace와 동일)
-        val maxHeightDp = 260
+        val maxHeightDp = 240
         val minHeightDp = 50
         val density = resources.displayMetrics.density
         val maxHeightPx = (maxHeightDp * density).toInt()
