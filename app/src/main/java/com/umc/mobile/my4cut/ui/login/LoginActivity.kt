@@ -19,6 +19,7 @@ import com.umc.mobile.my4cut.data.auth.local.TokenManager
 import com.umc.mobile.my4cut.data.auth.model.LoginRequest
 import com.umc.mobile.my4cut.data.auth.model.TokenResult
 import com.umc.mobile.my4cut.data.base.BaseResponse
+import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 import com.umc.mobile.my4cut.databinding.ActivityLoginBinding
 import com.umc.mobile.my4cut.network.RetrofitClient
 import retrofit2.Call
@@ -64,41 +65,74 @@ class LoginActivity : AppCompatActivity() {
                         Log.d("Login", "http=${response.code()}")
                         Log.d("Login", "code=${resp?.code}, message=${resp?.message}")
 
-                        if (response.isSuccessful && resp != null && resp.code.startsWith("C20")) {
-                            val tokenResult = resp.data
+                        when (response.code()) {
+                            200, 201 -> {
+                                // ✅ 로그인 성공
+                                if (resp != null && resp.code.startsWith("C20")) {
+                                    val tokenResult = resp.data
 
-                            if (tokenResult != null) {
-                                // ✅ 토큰 저장
-                                TokenManager.saveTokens(
-                                    this@LoginActivity,
-                                    tokenResult.accessToken,
-                                    tokenResult.refreshToken
-                                )
+                                    if (tokenResult != null) {
+                                        // 토큰 저장
+                                        TokenManager.saveTokens(
+                                            this@LoginActivity,
+                                            tokenResult.accessToken,
+                                            tokenResult.refreshToken
+                                        )
 
-                                Log.d("Login", "✅ Tokens saved successfully")
+                                        Log.d("Login", "✅ Tokens saved successfully")
 
+                                        // ✅ 탈퇴 계정 체크: 사용자 정보 조회 시도
+                                        checkIfAccountIsActive()
+                                    } else {
+                                        Toast.makeText(
+                                            this@LoginActivity,
+                                            "토큰 정보를 받아오지 못했습니다.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+                            }
+                            401 -> {
+                                // ❌ 인증 실패 (탈퇴 계정 또는 잘못된 비밀번호)
+                                val errorBody = try {
+                                    response.errorBody()?.string()
+                                } catch (e: Exception) {
+                                    null
+                                }
+
+                                Log.d("Login", "401 Error Body: $errorBody")
+
+                                // 탈퇴 계정 여부 확인
+                                if (errorBody?.contains("탈퇴") == true || resp?.code == "C4011") {
+                                    Toast.makeText(
+                                        this@LoginActivity,
+                                        "탈퇴한 계정입니다. 로그인할 수 없습니다.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } else {
+                                    Toast.makeText(
+                                        this@LoginActivity,
+                                        "이메일 또는 비밀번호가 일치하지 않습니다.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                            404 -> {
+                                // ❌ 가입되지 않은 계정
                                 Toast.makeText(
                                     this@LoginActivity,
-                                    "로그인에 성공했습니다.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-
-                                val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                startActivity(intent)
-                            } else {
-                                Toast.makeText(
-                                    this@LoginActivity,
-                                    "토큰 정보를 받아오지 못했습니다.",
+                                    "가입되지 않은 계정입니다.",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
-                        } else {
-                            Toast.makeText(
-                                this@LoginActivity,
-                                resp?.message ?: "로그인 실패",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            else -> {
+                                // 기타 오류
+                                Toast.makeText(
+                                    this@LoginActivity,
+                                    resp?.message ?: "로그인 실패",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                     }
 
@@ -115,6 +149,82 @@ class LoginActivity : AppCompatActivity() {
                     }
                 })
         }
+    }
+
+    /**
+     * ✅ 탈퇴 계정 체크: 로그인 성공 후 사용자 정보 조회
+     * 백엔드에서 탈퇴 계정도 로그인 성공 처리하므로 추가 검증 필요
+     */
+    private fun checkIfAccountIsActive() {
+        RetrofitClient.userService.getMyPage()
+            .enqueue(object : Callback<BaseResponse<UserMeResponse>> {
+
+                override fun onResponse(
+                    call: Call<BaseResponse<UserMeResponse>>,
+                    response: Response<BaseResponse<UserMeResponse>>
+                ) {
+                    Log.d("Login", "📋 User info check: ${response.code()}")
+
+                    when (response.code()) {
+                        200 -> {
+                            // ✅ 사용자 정보 조회 성공 = 정상 계정
+                            val userData = response.body()?.data
+
+                            if (userData != null) {
+                                Log.d("Login", "✅ Account is active: ${userData.nickname}")
+
+                                Toast.makeText(
+                                    this@LoginActivity,
+                                    "로그인에 성공했습니다.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                // 메인 화면으로 이동
+                                val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                startActivity(intent)
+                            } else {
+                                // 데이터가 없는 경우
+                                handleWithdrawnAccount()
+                            }
+                        }
+                        401, 403, 404 -> {
+                            // ❌ 탈퇴 계정 또는 유효하지 않은 계정
+                            handleWithdrawnAccount()
+                        }
+                        else -> {
+                            // 기타 오류
+                            Log.e("Login", "⚠️ Unexpected response: ${response.code()}")
+                            handleWithdrawnAccount()
+                        }
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<BaseResponse<UserMeResponse>>,
+                    t: Throwable
+                ) {
+                    Log.e("Login", "❌ User info check failed", t)
+                    // 네트워크 오류 시에도 탈퇴 계정으로 처리
+                    handleWithdrawnAccount()
+                }
+            })
+    }
+
+    /**
+     * 탈퇴 계정 처리: 토큰 삭제 및 로그인 화면 유지
+     */
+    private fun handleWithdrawnAccount() {
+        // 저장된 토큰 삭제
+        TokenManager.clear(this@LoginActivity)
+
+        Log.d("Login", "❌ Withdrawn account detected - tokens cleared")
+
+        Toast.makeText(
+            this@LoginActivity,
+            "탈퇴한 계정입니다. 로그인할 수 없습니다.",
+            Toast.LENGTH_LONG
+        ).show()
     }
 
     private fun initTextWatchers() {

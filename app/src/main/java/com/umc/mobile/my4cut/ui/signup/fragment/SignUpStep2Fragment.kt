@@ -72,7 +72,7 @@ class SignUpStep2Fragment : Fragment() {
     private fun initClickListener() {
         binding.btnBack.setOnClickListener { requireActivity().finish() }
 
-        // 중복 확인 버튼 (API 명세서에 별도 중복확인 API가 없으므로 로컬 검증 처리)
+        // ✅ 중복 확인 버튼 - GET 방식으로 서버 체크
         binding.btnCheckDuplicate.setOnClickListener {
             val email = binding.etEmail.text.toString()
 
@@ -81,17 +81,16 @@ class SignUpStep2Fragment : Fragment() {
                 return@setOnClickListener
             }
 
-            // [테스트] 간단한 이메일 형식 체크만 수행 (필요 시 수정)
+            // 이메일 형식 체크
             if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                // 이메일 형식이 아닐 때
                 isEmailVerified = false
                 updateEmailStatusUI(false, "올바른 이메일 형식이 아닙니다.")
-            } else {
-                // 성공 처리
-                isEmailVerified = true
-                updateEmailStatusUI(true, "사용 가능한 아이디에요.")
+                checkInputValidity()
+                return@setOnClickListener
             }
-            checkInputValidity()
+
+            // ✅ 서버에 중복 체크 (GET 방식)
+            checkEmailDuplicateOnServer(email)
         }
 
         binding.btnNext.setOnClickListener {
@@ -107,6 +106,81 @@ class SignUpStep2Fragment : Fragment() {
 
             (activity as? SignUpActivity)?.changeFragment(fragment)
         }
+    }
+
+    /**
+     * ✅ GET 방식으로 이메일 중복 체크
+     * GET /auth/check-email?email={email}
+     */
+    private fun checkEmailDuplicateOnServer(email: String) {
+        // 로딩 표시
+        binding.btnCheckDuplicate.isEnabled = false
+        binding.tvEmailStatus.visibility = View.VISIBLE
+        binding.tvEmailStatus.text = "확인 중..."
+        binding.tvEmailStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.gray_500))
+
+        android.util.Log.d("SignUpStep2", "📤 중복 체크 시작 (GET): $email")
+
+        com.umc.mobile.my4cut.network.RetrofitClient.authServiceNoAuth.checkEmailDuplicateGet(email)
+            .enqueue(object : retrofit2.Callback<com.umc.mobile.my4cut.data.base.BaseResponse<com.umc.mobile.my4cut.data.auth.model.EmailCheckResponse>> {
+
+                override fun onResponse(
+                    call: retrofit2.Call<com.umc.mobile.my4cut.data.base.BaseResponse<com.umc.mobile.my4cut.data.auth.model.EmailCheckResponse>>,
+                    response: retrofit2.Response<com.umc.mobile.my4cut.data.base.BaseResponse<com.umc.mobile.my4cut.data.auth.model.EmailCheckResponse>>
+                ) {
+                    binding.btnCheckDuplicate.isEnabled = true
+
+                    android.util.Log.d("SignUpStep2", "📨 응답 코드: ${response.code()}")
+
+                    if (response.isSuccessful && response.body() != null) {
+                        val responseData = response.body()?.data
+
+                        android.util.Log.d("SignUpStep2", "📨 응답 데이터: $responseData")
+
+                        if (responseData != null) {
+                            if (responseData.duplicated) {
+                                // ❌ 중복된 이메일 (duplicated: true)
+                                isEmailVerified = false
+                                updateEmailStatusUI(false, "이미 사용 중인 이메일입니다.")
+                                android.util.Log.d("SignUpStep2", "❌ 이메일 중복: ${responseData.email}")
+                            } else {
+                                // ✅ 사용 가능한 이메일 (duplicated: false)
+                                isEmailVerified = true
+                                updateEmailStatusUI(true, "사용 가능한 아이디예요.")
+                                android.util.Log.d("SignUpStep2", "✅ 이메일 사용 가능: ${responseData.email}")
+                            }
+                        } else {
+                            // 데이터가 null인 경우
+                            isEmailVerified = false
+                            Toast.makeText(requireContext(), "중복 확인 중 오류가 발생했습니다", Toast.LENGTH_SHORT).show()
+                            android.util.Log.e("SignUpStep2", "⚠️ 응답 데이터가 null입니다")
+                        }
+                    } else {
+                        // 응답 실패
+                        isEmailVerified = false
+                        val errorBody = try {
+                            response.errorBody()?.string()
+                        } catch (e: Exception) {
+                            null
+                        }
+                        android.util.Log.e("SignUpStep2", "❌ 중복 체크 실패: ${response.code()}, $errorBody")
+                        Toast.makeText(requireContext(), "중복 확인에 실패했습니다", Toast.LENGTH_SHORT).show()
+                    }
+
+                    checkInputValidity()
+                }
+
+                override fun onFailure(
+                    call: retrofit2.Call<com.umc.mobile.my4cut.data.base.BaseResponse<com.umc.mobile.my4cut.data.auth.model.EmailCheckResponse>>,
+                    t: Throwable
+                ) {
+                    binding.btnCheckDuplicate.isEnabled = true
+                    isEmailVerified = false
+                    android.util.Log.e("SignUpStep2", "💥 네트워크 오류", t)
+                    Toast.makeText(requireContext(), "네트워크 오류가 발생했습니다", Toast.LENGTH_SHORT).show()
+                    checkInputValidity()
+                }
+            })
     }
 
     private fun updateEmailStatusUI(isSuccess: Boolean, message: String) {
