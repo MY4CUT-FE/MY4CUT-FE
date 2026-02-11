@@ -105,10 +105,12 @@ class EditProfileActivity : AppCompatActivity() {
                 ) {
                     val body = response.body()?.data ?: return
 
-                    if (!body.profileImageViewUrl.isNullOrEmpty()) {
+                    if (!body.profileImageViewUrl.isNullOrBlank()) {
                         com.bumptech.glide.Glide.with(this@EditProfileActivity)
                             .load(body.profileImageViewUrl)
                             .circleCrop()
+                            .placeholder(R.drawable.img_profile_default)
+                            .error(R.drawable.img_profile_default)
                             .into(binding.ivProfile)
                     } else {
                         binding.ivProfile.setImageResource(R.drawable.img_profile_default)
