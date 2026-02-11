@@ -83,7 +83,7 @@
             android:fontFamily="@font/suit_regular"
             android:text="2025/11/04 20:45"
             android:textColor="#1A1A1A"
-            android:textSize="10sp"
+            android:textSize="7sp"
             app:layout_constraintBottom_toBottomOf="@id/tvUserName"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/tvUserName" />
