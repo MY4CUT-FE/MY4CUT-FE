@@ -4,6 +4,16 @@ import androidx.lifecycle.lifecycleScope
 import com.umc.mobile.my4cut.data.friend.remote.FriendServiceApi
 import kotlinx.coroutines.launch
 
+import android.net.Uri
+import android.graphics.BitmapFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
+import java.io.FileOutputStream
+
 import FriendUiItem
 import FriendsAdapter
 import FriendsMode
@@ -67,12 +77,23 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
                 allFriends.addAll(
                     friends.map {
                         Log.d("FRIEND_API", "nickname=${it.nickname}, profileImageUrl=${it.profileImageUrl}")
+                        val imageUrl = it.profileImageUrl?.let { url ->
+                            if (url.startsWith("http")) {
+                                url
+                            } else {
+                                // 앞에 /가 붙어도 중복 슬래시 방지
+                                val cleanPath = url.removePrefix("/")
+                                val fullUrl = "https://api.my4cut.shop/$cleanPath"
+                                Log.d("FRIEND_API", "finalImageUrl=$fullUrl")
+                                fullUrl
+                            }
+                        }
                         Friend(
                             friendId = it.friendId,
                             userId = it.userId,
                             nickname = it.nickname,
                             isFavorite = it.isFavorite,
-                            profileImageUrl = it.profileImageUrl
+                            profileImageUrl = imageUrl
                         )
                     }.sortedBy { it.nickname }
                 )
@@ -301,6 +322,67 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
 
             // 서버에서 최신 친구 목록 다시 불러오기
             initFriends()
+        }
+    }
+    /** 프로필 이미지 업로드 (압축 후 업로드) */
+    private fun uploadProfileImage(uri: Uri) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                Log.d("FriendsFragment", "🔄 이미지 압축 시작")
+
+                val compressedFile = compressImage(uri)
+                if (compressedFile == null) {
+                    Log.e("FriendsFragment", "❌ 이미지 압축 실패")
+                    return@launch
+                }
+
+                Log.d("FriendsFragment", "📤 압축 완료: ${compressedFile.length() / 1024}KB")
+
+                val requestFile =
+                    compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
+
+                val multipart = MultipartBody.Part.createFormData(
+                    "file",
+                    compressedFile.name,
+                    requestFile
+                )
+
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.userService.updateProfileImageMultipart(multipart)
+                }
+
+                if (response.isSuccessful) {
+                    Log.d("FriendsFragment", "✅ 프로필 업로드 성공")
+                    initFriends() // 목록 새로고침
+                } else {
+                    Log.e("FriendsFragment", "❌ 업로드 실패: ${response.code()}")
+                }
+
+                compressedFile.delete()
+
+            } catch (e: Exception) {
+                Log.e("FriendsFragment", "프로필 업로드 실패", e)
+            }
+        }
+    }
+
+    /** 이미지 압축 함수 (SpaceFragment와 동일 로직) */
+    private fun compressImage(uri: Uri): File? {
+        return try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri)
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+
+            val file = File(requireContext().cacheDir, "compressed_profile.jpg")
+            val out = FileOutputStream(file)
+
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, out)
+            out.flush()
+            out.close()
+
+            file
+        } catch (e: Exception) {
+            Log.e("FriendsFragment", "이미지 압축 실패", e)
+            null
         }
     }
 }

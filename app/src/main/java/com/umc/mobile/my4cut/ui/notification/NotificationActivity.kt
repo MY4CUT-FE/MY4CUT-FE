@@ -95,6 +95,21 @@ class NotificationActivity : AppCompatActivity() {
                                             RetrofitClient.friendService.acceptFriendRequest(item.referenceId)
                                         }
                                         "WORKSPACE_INVITE" -> {
+                                            // 먼저 현재 참여 중인 스페이스 개수 조회
+                                            val workspaceResponse = RetrofitClient.workspaceService.getMyWorkspaces()
+                                            val workspaceCount = workspaceResponse.data?.size ?: 0
+
+                                            // 최대 4개 제한
+                                            if (workspaceCount >= 4) {
+                                                Toast.makeText(
+                                                    this@NotificationActivity,
+                                                    "최대 스페이스 개수를 넘어섰어요",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                                return@launch
+                                            }
+
+                                            // 제한 미만이면 수락 진행
                                             RetrofitClient.workspaceInvitationService.acceptInvitation(item.referenceId)
                                         }
                                     }
@@ -148,11 +163,11 @@ class NotificationActivity : AppCompatActivity() {
 
     private fun formatTimeAgo(createdAt: String): String {
         return try {
-            val formatter = java.time.format.DateTimeFormatter.ISO_DATE_TIME
-            val created = java.time.LocalDateTime.parse(createdAt, formatter)
-            val now = java.time.LocalDateTime.now()
+            val parsed = java.time.OffsetDateTime.parse(createdAt)
+            val localTime = parsed.atZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalDateTime()
+            val now = java.time.LocalDateTime.now(java.time.ZoneId.systemDefault())
 
-            val minutes = java.time.Duration.between(created, now).toMinutes()
+            val minutes = java.time.Duration.between(localTime, now).toMinutes()
 
             when {
                 minutes < 1 -> "방금 전"

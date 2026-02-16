@@ -193,8 +193,8 @@ class PhotoDialogFragment : DialogFragment() {
         // 닉네임 표시
         tvUserName.text = uploaderNickname ?: ""
 
-        // 시간 포맷 yyyy/MM/dd HH:mm
-        tvDate.text = createdAt?.let { formatAbsoluteDateTime(it) } ?: ""
+        // 시간 포맷 n분 전 / n시간 전 방식으로 표시
+        tvDate.text = createdAt?.let { formatDateTimeSafe(it) } ?: ""
 
         // 프로필 이미지 표시 (없으면 기본 이미지)
         if (!uploaderProfileUrl.isNullOrEmpty()) {

@@ -114,12 +114,32 @@ class FriendsAdapter(
             // 닉네임
             binding.tvNickname.text = friend.nickname
 
-            // 프로필 이미지 (URL 로드)
-            Glide.with(binding.root.context)
-                .load(friend.profileImageUrl)
-                .placeholder(R.drawable.ic_profile_cat)
-                .error(R.drawable.ic_profile_cat)
-                .into(binding.ivProfile)
+            // 프로필 이미지 (토큰 포함 로드)
+            val imageUrl = friend.profileImageUrl
+
+            if (!imageUrl.isNullOrEmpty()) {
+                if (imageUrl.startsWith("content://")) {
+                    Glide.with(binding.root.context)
+                        .load(imageUrl)
+                        .placeholder(R.drawable.ic_profile_cat)
+                        .error(R.drawable.ic_profile_cat)
+                        .into(binding.ivProfile)
+                } else {
+                    val finalUrl = if (imageUrl.startsWith("http")) imageUrl
+                                   else "https://api.my4cut.shop/$imageUrl"
+                    Glide.with(binding.root.context)
+                        .load(finalUrl)
+                        .placeholder(R.drawable.ic_profile_cat)
+                        .error(R.drawable.ic_profile_cat)
+                        .override(120, 120)
+                        .centerCrop()
+                        .thumbnail(0.25f)
+                        .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                        .into(binding.ivProfile)
+                }
+            } else {
+                binding.ivProfile.setImageResource(R.drawable.ic_profile_cat)
+            }
 
             // 즐겨찾기 별
             binding.ivStar.setImageResource(
