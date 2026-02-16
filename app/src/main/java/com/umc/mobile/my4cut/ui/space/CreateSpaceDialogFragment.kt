@@ -140,7 +140,16 @@ class CreateSpaceDialogFragment : DialogFragment() {
 
             lifecycleScope.launch {
                 try {
-                    // 1. 스페이스 생성
+                    // 1. 현재 스페이스 개수 확인
+                    val myWorkspaceResponse = RetrofitClient.workspaceService.getMyWorkspaces()
+                    val currentCount = myWorkspaceResponse.data?.size ?: 0
+
+                    if (currentCount >= 4) {
+                        Toast.makeText(requireContext(), "최대 스페이스 개수를 넘어섰어요", Toast.LENGTH_SHORT).show()
+                        return@launch
+                    }
+
+                    // 2. 스페이스 생성
                     Log.d("INVITE_DEBUG", "before workspace creation: spaceName=$spaceName")
                     val createResponse = RetrofitClient.workspaceService.createWorkspace(
                         WorkspaceCreateRequestDto(

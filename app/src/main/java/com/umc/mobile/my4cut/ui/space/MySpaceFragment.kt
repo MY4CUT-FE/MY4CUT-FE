@@ -286,15 +286,16 @@ class MySpaceFragment : Fragment() {
 
     private fun parseIsoToMillis(iso: String): Long {
         return try {
-            // 서버 시간이 timezone 없이 내려오기 때문에 LocalDateTime으로 파싱 후
-            // 시스템 기본 timezone을 적용해서 millis로 변환
+            // 서버 시간이 UTC 기준(LocalDateTime 형태)으로 내려온다고 가정하고
+            // UTC로 해석한 뒤 로컬 시간으로 변환
             val localDateTime = java.time.LocalDateTime.parse(iso)
-            val zoned = localDateTime.atZone(java.time.ZoneId.systemDefault())
-            zoned.toInstant().toEpochMilli()
+            val instant = localDateTime
+                .atOffset(java.time.ZoneOffset.UTC)   // 서버 시간을 UTC로 해석
+                .toInstant()
+            instant.toEpochMilli()
         } catch (e: Exception) {
             android.util.Log.e("SPACE_API", "날짜 파싱 실패: $iso", e)
-            // 파싱 실패 시 바로 만료 처리되지 않도록 현재 시각 + 1일을 기본값으로 사용
-            System.currentTimeMillis() + (24L * 60 * 60 * 1000)
+            System.currentTimeMillis()
         }
     }
 

@@ -20,7 +20,7 @@ class NotificationAdapter(
             binding.ivNotiIcon.setImageResource(item.iconResId)
             binding.tvCategory.text = item.category
             binding.tvContent.text = item.content
-            binding.tvTime.text = item.time
+            binding.tvTime.text = formatTimeAgo(item.time)
 
             // 2. 버튼 영역 보이기/숨기기 로직
             if (item.hasButtons) {
@@ -49,4 +49,32 @@ class NotificationAdapter(
     }
 
     override fun getItemCount(): Int = items.size
+
+    private fun formatTimeAgo(timeString: String): String {
+        return try {
+            // 서버 시간이 UTC 기준인 경우가 많아서 OffsetDateTime으로 파싱 후
+            // 디바이스 로컬 시간대로 변환
+            val created = try {
+                java.time.OffsetDateTime.parse(timeString)
+                    .toLocalDateTime()
+            } catch (e: Exception) {
+                // Offset 없는 경우 fallback
+                java.time.LocalDateTime.parse(timeString)
+            }
+
+            val now = java.time.LocalDateTime.now()
+            val minutes = kotlin.math.abs(
+                java.time.Duration.between(created, now).toMinutes()
+            )
+
+            when {
+                minutes < 1 -> "방금 전"
+                minutes < 60 -> "${minutes}분 전"
+                minutes < 60 * 24 -> "${minutes / 60}시간 전"
+                else -> "${minutes / (60 * 24)}일 전"
+            }
+        } catch (e: Exception) {
+            timeString
+        }
+    }
 }
