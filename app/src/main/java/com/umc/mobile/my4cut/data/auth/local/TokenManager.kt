@@ -66,4 +66,18 @@ object TokenManager {
             null
         }
     }
+
+    fun isAccessTokenValid(context: Context): Boolean {
+        val token = getAccessToken(context) ?: return false
+        return try {
+            val payload = token.split(".")[1]
+            val decodedBytes = android.util.Base64.decode(payload, android.util.Base64.URL_SAFE)
+            val json = String(decodedBytes)
+            val exp = org.json.JSONObject(json).getLong("exp")
+            val currentTime = System.currentTimeMillis() / 1000
+            exp > currentTime
+        } catch (e: Exception) {
+            false
+        }
+    }
 }
