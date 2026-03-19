@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.kakao.sdk.auth.model.OAuthToken
@@ -40,12 +41,24 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private fun checkAutoLogin() {
+        // 로그인 UI 숨기기 (자동 로그인 결과에 따라 다시 표시)
+        setLoginUiVisibility(false)
+
+        // access token이 유효하면 바로 이동 (네트워크 요청 불필요)
+        if (TokenManager.isAccessTokenValid(this)) {
+            Log.d("AutoLogin", "Access token valid, skipping login")
+            navigateToMain()
+            return
+        }
+
+        // refresh token으로 갱신 시도
         val savedRefreshToken = TokenManager.getRefreshToken(this)
-        if (savedRefreshToken.isNullOrEmpty()) return
+        if (savedRefreshToken.isNullOrEmpty()) {
+            setLoginUiVisibility(true)
+            return
+        }
 
-        val headerToken = "Bearer $savedRefreshToken"
-
-        RetrofitClient.authServiceNoAuth.refresh(headerToken)
+        RetrofitClient.authServiceNoAuth.refresh("Bearer $savedRefreshToken")
             .enqueue(object : Callback<BaseResponse<TokenResult>> {
                 override fun onResponse(
                     call: Call<BaseResponse<TokenResult>>,
@@ -61,24 +74,37 @@ class IntroActivity : AppCompatActivity() {
                                     newTokens.accessToken,
                                     newTokens.refreshToken
                                 )
-
-                                Toast.makeText(this@IntroActivity, "자동 로그인 되었습니다.", Toast.LENGTH_SHORT).show()
-
-                                val intent = Intent(this@IntroActivity, MainActivity::class.java)
-                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                startActivity(intent)
+                                Log.d("AutoLogin", "Token refreshed, navigating to main")
+                                navigateToMain()
+                                return
                             }
-                        } else {
-                            Log.d("AutoLogin", "Refresh Failed: ${resp?.message}")
-                            TokenManager.clear(this@IntroActivity)
                         }
                     }
+                    Log.d("AutoLogin", "Refresh failed: ${response.body()?.message}")
+                    TokenManager.clear(this@IntroActivity)
+                    setLoginUiVisibility(true)
                 }
 
                 override fun onFailure(call: Call<BaseResponse<TokenResult>>, t: Throwable) {
-                    Log.e("AutoLogin", "Network Error", t)
+                    Log.e("AutoLogin", "Network error during refresh", t)
+                    // 네트워크 오류 시 토큰은 유지하고 로그인 화면만 표시
+                    setLoginUiVisibility(true)
                 }
             })
+    }
+
+    private fun setLoginUiVisibility(visible: Boolean) {
+        val visibility = if (visible) View.VISIBLE else View.INVISIBLE
+        binding.btnLoginMy4cut.visibility = visibility
+        binding.btnLoginKakao.visibility = visibility
+        binding.tvSignup.visibility = visibility
+    }
+
+    private fun navigateToMain() {
+        val intent = Intent(this@IntroActivity, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+
     }
 
     private fun initClickListener() {
@@ -178,10 +204,7 @@ class IntroActivity : AppCompatActivity() {
                                     Toast.LENGTH_SHORT
                                 ).show()
 
-                                val intent = Intent(this@IntroActivity, MainActivity::class.java)
-                                intent.flags =
-                                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                startActivity(intent)
+                                navigateToMain()
                             } else {
                                 Log.d(
                                     "KakaoServer",
