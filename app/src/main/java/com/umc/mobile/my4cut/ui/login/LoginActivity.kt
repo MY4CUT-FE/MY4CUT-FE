@@ -13,6 +13,15 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.google.firebase.messaging.FirebaseMessaging
+import com.umc.mobile.my4cut.data.notification.model.RegisterTokenRequestDto
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.CancellationException
 import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.auth.local.TokenManager
@@ -29,6 +38,13 @@ import retrofit2.Response
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
+
+    companion object {
+        private const val PREFS_NAME = "my4cut_prefs"
+        private const val KEY_FCM_TOKEN = "fcm_token"
+    }
+
+    private val fcmRegisterScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -217,6 +233,8 @@ class LoginActivity : AppCompatActivity() {
                                     Toast.LENGTH_SHORT
                                 ).show()
 
+                                registerFcmTokenAfterLogin()
+
                                 // 메인 화면으로 이동
                                 val intent = Intent(this@LoginActivity, MainActivity::class.java)
                                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -265,6 +283,47 @@ class LoginActivity : AppCompatActivity() {
         ).show()
     }
 
+    private fun registerFcmTokenAfterLogin() {
+        val savedToken = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getString(KEY_FCM_TOKEN, null)
+
+        if (!savedToken.isNullOrBlank()) {
+            sendFcmTokenToServer(savedToken)
+            return
+        }
+
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            if (!token.isNullOrBlank()) {
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                    .edit()
+                    .putString(KEY_FCM_TOKEN, token)
+                    .apply()
+
+                sendFcmTokenToServer(token)
+            }
+        }.addOnFailureListener { e ->
+            Log.e("FCM", "FCM 토큰 가져오기 실패", e)
+        }
+    }
+
+    private fun sendFcmTokenToServer(token: String) {
+        fcmRegisterScope.launch {
+            try {
+                RetrofitClient.notificationService.registerToken(
+                    RegisterTokenRequestDto(
+                        fcmToken = token,
+                        device = "ANDROID"
+                    )
+                )
+                Log.d("FCM", "FCM 토큰 서버 등록 성공")
+            } catch (e: CancellationException) {
+                Log.w("FCM", "FCM 토큰 서버 등록 작업 취소", e)
+            } catch (e: Exception) {
+                Log.e("FCM", "FCM 토큰 서버 등록 실패", e)
+            }
+        }
+    }
+
     private fun initTextWatchers() {
         val watcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -311,5 +370,9 @@ class LoginActivity : AppCompatActivity() {
             }
             false
         }
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        fcmRegisterScope.cancel()
     }
 }

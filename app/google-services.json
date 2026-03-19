@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "121501455011",
+    "project_id": "my4cut-45807",
+    "storage_bucket": "my4cut-45807.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:121501455011:android:ff33dbc6f1353fa9c0a516",
+        "android_client_info": {
+          "package_name": "com.umc.mobile.my4cut"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSXMmTYdG21aQFEJGBU_JTyJzfy3DNoaQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

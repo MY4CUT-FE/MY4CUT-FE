@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".GlobalApplication"
@@ -44,6 +45,13 @@
         <activity android:name=".ui.calendar.CalendarPickerActivity"/>
         <activity android:name=".ui.record.EntryRegisterActivity"/>
         <activity android:name=".ui.notification.NotificationActivity"/>
+        <service
+            android:name=".fcm.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
         <activity android:name=".ui.mypage.EditProfileActivity"/>
         <activity android:name=".ui.pose.PoseRecommendActivity"/>
         <activity android:name=".ui.myalbum.CalendarPickerActivity"/>
@@ -61,6 +69,14 @@
                     android:scheme="kakao91293971b269055877c1f904b3903103" />
             </intent-filter>
         </activity>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="my4cut_push" />
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
 
     </application>
 </manifest>
