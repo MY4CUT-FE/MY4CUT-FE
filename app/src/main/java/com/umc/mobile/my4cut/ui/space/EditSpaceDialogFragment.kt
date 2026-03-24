@@ -152,6 +152,14 @@ class EditSpaceDialogFragment : DialogFragment() {
             adapter = friendsAdapter
         }
 
+        popupBinding.rvFriends.setPadding(
+            0,
+            popupBinding.rvFriends.paddingTop,
+            0,
+            popupBinding.rvFriends.paddingBottom
+        )
+        popupBinding.rvFriends.clipToPadding = false
+
         // 드롭다운 최소/최대 높이 제한 (CreateSpace와 동일)
         val maxHeightDp = 240
         val minHeightDp = 50
@@ -191,12 +199,8 @@ class EditSpaceDialogFragment : DialogFragment() {
         val favorites = friendList.filter { it.isFavorite }
         val normals = friendList.filter { !it.isFavorite }
 
-        val uiItems = mutableListOf<FriendUiItem>().apply {
-            if (favorites.isNotEmpty()) {
-                add(FriendUiItem.Header("즐겨찾기"))
-                favorites.forEach { add(FriendUiItem.Item(it)) }
-            }
-            add(FriendUiItem.Header("친구 목록"))
+        val uiItems = buildList<FriendUiItem> {
+            favorites.forEach { add(FriendUiItem.Item(it)) }
             normals.forEach { add(FriendUiItem.Item(it)) }
         }
 

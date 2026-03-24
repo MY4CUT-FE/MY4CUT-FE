@@ -56,6 +56,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     private var isOwner: Boolean = false
     private var myUserId: Long = -1L
     private var myNickname: String = ""
+    private val existingMemberIds = mutableListOf<Long>()
 
     private val workspacePhotoService: WorkspacePhotoService by lazy {
         RetrofitClient.workspacePhotoService
@@ -121,6 +122,16 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
 
                 // 스페이스 정보 UI 반영
                 binding.tvTitle.text = data.name
+
+                existingMemberIds.clear()
+                data.ownerId?.let { ownerId ->
+                    existingMemberIds.add(ownerId.toLong())
+                }
+
+                Log.d(
+                    "SpaceFragment",
+                    "edit dialog memberIds=$existingMemberIds (현재 응답에서는 ownerId만 확보 가능)"
+                )
 
                 // 현재 로그인 사용자 정보 조회 → 방장 여부 판단
                 RetrofitClient.userService.getMyPage().enqueue(object :
@@ -378,7 +389,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         val dialog = EditSpaceDialogFragment.newInstance(
             spaceId = spaceId,
             spaceName = binding.tvTitle.text.toString(),
-            memberIds = emptyList()
+            memberIds = existingMemberIds.toList()
         )
 
         // 수정 완료 후 자동 갱신
