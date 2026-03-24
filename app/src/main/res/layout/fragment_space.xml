@@ -46,6 +46,16 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
+            android:id="@+id/btnFinalToggle"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/ic_final_off"
+            app:layout_constraintEnd_toStartOf="@id/btnExitMenu"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <ImageView
             android:id="@+id/btnExitMenu"
             android:layout_width="15dp"
             android:layout_height="14dp"
@@ -115,7 +125,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
-            android:text="네컷\n업로드"
+            android:text="네컷 업로드"
             android:textSize="7sp"
             android:textColor="#391801"
             android:gravity="center"/>
