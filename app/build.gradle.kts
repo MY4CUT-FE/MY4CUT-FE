@@ -54,6 +54,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation(libs.androidx.viewfinder.core)
 
     // 자바 최신 기능 지원 (Desugaring)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
@@ -134,4 +135,7 @@ dependencies {
     // FCM
     implementation(platform("com.google.firebase:firebase-bom:34.10.0"))
     implementation("com.google.firebase:firebase-messaging")
+
+    // flexbox
+    implementation("com.google.android.flexbox:flexbox:3.0.0")
 }

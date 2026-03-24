@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ivMemberProfile"
+    style="@style/CircleImage"
+    android:layout_width="30dp"
+    android:layout_height="30dp"
+    android:layout_marginHorizontal="6dp"
+    android:layout_marginVertical="6dp"
+    android:src="@drawable/ic_profile_cat" />

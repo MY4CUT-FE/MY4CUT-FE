@@ -1,5 +1,15 @@
 package com.umc.mobile.my4cut.ui.space
 
+import android.view.ViewGroup
+import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.view.setPadding
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.flexbox.AlignItems
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexWrap
+import com.google.android.flexbox.FlexboxLayoutManager
+import com.google.android.flexbox.JustifyContent
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -29,6 +39,7 @@ import com.umc.mobile.my4cut.databinding.FragmentSpaceBinding
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import android.util.Log
+import android.widget.ImageView
 import androidx.exifinterface.media.ExifInterface
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.user.model.UserMeResponse
@@ -51,6 +62,9 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     private lateinit var binding: FragmentSpaceBinding
     private lateinit var photoAdapter: PhotoRVAdapter
     private var photoDatas = ArrayList<PhotoData>()
+
+    private lateinit var memberAdapter: MemberAdapter
+    private val memberItems = ArrayList<MemberItem>()
 
     private var spaceId: Long = -1L
     private var isOwner: Boolean = false
@@ -83,6 +97,17 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentSpaceBinding.bind(view)
         binding.btnChange.visibility = View.GONE
+
+        val membersRecyclerView = view.findViewById<RecyclerView>(R.id.rvMembers)
+        memberAdapter = MemberAdapter(memberItems)
+        membersRecyclerView.adapter = memberAdapter
+        membersRecyclerView.layoutManager = FlexboxLayoutManager(requireContext()).apply {
+            flexDirection = FlexDirection.ROW
+            flexWrap = FlexWrap.WRAP
+            justifyContent = JustifyContent.CENTER
+            alignItems = AlignItems.CENTER
+        }
+        membersRecyclerView.isNestedScrollingEnabled = false
 
         photoAdapter = PhotoRVAdapter(photoDatas)
         binding.rvPhotoList.adapter = photoAdapter
@@ -128,6 +153,8 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     existingMemberIds.add(ownerId.toLong())
                 }
 
+                updateMemberUi(data.memberCount ?: existingMemberIds.size)
+
                 Log.d(
                     "SpaceFragment",
                     "edit dialog memberIds=$existingMemberIds (현재 응답에서는 ownerId만 확보 가능)"
@@ -148,6 +175,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
 
                         Log.d("SpaceFragment", "isOwner=$isOwner ownerId=${data.ownerId} myUserId=$myUserId")
                         binding.btnChange.visibility = if (isOwner) View.VISIBLE else View.GONE
+                        updateMemberUi(data.memberCount ?: existingMemberIds.size)
                     }
 
                     override fun onFailure(
@@ -483,6 +511,56 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                 arguments = Bundle().apply {
                     putLong(ARG_SPACE_ID, spaceId)
                 }
+            }
+        }
+    }
+
+    private fun updateMemberUi(memberCount: Int) {
+        memberItems.clear()
+        repeat(memberCount.coerceAtLeast(0)) { index ->
+            memberItems.add(MemberItem(id = index.toLong()))
+        }
+        memberAdapter.notifyDataSetChanged()
+    }
+
+    private fun Int.toDp(): Int {
+        return (this * resources.displayMetrics.density).toInt()
+    }
+
+    private data class MemberItem(
+        val id: Long
+    )
+
+    private inner class MemberAdapter(
+        private val items: List<MemberItem>
+    ) : RecyclerView.Adapter<MemberAdapter.MemberViewHolder>() {
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MemberViewHolder {
+            val imageView = AppCompatImageView(parent.context).apply {
+                layoutParams = FlexboxLayoutManager.LayoutParams(27.toDp(), 27.toDp()).apply {
+                    val horizontal = 3.toDp()
+                    val vertical = 3.toDp()
+                    setMargins(horizontal, vertical, horizontal, vertical)
+                }
+                setImageResource(R.drawable.ic_profile_cat)
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                setPadding(0)
+            }
+            return MemberViewHolder(imageView)
+        }
+
+        override fun onBindViewHolder(holder: MemberViewHolder, position: Int) {
+            holder.bind(items[position])
+        }
+
+        override fun getItemCount(): Int = items.size
+
+        inner class MemberViewHolder(
+            private val imageView: AppCompatImageView
+        ) : RecyclerView.ViewHolder(imageView) {
+
+            fun bind(item: MemberItem) {
+                imageView.setImageResource(R.drawable.ic_profile_cat)
             }
         }
     }
