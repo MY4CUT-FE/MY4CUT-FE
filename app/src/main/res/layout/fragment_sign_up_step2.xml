@@ -47,6 +47,7 @@
         android:fontFamily="@font/suit_bold"
         app:layout_constraintStart_toEndOf="@id/tv_step_1"
         app:layout_constraintTop_toTopOf="@id/tv_step_1" />
+
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
@@ -84,17 +85,18 @@
         android:fontFamily="@font/suit_regular"
         android:textColor="@color/gray_900"
         android:inputType="textEmailAddress"
-        app:layout_constraintEnd_toStartOf="@+id/btn_check_duplicate"
+        app:layout_constraintEnd_toStartOf="@+id/btn_send_verification"
         app:layout_constraintStart_toStartOf="@id/tv_label_email"
         app:layout_constraintTop_toBottomOf="@id/tv_label_email" />
 
+    <!-- 인증코드 발송 버튼 -->
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_check_duplicate"
-        android:layout_width="84dp"
+        android:id="@+id/btn_send_verification"
+        android:layout_width="100dp"
         android:layout_height="52dp"
         android:layout_marginEnd="20dp"
-        android:text="중복 확인"
-        android:textColor="@color/gray_500"
+        android:text="인증코드 발송"
+        android:textColor="@color/white"
         android:textSize="12sp"
         android:fontFamily="@font/suit_medium"
         android:stateListAnimator="@null"
@@ -104,29 +106,88 @@
         android:insetBottom="0dp"
         android:insetLeft="0dp"
         android:insetRight="0dp"
-        app:backgroundTint="@color/white"
-        app:strokeColor="@color/gray_300"
-        app:strokeWidth="1dp"
+        app:backgroundTint="@color/coral_800"
         app:cornerRadius="12dp"
         app:layout_constraintBottom_toBottomOf="@+id/et_email"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/et_email" />
 
+    <!-- 이메일 상태 메시지: 발송 안내 또는 에러 -->
     <TextView
         android:id="@+id/tv_email_status"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:text="사용 가능한 아이디에요."
-        android:textColor="@color/success_green"
+        android:layout_marginEnd="20dp"
         android:textSize="11sp"
         android:fontFamily="@font/suit_regular"
         android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="@id/btn_check_duplicate"
-        app:layout_constraintTop_toBottomOf="@id/et_email"
         android:drawablePadding="4dp"
         android:gravity="center_vertical"
-        tools:visibility="visible" />
+        app:layout_constraintStart_toStartOf="@id/et_email"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/et_email"
+        tools:visibility="visible"
+        tools:text="이미 가입된 이메일입니다." />
+
+    <!-- 인증코드 입력칸 (초기 gone) -->
+    <EditText
+        android:id="@+id/et_verification_code"
+        android:layout_width="0dp"
+        android:layout_height="52dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/bg_edittext_rounded"
+        android:hint="인증코드 입력"
+        android:paddingHorizontal="16dp"
+        android:textSize="14sp"
+        android:fontFamily="@font/suit_regular"
+        android:textColor="@color/gray_900"
+        android:inputType="text"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@+id/btn_verify"
+        app:layout_constraintStart_toStartOf="@id/et_email"
+        app:layout_constraintTop_toBottomOf="@id/tv_email_status" />
+
+    <!-- 인증 버튼 (초기 gone) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_verify"
+        android:layout_width="60dp"
+        android:layout_height="52dp"
+        android:layout_marginEnd="20dp"
+        android:text="인증"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        android:fontFamily="@font/suit_medium"
+        android:stateListAnimator="@null"
+        android:padding="0dp"
+        android:minWidth="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:insetLeft="0dp"
+        android:insetRight="0dp"
+        android:visibility="gone"
+        app:backgroundTint="@color/coral_800"
+        app:cornerRadius="12dp"
+        app:layout_constraintBottom_toBottomOf="@+id/et_verification_code"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/et_verification_code" />
+
+    <!-- 인증 결과 메시지 (초기 gone) -->
+    <TextView
+        android:id="@+id/tv_verification_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textSize="11sp"
+        android:fontFamily="@font/suit_regular"
+        android:visibility="gone"
+        android:drawablePadding="4dp"
+        android:gravity="center_vertical"
+        app:layout_constraintStart_toStartOf="@id/et_verification_code"
+        app:layout_constraintTop_toBottomOf="@id/et_verification_code"
+        tools:visibility="visible"
+        tools:text="인증이 완료되었습니다." />
 
     <TextView
         android:id="@+id/tv_label_pw"
@@ -138,7 +199,7 @@
         android:textSize="12sp"
         android:fontFamily="@font/suit_medium"
         app:layout_constraintStart_toStartOf="@id/tv_title"
-        app:layout_constraintTop_toBottomOf="@id/tv_email_status" />
+        app:layout_constraintTop_toBottomOf="@id/tv_verification_status" />
 
     <EditText
         android:id="@+id/et_password"
@@ -192,7 +253,7 @@
         app:layout_constraintTop_toBottomOf="@id/et_password_check"
         android:drawablePadding="4dp"
         android:gravity="center_vertical"
-        tools:visibility="visible"/>
+        tools:visibility="visible" />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btn_next"
