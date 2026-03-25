@@ -155,9 +155,9 @@ class FriendsAdapter(
 
             // 선택 상태 배경 처리 (테두리 보존)
             if (enableSelectionGray && selected) {
-//                binding.layoutContent.setBackgroundColor(
-//                    Color.parseColor("#F7F7F7")
-//                )
+                binding.layoutContent.setBackgroundColor(
+                    Color.parseColor("#F2F2F2")
+                )
             } else {
                 binding.layoutContent.setBackgroundColor(Color.TRANSPARENT)
             }

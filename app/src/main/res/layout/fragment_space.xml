@@ -46,6 +46,16 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
+            android:id="@+id/btnFinalToggle"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/ic_final_off"
+            app:layout_constraintEnd_toStartOf="@id/btnExitMenu"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <ImageView
             android:id="@+id/btnExitMenu"
             android:layout_width="15dp"
             android:layout_height="14dp"
@@ -56,15 +66,17 @@
             app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <ImageView
-        android:id="@+id/layoutMembers"
-        android:layout_width="21dp"
-        android:layout_height="21dp"
-        android:src="@drawable/ic_profile_cat"
-        style="@style/CircleImage"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvMembers"
+        android:layout_width="260dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:nestedScrollingEnabled="false"
+        android:overScrollMode="never"
         app:layout_constraintTop_toBottomOf="@id/layoutHeader"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:listitem="@drawable/ic_profile_cat" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -75,10 +87,10 @@
         android:gravity="center"
         android:text="7일 뒤 만료"
         android:textColor="#FE927F"
-        android:textSize="9sp"
+        android:textSize="10sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutMembers" />
+        app:layout_constraintTop_toBottomOf="@id/rvMembers" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvPhotoList"
@@ -88,7 +100,7 @@
         android:paddingHorizontal="12dp"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutMembers"
+        app:layout_constraintTop_toBottomOf="@id/rvMembers"
         app:layout_constraintVertical_bias="0.0"
         app:spanCount="2"
         tools:itemCount="2"
@@ -113,7 +125,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
-            android:text="네컷\n업로드"
+            android:text="네컷 업로드"
             android:textSize="7sp"
             android:textColor="#391801"
             android:gravity="center"/>

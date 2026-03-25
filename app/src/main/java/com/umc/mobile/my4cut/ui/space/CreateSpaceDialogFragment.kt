@@ -219,16 +219,10 @@ class CreateSpaceDialogFragment : DialogFragment() {
         val favorites = friendList.filter { it.isFavorite }
         val normals = friendList.filter { !it.isFavorite }
 
-        val items = mutableListOf<FriendUiItem>()
-        if (favorites.isNotEmpty()) {
-            items.add(FriendUiItem.Header("즐겨찾기"))
-            favorites.forEach { items.add(FriendUiItem.Item(it)) }
+        return buildList {
+            favorites.forEach { add(FriendUiItem.Item(it)) }
+            normals.forEach { add(FriendUiItem.Item(it)) }
         }
-        if (normals.isNotEmpty()) {
-            items.add(FriendUiItem.Header("친구 목록"))
-            normals.forEach { items.add(FriendUiItem.Item(it)) }
-        }
-        return items
     }
 
     override fun onStart() {
@@ -243,21 +237,6 @@ class CreateSpaceDialogFragment : DialogFragment() {
         }
     }
 
-    // 더 이상 사용하지 않음. 외부에서 처리.
-    /*
-    private fun createSpaceWithSelectedFriends() {
-        // TODO: 실제 스페이스 생성 API/DB 연동
-        // 현재는 선택 결과 로그/확인용
-        val spaceName = binding.etSpaceName.text.toString()
-        val members = selectedFriends.toList()
-
-        // 예시: 로그 출력
-        members.forEach {
-            Log.d("CreateSpace", "member=${it.nickname}")
-        }
-    }
-    */
-
     override fun onDestroyView() {
         super.onDestroyView()
         popupWindow?.dismiss()
@@ -266,19 +245,10 @@ class CreateSpaceDialogFragment : DialogFragment() {
 
     private fun submitDialogFriends() {
         Log.d("FriendList", "submitDialogFriends called, friendList size=${friendList.size}, selectedIds=$selectedFriendIds")
-        val favorites = friendList.filter { it.isFavorite }
-        val normals = friendList.filter { !it.isFavorite }
 
-        val uiItems = buildList<FriendUiItem> {
-            if (favorites.isNotEmpty()) {
-                add(FriendUiItem.Header("즐겨찾기"))
-                favorites.forEach { add(FriendUiItem.Item(it)) }
-            }
-            add(FriendUiItem.Header("친구 목록"))
-            normals.forEach { add(FriendUiItem.Item(it)) }
-        }
+        if (!::friendsAdapter.isInitialized) return
 
-        friendsAdapter.submitList(uiItems)
+        friendsAdapter.submitList(buildFriendUiItems())
     }
 
     private fun showFriendPopup() {
@@ -290,6 +260,14 @@ class CreateSpaceDialogFragment : DialogFragment() {
         binding.layoutFriendSelect.setBackgroundResource(
             R.drawable.bg_dropdown_open
         )
+
+        popupBinding.rvFriends.setPadding(
+            0,
+            popupBinding.rvFriends.paddingTop,
+            0,
+            popupBinding.rvFriends.paddingBottom
+        )
+        popupBinding.rvFriends.clipToPadding = false
 
         friendsAdapter = FriendsAdapter(
             getMode = { FriendsMode.NORMAL },

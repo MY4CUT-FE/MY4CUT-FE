@@ -19,6 +19,7 @@ compose-ui = "1.6.7"
 compose-material3 = "1.2.1"
 activity-compose = "1.9.0"
 composeCompiler = "1.5.15"
+viewfinderCore = "1.5.3"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -47,6 +48,7 @@ androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navi
 androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
 firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
 calendar = { module = "com.kizitonwose.calendar:view", version.ref = "calendar-view" }
+androidx-viewfinder-core = { group = "androidx.camera.viewfinder", name = "viewfinder-core", version.ref = "viewfinderCore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

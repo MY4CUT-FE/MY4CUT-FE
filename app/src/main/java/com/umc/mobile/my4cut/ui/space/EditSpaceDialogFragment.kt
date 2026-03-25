@@ -40,6 +40,8 @@ class EditSpaceDialogFragment : DialogFragment() {
     private var spaceId: Long = -1L
     private var originalSpaceName: String = ""
     private val originalMemberIds = mutableSetOf<Long>()
+    private val alreadyInvitedFriendIds = mutableSetOf<Long>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -109,8 +111,7 @@ class EditSpaceDialogFragment : DialogFragment() {
             }
             else -> {
                 val first = selectedFriends.first().nickname
-                binding.tvFriendSummary.text =
-                    "$first 외 ${selectedFriends.size - 1}명"
+                binding.tvFriendSummary.text = "$first 외 ${selectedFriends.size - 1}명"
                 binding.tvFriendSummary.setTextColor(Color.parseColor("#1A1A1A"))
             }
         }
@@ -125,8 +126,11 @@ class EditSpaceDialogFragment : DialogFragment() {
 
         friendsAdapter = FriendsAdapter(
             getMode = { FriendsMode.NORMAL },
-            isSelected = { id: Long -> selectedFriendIds.contains(id) },
+            isSelected = { id: Long -> selectedFriendIds.contains(id) || alreadyInvitedFriendIds.contains(id) },
             onFriendClick = { friend ->
+                if (alreadyInvitedFriendIds.contains(friend.friendId)) {
+                    return@FriendsAdapter
+                }
                 val id = friend.friendId
                 if (selectedFriendIds.contains(id)) {
                     selectedFriendIds.remove(id)
@@ -151,6 +155,14 @@ class EditSpaceDialogFragment : DialogFragment() {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = friendsAdapter
         }
+
+        popupBinding.rvFriends.setPadding(
+            0,
+            popupBinding.rvFriends.paddingTop,
+            0,
+            popupBinding.rvFriends.paddingBottom
+        )
+        popupBinding.rvFriends.clipToPadding = false
 
         // 드롭다운 최소/최대 높이 제한 (CreateSpace와 동일)
         val maxHeightDp = 240
@@ -191,12 +203,8 @@ class EditSpaceDialogFragment : DialogFragment() {
         val favorites = friendList.filter { it.isFavorite }
         val normals = friendList.filter { !it.isFavorite }
 
-        val uiItems = mutableListOf<FriendUiItem>().apply {
-            if (favorites.isNotEmpty()) {
-                add(FriendUiItem.Header("즐겨찾기"))
-                favorites.forEach { add(FriendUiItem.Item(it)) }
-            }
-            add(FriendUiItem.Header("친구 목록"))
+        val uiItems = buildList<FriendUiItem> {
+            favorites.forEach { add(FriendUiItem.Item(it)) }
             normals.forEach { add(FriendUiItem.Item(it)) }
         }
 
@@ -251,6 +259,7 @@ class EditSpaceDialogFragment : DialogFragment() {
                 friendList.clear()
                 selectedFriends.clear()
                 selectedFriendIds.clear()
+                alreadyInvitedFriendIds.clear()
 
                 friendList.addAll(
                     data.map {
@@ -264,11 +273,18 @@ class EditSpaceDialogFragment : DialogFragment() {
                     }
                 )
 
-                // 기존 스페이스 멤버 미리 선택
+                // friends API의 userId는 친구 본인 id가 아니라 내 userId로 내려오므로,
+                // 기존 멤버 판별에는 friendId만 사용한다.
                 friendList.forEach { friend ->
-                    if (originalMemberIds.contains(friend.userId)) {
-                        selectedFriendIds.add(friend.friendId)
-                        selectedFriends.add(friend)
+                    val isAlreadyMember = originalMemberIds.contains(friend.friendId)
+
+                    Log.d(
+                        "EditSpace",
+                        "friend=${friend.nickname}, userId=${friend.userId}, friendId=${friend.friendId}, isAlreadyMember=$isAlreadyMember"
+                    )
+
+                    if (isAlreadyMember) {
+                        alreadyInvitedFriendIds.add(friend.friendId)
                     }
                 }
 

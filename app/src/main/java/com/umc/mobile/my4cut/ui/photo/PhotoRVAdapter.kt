@@ -5,12 +5,14 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.umc.mobile.my4cut.databinding.ItemPhotoBinding
 import com.bumptech.glide.Glide
+import com.umc.mobile.my4cut.R
 
 class PhotoRVAdapter(
     private val photoList: MutableList<PhotoData>
 ) : RecyclerView.Adapter<PhotoRVAdapter.PhotoViewHolder>() {
 
     var onItemClickListener: ((PhotoData) -> Unit)? = null
+    var onFinalToggleListener: ((PhotoData) -> Unit)? = null
 
     inner class PhotoViewHolder(
         private val binding: ItemPhotoBinding
@@ -33,6 +35,25 @@ class PhotoRVAdapter(
             binding.tvUserName.text = photo.userName
             binding.tvDateTime.text = photo.dateTime
             binding.tvCommentCount.text = photo.commentCount.toString()
+
+            binding.ivFinalToggle.setImageResource(
+                if (photo.isFinal) R.drawable.ic_final_on
+                else R.drawable.ic_final_off
+            )
+
+            binding.ivFinalToggle.setOnClickListener {
+                val clickedPosition = bindingAdapterPosition
+                if (clickedPosition == RecyclerView.NO_POSITION) return@setOnClickListener
+
+                val wasFinal = photoList[clickedPosition].isFinal
+
+                photoList.forEachIndexed { index, item ->
+                    item.isFinal = index == clickedPosition && !wasFinal
+                }
+
+                notifyDataSetChanged()
+                onFinalToggleListener?.invoke(photoList[clickedPosition])
+            }
 
             binding.root.setOnClickListener {
                 onItemClickListener?.invoke(photo)
@@ -57,7 +78,12 @@ class PhotoRVAdapter(
 
     fun updatePhotos(newPhotos: List<PhotoData>) {
         photoList.clear()
-        photoList.addAll(newPhotos)
+
+        val sortedList = newPhotos
+            .sortedWith(compareByDescending<PhotoData> { it.isFinal })
+            .reversed()
+
+        photoList.addAll(sortedList)
         notifyDataSetChanged()
     }
 }

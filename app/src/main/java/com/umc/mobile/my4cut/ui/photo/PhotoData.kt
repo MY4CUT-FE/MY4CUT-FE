@@ -11,5 +11,7 @@ data class PhotoData(
 
     // 서버 이미지 URL (nullable)
     val photoUrl: String?,
-    val uploaderId: Long?
+    val uploaderId: Long?,
+
+    var isFinal: Boolean = false
 )

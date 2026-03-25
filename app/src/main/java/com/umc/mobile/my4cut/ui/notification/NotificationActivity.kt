@@ -84,7 +84,8 @@ class NotificationActivity : AppCompatActivity() {
                         )
                     }.toMutableList()
 
-                    val adapter = NotificationAdapter(
+                    lateinit var adapter: NotificationAdapter
+                    adapter = NotificationAdapter(
                         uiList,
                         onAcceptClick = { item ->
                             lifecycleScope.launch {
@@ -119,6 +120,8 @@ class NotificationActivity : AppCompatActivity() {
                                     if (index != -1) {
                                         uiList.removeAt(index)
                                         binding.rvNotification.adapter?.notifyItemRemoved(index)
+                                        binding.btnMore.visibility =
+                                            if (adapter.canLoadMore()) android.view.View.VISIBLE else android.view.View.GONE
                                     }
                                 } catch (e: Exception) {
                                     Toast.makeText(this@NotificationActivity, "수락 실패: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -143,6 +146,8 @@ class NotificationActivity : AppCompatActivity() {
                                     if (index != -1) {
                                         uiList.removeAt(index)
                                         binding.rvNotification.adapter?.notifyItemRemoved(index)
+                                        binding.btnMore.visibility =
+                                            if (adapter.canLoadMore()) android.view.View.VISIBLE else android.view.View.GONE
                                     }
                                 } catch (e: Exception) {
                                     Toast.makeText(this@NotificationActivity, "거절 실패: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -150,8 +155,15 @@ class NotificationActivity : AppCompatActivity() {
                             }
                         }
                     )
+                    binding.btnMore.setOnClickListener {
+                        adapter.loadMore()
+                        binding.btnMore.visibility =
+                            if (adapter.canLoadMore()) android.view.View.VISIBLE else android.view.View.GONE
+                    }
                     binding.rvNotification.adapter = adapter
                     binding.rvNotification.layoutManager = LinearLayoutManager(this@NotificationActivity)
+                    binding.btnMore.visibility =
+                        if (adapter.canLoadMore()) android.view.View.VISIBLE else android.view.View.GONE
                 }
 
             } catch (e: Exception) {
