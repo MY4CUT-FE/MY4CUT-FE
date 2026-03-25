@@ -78,7 +78,12 @@ class PhotoRVAdapter(
 
     fun updatePhotos(newPhotos: List<PhotoData>) {
         photoList.clear()
-        photoList.addAll(newPhotos)
+
+        val sortedList = newPhotos
+            .sortedWith(compareByDescending<PhotoData> { it.isFinal })
+            .reversed()
+
+        photoList.addAll(sortedList)
         notifyDataSetChanged()
     }
 }
