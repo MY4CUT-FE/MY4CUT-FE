@@ -15,54 +15,82 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_marginStart="4dp"
-        android:src="@drawable/ic_arrow_back_24"
         android:padding="12dp"
-        app:tint="@color/gray_900"
-        app:layout_constraintStart_toStartOf="parent"
+        android:src="@drawable/ic_arrow_back_24"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/gray_900" />
 
     <TextView
+        android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="@font/suit_bold"
         android:text="알림"
         android:textColor="#1A1A1A"
         android:textSize="18sp"
-        android:fontFamily="@font/suit_bold"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_notification"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="10dp"
-        android:clipToPadding="false"
-        android:paddingTop="10dp"
-        android:paddingBottom="40dp"
-        android:overScrollMode="never"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintTop_toBottomOf="@id/cl_header"
-        app:layout_constraintBottom_toTopOf="@id/tv_footer_info"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:listitem="@layout/item_notification"/>
+<TextView
+    android:id="@+id/tv_delete_all"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="10dp"
+    android:layout_marginEnd="20dp"
+    android:drawableEnd="@drawable/ic_trash"
+    android:drawablePadding="4dp"
+    android:fontFamily="@font/suit_medium"
+    android:text="전체 삭제"
+    android:textColor="#8C8C8C"
+    android:textSize="13sp"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/cl_header" />
 
-    <TextView
-        android:id="@+id/tv_footer_info"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:layout_marginStart="20dp"
-        android:text="* 알림은 30일 후 자동 삭제됩니다."
-        android:textColor="#BDBDBD"
-        android:textSize="12sp"
-        android:fontFamily="@font/suit_medium"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
+<androidx.recyclerview.widget.RecyclerView
+    android:id="@+id/rv_notification"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_marginTop="10dp"
+    android:layout_marginBottom="10dp"
+    android:clipToPadding="false"
+    android:overScrollMode="never"
+    android:paddingTop="10dp"
+    android:paddingBottom="24dp"
+    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+    app:layout_constraintBottom_toTopOf="@id/btn_more"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/tv_delete_all"
+    tools:listitem="@layout/item_notification" />
+
+<ImageView
+    android:id="@+id/btn_more"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="18dp"
+    android:src="@drawable/ic_seemore"
+    android:contentDescription="더보기"
+    app:layout_constraintBottom_toTopOf="@id/tv_footer_info"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent" />
+
+<TextView
+    android:id="@+id/tv_footer_info"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="20dp"
+    android:layout_marginBottom="24dp"
+    android:fontFamily="@font/suit_medium"
+    android:text="* 알림은 30일 후 자동 삭제됩니다."
+    android:textColor="#BDBDBD"
+    android:textSize="12sp"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

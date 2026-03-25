@@ -30,56 +30,67 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
+            <ImageView
+                android:id="@+id/iv_close"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginTop="2dp"
+                android:src="@drawable/ic_noti_close"
+                android:contentDescription="닫기"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/iv_noti_icon" />
+
             <TextView
                 android:id="@+id/tv_category"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
                 tools:text="초대"
                 android:textColor="#9E9E9E"
-                android:textSize="12sp"
+                android:textSize="15sp"
                 android:fontFamily="@font/suit_medium"
                 app:layout_constraintStart_toEndOf="@id/iv_noti_icon"
                 app:layout_constraintTop_toTopOf="@id/iv_noti_icon"
-                app:layout_constraintBottom_toBottomOf="@id/iv_noti_icon"/>
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="2dp"/>
 
             <TextView
                 android:id="@+id/tv_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
                 tools:text="13분 전"
                 android:textColor="#BDBDBD"
                 android:textSize="12sp"
                 android:fontFamily="@font/suit_regular"
-                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/tv_category"
                 app:layout_constraintTop_toTopOf="@id/tv_category"
-                app:layout_constraintBottom_toBottomOf="@id/tv_category"/>
+                app:layout_constraintBottom_toBottomOf="@id/tv_category" />
 
             <TextView
                 android:id="@+id/tv_content"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 tools:text="화운님이 1104 네컷 스페이스에 회원님을 초대했습니다."
                 android:textColor="#1A1A1A"
                 android:textSize="14sp"
                 android:fontFamily="@font/suit_medium"
                 android:lineSpacingExtra="4dp"
                 app:layout_constraintStart_toStartOf="@id/tv_category"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_category"/>
+                app:layout_constraintEnd_toStartOf="@id/iv_close"
+                app:layout_constraintTop_toBottomOf="@id/tv_category" />
 
             <LinearLayout
                 android:id="@+id/ll_buttons"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="14dp"
                 android:weightSum="2"
                 android:visibility="visible"
                 app:layout_constraintTop_toBottomOf="@id/tv_content"
-                app:layout_constraintStart_toStartOf="@id/tv_category"
-                app:layout_constraintEnd_toEndOf="parent">
+                app:layout_constraintStart_toStartOf="@id/tv_content"
+                app:layout_constraintEnd_toStartOf="@id/iv_close">
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btn_accept"

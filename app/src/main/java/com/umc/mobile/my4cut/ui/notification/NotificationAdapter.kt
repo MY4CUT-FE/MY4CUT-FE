@@ -12,6 +12,12 @@ class NotificationAdapter(
     private val onDeclineClick: (NotificationData) -> Unit
 ) : RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
 
+    private var visibleCount = minOf(PAGE_SIZE, items.size)
+
+    companion object {
+        private const val PAGE_SIZE = 8
+    }
+
     inner class ViewHolder(private val binding: ItemNotificationBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
@@ -27,6 +33,14 @@ class NotificationAdapter(
                 binding.llButtons.visibility = View.VISIBLE
             } else {
                 binding.llButtons.visibility = View.GONE
+            }
+
+            // 3. 삭제 버튼 보이기/숨기기 로직
+            if (item.type == "FRIEND_REQUEST" || item.type == "WORKSPACE_INVITE") {
+                binding.ivClose.visibility = View.GONE
+                binding.ivClose.setOnClickListener(null)
+            } else {
+                binding.ivClose.visibility = View.VISIBLE
             }
 
             // 3. 버튼 클릭 리스너 예시
@@ -48,7 +62,18 @@ class NotificationAdapter(
         holder.bind(items[position])
     }
 
-    override fun getItemCount(): Int = items.size
+    override fun getItemCount(): Int = visibleCount
+
+    fun loadMore() {
+        val previousCount = visibleCount
+        visibleCount = minOf(visibleCount + PAGE_SIZE, items.size)
+
+        if (visibleCount > previousCount) {
+            notifyItemRangeInserted(previousCount, visibleCount - previousCount)
+        }
+    }
+
+    fun canLoadMore(): Boolean = visibleCount < items.size
 
     private fun formatTimeAgo(timeString: String): String {
         return try {
