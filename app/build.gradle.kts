@@ -138,4 +138,7 @@ dependencies {
 
     // flexbox
     implementation("com.google.android.flexbox:flexbox:3.0.0")
+
+    // 스켈레톤
+    implementation("com.facebook.shimmer:shimmer:0.5.0")
 }
