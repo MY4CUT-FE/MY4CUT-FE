@@ -348,6 +348,14 @@ class PhotoDialogFragment : DialogFragment() {
                     .deletePhoto(workspaceId, photoId)
 
                 Log.d("PhotoDialog", "사진 삭제 성공: ${response.code}")
+
+                parentFragmentManager.setFragmentResult(
+                    RESULT_PHOTO_DELETED,
+                    Bundle().apply {
+                        putLong(BUNDLE_KEY_DELETED_PHOTO_ID, photoId)
+                    }
+                )
+
                 dismiss()
             } catch (e: Exception) {
                 Log.e("PhotoDialog", "사진 삭제 실패", e)
@@ -454,6 +462,9 @@ class PhotoDialogFragment : DialogFragment() {
     }
 
     companion object {
+        const val RESULT_PHOTO_DELETED = "result_photo_deleted"
+        const val BUNDLE_KEY_DELETED_PHOTO_ID = "bundle_key_deleted_photo_id"
+
         private const val ARG_PHOTO_URL = "photoUrl"
 
         fun newInstance(

@@ -109,6 +109,20 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         }
         membersRecyclerView.isNestedScrollingEnabled = false
 
+        parentFragmentManager.setFragmentResultListener(
+            PhotoDialogFragment.RESULT_PHOTO_DELETED,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            val deletedPhotoId = bundle.getLong(
+                PhotoDialogFragment.BUNDLE_KEY_DELETED_PHOTO_ID,
+                -1L
+            )
+
+            if (deletedPhotoId != -1L) {
+                photoAdapter.removePhoto(deletedPhotoId)
+            }
+        }
+
         photoAdapter = PhotoRVAdapter(photoDatas)
         binding.rvPhotoList.adapter = photoAdapter
         binding.rvPhotoList.layoutManager = GridLayoutManager(requireContext(), 2)
