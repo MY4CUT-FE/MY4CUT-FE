@@ -156,14 +156,28 @@ class NotificationActivity : AppCompatActivity() {
                         }
                     )
                     binding.btnMore.setOnClickListener {
-                        adapter.loadMore()
-                        binding.btnMore.visibility =
-                            if (adapter.canLoadMore()) android.view.View.VISIBLE else android.view.View.GONE
+                        if (adapter.canLoadMore()) {
+                            adapter.loadMore()
+                            binding.btnMore.visibility = android.view.View.VISIBLE
+                        } else {
+                            // 더 이상 불러올 게 없으면 위로 이동 버튼으로 변경
+                            binding.btnMore.setImageResource(R.drawable.ic_noti_to_top)
+                            binding.btnMore.setOnClickListener {
+                                binding.rvNotification.smoothScrollToPosition(0)
+                            }
+                        }
                     }
                     binding.rvNotification.adapter = adapter
                     binding.rvNotification.layoutManager = LinearLayoutManager(this@NotificationActivity)
-                    binding.btnMore.visibility =
-                        if (adapter.canLoadMore()) android.view.View.VISIBLE else android.view.View.GONE
+                    if (adapter.canLoadMore()) {
+                        binding.btnMore.visibility = android.view.View.VISIBLE
+                    } else {
+                        binding.btnMore.visibility = android.view.View.VISIBLE
+                        binding.btnMore.setImageResource(R.drawable.ic_noti_to_top)
+                        binding.btnMore.setOnClickListener {
+                            binding.rvNotification.smoothScrollToPosition(0)
+                        }
+                    }
                 }
 
             } catch (e: Exception) {
