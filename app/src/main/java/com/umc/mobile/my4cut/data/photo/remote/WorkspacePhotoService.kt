@@ -5,15 +5,17 @@ import com.umc.mobile.my4cut.data.photo.model.CommentCreateRequest
 import com.umc.mobile.my4cut.data.photo.model.CommentDto
 import com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoResponseDto
 import com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoUploadRequestDto
+import retrofit2.Call
 import retrofit2.http.*
 
 interface WorkspacePhotoService {
 
     /** 사진 목록 조회 */
-    @GET("workspaces/{workspaceId}/photos")
-    suspend fun getPhotos(
-        @Path("workspaceId") workspaceId: Long
-    ): BaseResponse<List<WorkspacePhotoResponseDto>>
+    @GET("/workspaces/{workspaceId}/photos")
+    fun getPhotos(
+        @Path("workspaceId") workspaceId: Long,
+        @Query("sort") sort: String? = null
+    ): Call<BaseResponse<List<WorkspacePhotoResponseDto>>>
 
     /** 사진 업로드 (mediaId 등록 방식) */
     @POST("workspaces/{workspaceId}/photos")

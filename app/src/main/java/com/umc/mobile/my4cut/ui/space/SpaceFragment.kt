@@ -297,47 +297,63 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     }
 
     private fun loadPhotosFromApi() {
-        lifecycleScope.launch {
-            try {
-                val response = workspacePhotoService.getPhotos(spaceId)
+        workspacePhotoService.getPhotos(spaceId, "oldest")
+            .enqueue(object : Callback<BaseResponse<List<com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoResponseDto>>> {
+                override fun onResponse(
+                    call: Call<BaseResponse<List<com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoResponseDto>>>,
+                    response: Response<BaseResponse<List<com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoResponseDto>>>
+                ) {
+                    val list = response.body()?.data ?: emptyList()
+                    Log.d("PHOTO_DEBUG", "서버에서 받은 사진 개수 = ${list.size}")
 
-                val list = response.data ?: emptyList()
-                Log.d("PHOTO_DEBUG", "서버에서 받은 사진 개수 = ${list.size}")
+                    val newPhotos = ArrayList<PhotoData>()
 
-                photoDatas.clear()
+                    for (photoResponse in list) {
+                        val photoId = photoResponse.mediaId ?: 0L
 
-                photoDatas.addAll(
-                    list.map {
-                        val photoId = it.mediaId ?: 0L
-
-                        // 댓글 개수 조회 (기본값 0)
-                        var commentCount = 0
-                        try {
-                            val commentResponse =
-                                workspacePhotoService.getComments(spaceId, photoId)
-                            commentCount = commentResponse.data?.size ?: 0
-                        } catch (e: Exception) {
-                            Log.e("PHOTO_DEBUG", "댓글 개수 조회 실패 photoId=$photoId", e)
-                        }
-
-                        PhotoData(
-                            photoId = photoId,
-                            userName = it.uploaderNickname ?: "",
-                            userProfileUrl = null,
-                            photoUrl = it.viewUrl ?: "",
-                            dateTime = formatDateTime(it.createdAt),
-                            commentCount = commentCount,
-                            uploaderId = if (it.uploaderNickname == myNickname) myUserId else null
+                        newPhotos.add(
+                            PhotoData(
+                                photoId = photoId,
+                                userProfileUrl = null,
+                                userName = photoResponse.uploaderNickname ?: "",
+                                dateTime = formatDateTime(photoResponse.createdAt),
+                                commentCount = 0,
+                                photoImageRes = null,
+                                photoUrl = photoResponse.viewUrl,
+                                uploaderId = if (photoResponse.uploaderNickname == myNickname) myUserId else null,
+                                isFinal = photoResponse.isFinal ?: false
+                            )
                         )
                     }
-                )
 
-                photoAdapter.notifyDataSetChanged()
+                    photoDatas.clear()
+                    photoDatas.addAll(newPhotos)
+                    photoAdapter.updatePhotos(newPhotos)
 
-            } catch (e: Exception) {
-                Log.e("SpaceFragment", "사진 목록 API 실패", e)
-            }
-        }
+                    for (photo in newPhotos) {
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            try {
+                                val commentResponse = workspacePhotoService.getComments(spaceId, photo.photoId)
+                                val count = commentResponse.data?.size ?: 0
+                                val index = photoDatas.indexOfFirst { it.photoId == photo.photoId }
+                                if (index != -1) {
+                                    photoDatas[index] = photoDatas[index].copy(commentCount = count)
+                                    photoAdapter.notifyItemChanged(index)
+                                }
+                            } catch (e: Exception) {
+                                Log.e("PHOTO_DEBUG", "댓글 개수 조회 실패 photoId=${photo.photoId}", e)
+                            }
+                        }
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<BaseResponse<List<com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoResponseDto>>>,
+                    t: Throwable
+                ) {
+                    Log.e("SpaceFragment", "사진 목록 API 실패", t)
+                }
+            })
     }
 
     private fun showExitDialog() {
