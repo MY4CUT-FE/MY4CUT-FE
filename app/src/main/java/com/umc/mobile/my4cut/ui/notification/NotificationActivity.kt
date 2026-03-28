@@ -175,11 +175,10 @@ class NotificationActivity : AppCompatActivity() {
 
     private fun formatTimeAgo(createdAt: String): String {
         return try {
-            val parsed = java.time.OffsetDateTime.parse(createdAt)
-            val localTime = parsed.atZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalDateTime()
-            val now = java.time.LocalDateTime.now(java.time.ZoneId.systemDefault())
+            val parsed = java.time.LocalDateTime.parse(createdAt)
+            val now = java.time.LocalDateTime.now()
 
-            val minutes = java.time.Duration.between(localTime, now).toMinutes()
+            val minutes = java.time.Duration.between(parsed, now).toMinutes()
 
             when {
                 minutes < 1 -> "방금 전"
@@ -188,6 +187,7 @@ class NotificationActivity : AppCompatActivity() {
                 else -> "${minutes / (60 * 24)}일 전"
             }
         } catch (e: Exception) {
+            Log.e("NotificationTime", "createdAt parse 실패: $createdAt", e)
             "방금 전"
         }
     }

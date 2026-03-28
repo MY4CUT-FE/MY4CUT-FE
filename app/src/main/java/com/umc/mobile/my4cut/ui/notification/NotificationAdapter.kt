@@ -15,7 +15,7 @@ class NotificationAdapter(
     private var visibleCount = minOf(PAGE_SIZE, items.size)
 
     companion object {
-        private const val PAGE_SIZE = 8
+        private const val PAGE_SIZE = 6
     }
 
     inner class ViewHolder(private val binding: ItemNotificationBinding) :
