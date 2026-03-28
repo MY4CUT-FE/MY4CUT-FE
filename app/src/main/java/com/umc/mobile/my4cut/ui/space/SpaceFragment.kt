@@ -1,5 +1,7 @@
 package com.umc.mobile.my4cut.ui.space
 
+import com.bumptech.glide.Glide
+
 import android.view.ViewGroup
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.view.setPadding
@@ -70,6 +72,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     private var isOwner: Boolean = false
     private var myUserId: Long = -1L
     private var myNickname: String = ""
+    private var myProfileImageUrl: String? = null
     private val existingMemberIds = mutableListOf<Long>()
 
     private val workspacePhotoService: WorkspacePhotoService by lazy {
@@ -167,7 +170,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     existingMemberIds.add(ownerId.toLong())
                 }
 
-                updateMemberUi(data.memberCount ?: existingMemberIds.size)
+                updateMemberUi(data.memberProfiles)
 
                 Log.d(
                     "SpaceFragment",
@@ -185,11 +188,13 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                         val body = response.body()
                         myUserId = body?.data?.userId?.toLong() ?: -1L
                         myNickname = body?.data?.nickname ?: ""
+                        myProfileImageUrl = body?.data?.profileImageViewUrl
                         isOwner = (data.ownerId?.toLong() == myUserId)
 
                         Log.d("SpaceFragment", "isOwner=$isOwner ownerId=${data.ownerId} myUserId=$myUserId")
                         binding.btnChange.visibility = if (isOwner) View.VISIBLE else View.GONE
-                        updateMemberUi(data.memberCount ?: existingMemberIds.size)
+                        updateMemberUi(data.memberProfiles)
+                        updatePhotoUploaderProfiles()
                     }
 
                     override fun onFailure(
@@ -328,7 +333,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                         newPhotos.add(
                             PhotoData(
                                 photoId = photoId,
-                                userProfileUrl = null,
+                                userProfileUrl = if (photoResponse.uploaderNickname == myNickname) myProfileImageUrl else null,
                                 userName = photoResponse.uploaderNickname ?: "",
                                 dateTime = formatDateTime(photoResponse.createdAt),
                                 commentCount = 0,
@@ -545,12 +550,46 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         }
     }
 
-    private fun updateMemberUi(memberCount: Int) {
+    private fun updateMemberUi(memberProfiles: List<String>?) {
         memberItems.clear()
-        repeat(memberCount.coerceAtLeast(0)) { index ->
-            memberItems.add(MemberItem(id = index.toLong()))
+
+        memberProfiles.orEmpty().forEachIndexed { index, profilePath ->
+            memberItems.add(
+                MemberItem(
+                    id = index.toLong(),
+                    profileImageUrl = buildProfileUrl(profilePath)
+                )
+            )
         }
+
         memberAdapter.notifyDataSetChanged()
+    }
+
+    private fun buildProfileUrl(profilePath: String?): String? {
+        if (profilePath.isNullOrBlank()) return null
+        return if (profilePath.startsWith("http://") || profilePath.startsWith("https://")) {
+            profilePath
+        } else {
+            null
+        }
+    }
+
+    private fun updatePhotoUploaderProfiles() {
+        if (myProfileImageUrl.isNullOrBlank()) return
+        if (photoDatas.isEmpty()) return
+
+        var changed = false
+        for (index in photoDatas.indices) {
+            val photo = photoDatas[index]
+            if (photo.uploaderId == myUserId && photo.userProfileUrl != myProfileImageUrl) {
+                photoDatas[index] = photo.copy(userProfileUrl = myProfileImageUrl)
+                changed = true
+            }
+        }
+
+        if (changed) {
+            photoAdapter.updatePhotos(photoDatas.toList())
+        }
     }
 
     private fun Int.toDp(): Int {
@@ -558,7 +597,8 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     }
 
     private data class MemberItem(
-        val id: Long
+        val id: Long,
+        val profileImageUrl: String?
     )
 
     private inner class MemberAdapter(
@@ -590,7 +630,16 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         ) : RecyclerView.ViewHolder(imageView) {
 
             fun bind(item: MemberItem) {
-                imageView.setImageResource(R.drawable.ic_profile_cat)
+                if (item.profileImageUrl.isNullOrBlank()) {
+                    imageView.setImageResource(R.drawable.ic_profile_cat)
+                } else {
+                    Glide.with(imageView)
+                        .load(item.profileImageUrl)
+                        .placeholder(R.drawable.ic_profile_cat)
+                        .error(R.drawable.ic_profile_cat)
+                        .circleCrop()
+                        .into(imageView)
+                }
             }
         }
     }
