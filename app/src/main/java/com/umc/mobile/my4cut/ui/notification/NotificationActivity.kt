@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.lifecycle.lifecycleScope
 import com.umc.mobile.my4cut.network.RetrofitClient
 import kotlinx.coroutines.launch
+import android.view.View
 
 class NotificationActivity : AppCompatActivity() {
 
@@ -28,6 +29,18 @@ class NotificationActivity : AppCompatActivity() {
         // 뒤로가기 버튼 클릭 시 종료
         binding.btnBack.setOnClickListener {
             finish()
+        }
+        binding.tvDeleteAll.setOnClickListener {
+            lifecycleScope.launch {
+                try {
+                    RetrofitClient.notificationService.deleteAllNotifications()
+                    binding.rvNotification.adapter = null
+                    binding.btnMore.visibility = View.GONE
+                    Toast.makeText(this@NotificationActivity, "전체 삭제되었습니다.", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(this@NotificationActivity, "전체 삭제 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
@@ -151,6 +164,22 @@ class NotificationActivity : AppCompatActivity() {
                                     }
                                 } catch (e: Exception) {
                                     Toast.makeText(this@NotificationActivity, "거절 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        onDeleteClick = { item ->
+                            lifecycleScope.launch {
+                                try {
+                                    RetrofitClient.notificationService.deleteNotification(item.id)
+                                    val index = uiList.indexOf(item)
+                                    if (index != -1) {
+                                        uiList.removeAt(index)
+                                        binding.rvNotification.adapter?.notifyItemRemoved(index)
+                                        binding.btnMore.visibility =
+                                            if (adapter.canLoadMore()) View.VISIBLE else View.GONE
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(this@NotificationActivity, "삭제 실패: ${e.message}", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }
