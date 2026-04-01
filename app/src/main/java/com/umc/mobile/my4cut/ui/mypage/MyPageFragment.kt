@@ -1,5 +1,7 @@
 package com.umc.mobile.my4cut.ui.mypage
 
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import android.app.Activity.RESULT_OK
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -64,6 +66,7 @@ class MyPageFragment : Fragment() {
         Log.d("MyPageFragment", "📱 onResume - refreshing profile")
         // ✅ 화면이 보일 때마다 프로필 새로고침
         loadMyPage()
+        updateNotificationIcon()
     }
 
     private fun loadMyPage() {
@@ -295,6 +298,22 @@ class MyPageFragment : Fragment() {
         requireActivity().runOnUiThread {
             if (_binding != null) {
                 this@MyPageFragment.setupUsageText(count)
+            }
+        }
+    }
+
+    private fun updateNotificationIcon() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.notificationService.getUnreadStatus()
+                val hasUnread = response.data?.hasUnread == true
+
+                binding.ivNotification.setImageResource(
+                    if (hasUnread) R.drawable.ic_noti_on
+                    else R.drawable.ic_noti_off
+                )
+            } catch (e: Exception) {
+                binding.ivNotification.setImageResource(R.drawable.ic_noti_off)
             }
         }
     }

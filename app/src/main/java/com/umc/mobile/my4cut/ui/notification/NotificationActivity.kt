@@ -58,9 +58,20 @@ class NotificationActivity : AppCompatActivity() {
                 }
 
                 if (response.code.startsWith("C2") && response.data != null) {
+                    suspend fun markVisibleItemsAsRead(endExclusive: Int) {
+                        val safeEnd = minOf(endExclusive, response.data.size)
+                        response.data.take(safeEnd)
+                            .filter { dto -> dto.isRead != true }
+                            .forEach { dto ->
+                                try {
+                                    RetrofitClient.notificationService.readNotification(dto.notificationId)
+                                } catch (e: Exception) {
+                                    Log.e("NotificationRead", "알림 읽음 처리 실패: id=${dto.notificationId}", e)
+                                }
+                            }
+                    }
 
                     val uiList = response.data
-                        .filter { dto -> dto.isRead != true }
                         .map { dto ->
                         Log.d(
                             "NotificationDebug",
@@ -96,6 +107,8 @@ class NotificationActivity : AppCompatActivity() {
                             hasButtons = dto.type == "FRIEND_REQUEST" || dto.type == "WORKSPACE_INVITE"
                         )
                     }.toMutableList()
+
+                    markVisibleItemsAsRead(8)
 
                     lateinit var adapter: NotificationAdapter
                     adapter = NotificationAdapter(
@@ -185,14 +198,26 @@ class NotificationActivity : AppCompatActivity() {
                         }
                     )
                     binding.btnMore.setOnClickListener {
-                        if (adapter.canLoadMore()) {
-                            adapter.loadMore()
-                            binding.btnMore.visibility = android.view.View.VISIBLE
-                        } else {
-                            // 더 이상 불러올 게 없으면 위로 이동 버튼으로 변경
-                            binding.btnMore.setImageResource(R.drawable.ic_noti_to_top)
-                            binding.btnMore.setOnClickListener {
-                                binding.rvNotification.smoothScrollToPosition(0)
+                        lifecycleScope.launch {
+                            if (adapter.canLoadMore()) {
+                                val currentCount = adapter.itemCount
+                                adapter.loadMore()
+                                markVisibleItemsAsRead(adapter.itemCount)
+
+                                if (adapter.canLoadMore()) {
+                                    binding.btnMore.visibility = View.VISIBLE
+                                } else {
+                                    binding.btnMore.visibility = View.VISIBLE
+                                    binding.btnMore.setImageResource(R.drawable.ic_noti_to_top)
+                                    binding.btnMore.setOnClickListener {
+                                        binding.rvNotification.smoothScrollToPosition(0)
+                                    }
+                                }
+                            } else {
+                                binding.btnMore.setImageResource(R.drawable.ic_noti_to_top)
+                                binding.btnMore.setOnClickListener {
+                                    binding.rvNotification.smoothScrollToPosition(0)
+                                }
                             }
                         }
                     }
@@ -218,8 +243,21 @@ class NotificationActivity : AppCompatActivity() {
 
     private fun formatTimeAgo(createdAt: String): String {
         return try {
-            val parsed = java.time.LocalDateTime.parse(createdAt)
-            val now = java.time.LocalDateTime.now()
+            val now = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Seoul"))
+
+            val parsed = try {
+                java.time.OffsetDateTime.parse(createdAt)
+                    .atZoneSameInstant(java.time.ZoneId.of("Asia/Seoul"))
+            } catch (e1: Exception) {
+                try {
+                    java.time.Instant.parse(createdAt)
+                        .atZone(java.time.ZoneId.of("Asia/Seoul"))
+                } catch (e2: Exception) {
+                    java.time.LocalDateTime.parse(createdAt)
+                        .atOffset(java.time.ZoneOffset.UTC)
+                        .atZoneSameInstant(java.time.ZoneId.of("Asia/Seoul"))
+                }
+            }
 
             val minutes = java.time.Duration.between(parsed, now).toMinutes()
 

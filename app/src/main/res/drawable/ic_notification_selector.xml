@@ -4,10 +4,10 @@
     <!-- 알림 있음 -->
     <item
         android:state_selected="true"
-        android:drawable="@drawable/ic_notification_on" />
+        android:drawable="@drawable/ic_noti_on" />
 
     <!-- 알림 없음 (기본) -->
     <item
-        android:drawable="@drawable/ic_notification_off" />
+        android:drawable="@drawable/ic_noti_off" />
 
 </selector>

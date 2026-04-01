@@ -1,4 +1,8 @@
+
 package com.umc.mobile.my4cut.ui.myalbum
+import androidx.lifecycle.lifecycleScope
+import com.umc.mobile.my4cut.R
+import kotlinx.coroutines.launch
 
 import android.content.Intent
 import android.os.Bundle
@@ -12,6 +16,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.umc.mobile.my4cut.databinding.FragmentCalendarMainBinding
 import com.umc.mobile.my4cut.databinding.ViewTabCustomBinding
 import com.google.android.material.tabs.TabLayoutMediator
+import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 
 class CalendarMainFragment : Fragment() {
@@ -38,8 +43,31 @@ class CalendarMainFragment : Fragment() {
 
         setupTabs()
 
+        updateNotificationIcon()
+
         binding.ivNotification.setOnClickListener {
             startActivity(Intent(requireContext(), NotificationActivity::class.java))
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateNotificationIcon()
+    }
+
+    private fun updateNotificationIcon() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.notificationService.getUnreadStatus()
+                val hasUnread = response.data?.hasUnread == true
+
+                binding.ivNotification.setImageResource(
+                    if (hasUnread) R.drawable.ic_noti_on
+                    else R.drawable.ic_noti_off
+                )
+            } catch (e: Exception) {
+                binding.ivNotification.setImageResource(R.drawable.ic_noti_off)
+            }
         }
     }
 
