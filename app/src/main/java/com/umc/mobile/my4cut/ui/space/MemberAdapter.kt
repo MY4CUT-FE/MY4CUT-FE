@@ -7,6 +7,7 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.umc.mobile.my4cut.R
 import com.google.android.flexbox.FlexboxLayoutManager
+import com.bumptech.glide.Glide
 
 class MemberAdapter : RecyclerView.Adapter<MemberAdapter.MemberViewHolder>() {
 
@@ -44,13 +45,15 @@ class MemberAdapter : RecyclerView.Adapter<MemberAdapter.MemberViewHolder>() {
         private val imageView = itemView as ImageView
 
         fun bind(item: MemberUiModel) {
-            if (item.profileImageUrl == null) {
+            if (item.profileImageUrl.isNullOrBlank()) {
                 imageView.setImageResource(R.drawable.ic_profile_cat)
             } else {
-                // Glide.with(imageView)
-                //     .load(item.profileImageUrl)
-                //     .placeholder(R.drawable.ic_profile_cat)
-                //     .into(imageView)
+                Glide.with(imageView)
+                    .load(item.profileImageUrl)
+                    .placeholder(R.drawable.ic_profile_cat)
+                    .error(R.drawable.ic_profile_cat)
+                    .circleCrop()
+                    .into(imageView)
             }
         }
     }

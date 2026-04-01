@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.lifecycle.lifecycleScope
 import com.umc.mobile.my4cut.network.RetrofitClient
 import kotlinx.coroutines.launch
+import android.view.View
 
 class NotificationActivity : AppCompatActivity() {
 
@@ -29,6 +30,18 @@ class NotificationActivity : AppCompatActivity() {
         binding.btnBack.setOnClickListener {
             finish()
         }
+        binding.tvDeleteAll.setOnClickListener {
+            lifecycleScope.launch {
+                try {
+                    RetrofitClient.notificationService.deleteAllNotifications()
+                    binding.rvNotification.adapter = null
+                    binding.btnMore.visibility = View.GONE
+                    Toast.makeText(this@NotificationActivity, "전체 삭제되었습니다.", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(this@NotificationActivity, "전체 삭제 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     private fun setupRecyclerView() {
@@ -45,9 +58,20 @@ class NotificationActivity : AppCompatActivity() {
                 }
 
                 if (response.code.startsWith("C2") && response.data != null) {
+                    suspend fun markVisibleItemsAsRead(endExclusive: Int) {
+                        val safeEnd = minOf(endExclusive, response.data.size)
+                        response.data.take(safeEnd)
+                            .filter { dto -> dto.isRead != true }
+                            .forEach { dto ->
+                                try {
+                                    RetrofitClient.notificationService.readNotification(dto.notificationId)
+                                } catch (e: Exception) {
+                                    Log.e("NotificationRead", "알림 읽음 처리 실패: id=${dto.notificationId}", e)
+                                }
+                            }
+                    }
 
                     val uiList = response.data
-                        .filter { dto -> dto.isRead != true }
                         .map { dto ->
                         Log.d(
                             "NotificationDebug",
@@ -83,6 +107,8 @@ class NotificationActivity : AppCompatActivity() {
                             hasButtons = dto.type == "FRIEND_REQUEST" || dto.type == "WORKSPACE_INVITE"
                         )
                     }.toMutableList()
+
+                    markVisibleItemsAsRead(8)
 
                     lateinit var adapter: NotificationAdapter
                     adapter = NotificationAdapter(
@@ -153,17 +179,59 @@ class NotificationActivity : AppCompatActivity() {
                                     Toast.makeText(this@NotificationActivity, "거절 실패: ${e.message}", Toast.LENGTH_SHORT).show()
                                 }
                             }
+                        },
+                        onDeleteClick = { item ->
+                            lifecycleScope.launch {
+                                try {
+                                    RetrofitClient.notificationService.deleteNotification(item.id)
+                                    val index = uiList.indexOf(item)
+                                    if (index != -1) {
+                                        uiList.removeAt(index)
+                                        binding.rvNotification.adapter?.notifyItemRemoved(index)
+                                        binding.btnMore.visibility =
+                                            if (adapter.canLoadMore()) View.VISIBLE else View.GONE
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(this@NotificationActivity, "삭제 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         }
                     )
                     binding.btnMore.setOnClickListener {
-                        adapter.loadMore()
-                        binding.btnMore.visibility =
-                            if (adapter.canLoadMore()) android.view.View.VISIBLE else android.view.View.GONE
+                        lifecycleScope.launch {
+                            if (adapter.canLoadMore()) {
+                                val currentCount = adapter.itemCount
+                                adapter.loadMore()
+                                markVisibleItemsAsRead(adapter.itemCount)
+
+                                if (adapter.canLoadMore()) {
+                                    binding.btnMore.visibility = View.VISIBLE
+                                } else {
+                                    binding.btnMore.visibility = View.VISIBLE
+                                    binding.btnMore.setImageResource(R.drawable.ic_noti_to_top)
+                                    binding.btnMore.setOnClickListener {
+                                        binding.rvNotification.smoothScrollToPosition(0)
+                                    }
+                                }
+                            } else {
+                                binding.btnMore.setImageResource(R.drawable.ic_noti_to_top)
+                                binding.btnMore.setOnClickListener {
+                                    binding.rvNotification.smoothScrollToPosition(0)
+                                }
+                            }
+                        }
                     }
                     binding.rvNotification.adapter = adapter
                     binding.rvNotification.layoutManager = LinearLayoutManager(this@NotificationActivity)
-                    binding.btnMore.visibility =
-                        if (adapter.canLoadMore()) android.view.View.VISIBLE else android.view.View.GONE
+                    if (adapter.canLoadMore()) {
+                        binding.btnMore.visibility = android.view.View.VISIBLE
+                    } else {
+                        binding.btnMore.visibility = android.view.View.VISIBLE
+                        binding.btnMore.setImageResource(R.drawable.ic_noti_to_top)
+                        binding.btnMore.setOnClickListener {
+                            binding.rvNotification.smoothScrollToPosition(0)
+                        }
+                    }
                 }
 
             } catch (e: Exception) {
@@ -175,11 +243,23 @@ class NotificationActivity : AppCompatActivity() {
 
     private fun formatTimeAgo(createdAt: String): String {
         return try {
-            val parsed = java.time.OffsetDateTime.parse(createdAt)
-            val localTime = parsed.atZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalDateTime()
-            val now = java.time.LocalDateTime.now(java.time.ZoneId.systemDefault())
+            val now = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Seoul"))
 
-            val minutes = java.time.Duration.between(localTime, now).toMinutes()
+            val parsed = try {
+                java.time.OffsetDateTime.parse(createdAt)
+                    .atZoneSameInstant(java.time.ZoneId.of("Asia/Seoul"))
+            } catch (e1: Exception) {
+                try {
+                    java.time.Instant.parse(createdAt)
+                        .atZone(java.time.ZoneId.of("Asia/Seoul"))
+                } catch (e2: Exception) {
+                    java.time.LocalDateTime.parse(createdAt)
+                        .atOffset(java.time.ZoneOffset.UTC)
+                        .atZoneSameInstant(java.time.ZoneId.of("Asia/Seoul"))
+                }
+            }
+
+            val minutes = java.time.Duration.between(parsed, now).toMinutes()
 
             when {
                 minutes < 1 -> "방금 전"
@@ -188,6 +268,7 @@ class NotificationActivity : AppCompatActivity() {
                 else -> "${minutes / (60 * 24)}일 전"
             }
         } catch (e: Exception) {
+            Log.e("NotificationTime", "createdAt parse 실패: $createdAt", e)
             "방금 전"
         }
     }

@@ -15,6 +15,7 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import coil.load
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.base.BaseResponse
@@ -36,6 +37,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
 
@@ -88,6 +90,7 @@ class HomeFragment : Fragment() {
         // ✅ API 데이터 로드
         loadCalendarData()
         loadDay4CutData(selectedDate)
+        updateNotificationIcon()
     }
 
     private fun setupDateBanner() {
@@ -347,6 +350,22 @@ class HomeFragment : Fragment() {
         binding.tvContentDate.text = date.format(formatter)
     }
 
+    private fun updateNotificationIcon() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.notificationService.getUnreadStatus()
+                val hasUnread = response.data?.hasUnread == true
+
+                binding.ivNotification.setImageResource(
+                    if (hasUnread) R.drawable.ic_noti_on
+                    else R.drawable.ic_noti_off
+                )
+            } catch (e: Exception) {
+                binding.ivNotification.setImageResource(R.drawable.ic_noti_off)
+            }
+        }
+    }
+
     /**
      * ✅ 화면 복귀 시 데이터 새로고침
      */
@@ -355,6 +374,7 @@ class HomeFragment : Fragment() {
         // 다른 화면에서 돌아왔을 때 데이터 갱신
         loadCalendarData()
         loadDay4CutData(selectedDate)
+        updateNotificationIcon()
     }
 
     override fun onDestroyView() {

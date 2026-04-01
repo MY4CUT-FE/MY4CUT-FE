@@ -1,5 +1,7 @@
 package com.umc.mobile.my4cut.ui.space
 
+import com.bumptech.glide.Glide
+
 import android.view.ViewGroup
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.view.setPadding
@@ -70,6 +72,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     private var isOwner: Boolean = false
     private var myUserId: Long = -1L
     private var myNickname: String = ""
+    private var myProfileImageUrl: String? = null
     private val existingMemberIds = mutableListOf<Long>()
 
     private val workspacePhotoService: WorkspacePhotoService by lazy {
@@ -108,6 +111,20 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
             alignItems = AlignItems.CENTER
         }
         membersRecyclerView.isNestedScrollingEnabled = false
+
+        parentFragmentManager.setFragmentResultListener(
+            PhotoDialogFragment.RESULT_PHOTO_DELETED,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            val deletedPhotoId = bundle.getLong(
+                PhotoDialogFragment.BUNDLE_KEY_DELETED_PHOTO_ID,
+                -1L
+            )
+
+            if (deletedPhotoId != -1L) {
+                photoAdapter.removePhoto(deletedPhotoId)
+            }
+        }
 
         photoAdapter = PhotoRVAdapter(photoDatas)
         binding.rvPhotoList.adapter = photoAdapter
@@ -153,7 +170,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     existingMemberIds.add(ownerId.toLong())
                 }
 
-                updateMemberUi(data.memberCount ?: existingMemberIds.size)
+                updateMemberUi(data.memberProfiles)
 
                 Log.d(
                     "SpaceFragment",
@@ -171,11 +188,13 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                         val body = response.body()
                         myUserId = body?.data?.userId?.toLong() ?: -1L
                         myNickname = body?.data?.nickname ?: ""
+                        myProfileImageUrl = body?.data?.profileImageViewUrl
                         isOwner = (data.ownerId?.toLong() == myUserId)
 
                         Log.d("SpaceFragment", "isOwner=$isOwner ownerId=${data.ownerId} myUserId=$myUserId")
                         binding.btnChange.visibility = if (isOwner) View.VISIBLE else View.GONE
-                        updateMemberUi(data.memberCount ?: existingMemberIds.size)
+                        updateMemberUi(data.memberProfiles)
+                        updatePhotoUploaderProfiles()
                     }
 
                     override fun onFailure(
@@ -297,47 +316,63 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     }
 
     private fun loadPhotosFromApi() {
-        lifecycleScope.launch {
-            try {
-                val response = workspacePhotoService.getPhotos(spaceId)
+        workspacePhotoService.getPhotos(spaceId, "oldest")
+            .enqueue(object : Callback<BaseResponse<List<com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoResponseDto>>> {
+                override fun onResponse(
+                    call: Call<BaseResponse<List<com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoResponseDto>>>,
+                    response: Response<BaseResponse<List<com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoResponseDto>>>
+                ) {
+                    val list = response.body()?.data ?: emptyList()
+                    Log.d("PHOTO_DEBUG", "서버에서 받은 사진 개수 = ${list.size}")
 
-                val list = response.data ?: emptyList()
-                Log.d("PHOTO_DEBUG", "서버에서 받은 사진 개수 = ${list.size}")
+                    val newPhotos = ArrayList<PhotoData>()
 
-                photoDatas.clear()
+                    for (photoResponse in list) {
+                        val photoId = photoResponse.mediaId ?: 0L
 
-                photoDatas.addAll(
-                    list.map {
-                        val photoId = it.mediaId ?: 0L
-
-                        // 댓글 개수 조회 (기본값 0)
-                        var commentCount = 0
-                        try {
-                            val commentResponse =
-                                workspacePhotoService.getComments(spaceId, photoId)
-                            commentCount = commentResponse.data?.size ?: 0
-                        } catch (e: Exception) {
-                            Log.e("PHOTO_DEBUG", "댓글 개수 조회 실패 photoId=$photoId", e)
-                        }
-
-                        PhotoData(
-                            photoId = photoId,
-                            userName = it.uploaderNickname ?: "",
-                            userProfileUrl = null,
-                            photoUrl = it.viewUrl ?: "",
-                            dateTime = formatDateTime(it.createdAt),
-                            commentCount = commentCount,
-                            uploaderId = if (it.uploaderNickname == myNickname) myUserId else null
+                        newPhotos.add(
+                            PhotoData(
+                                photoId = photoId,
+                                userProfileUrl = if (photoResponse.uploaderNickname == myNickname) myProfileImageUrl else null,
+                                userName = photoResponse.uploaderNickname ?: "",
+                                dateTime = formatDateTime(photoResponse.createdAt),
+                                commentCount = 0,
+                                photoImageRes = null,
+                                photoUrl = photoResponse.viewUrl,
+                                uploaderId = if (photoResponse.uploaderNickname == myNickname) myUserId else null,
+                                isFinal = photoResponse.isFinal ?: false
+                            )
                         )
                     }
-                )
 
-                photoAdapter.notifyDataSetChanged()
+                    photoDatas.clear()
+                    photoDatas.addAll(newPhotos)
+                    photoAdapter.updatePhotos(newPhotos)
 
-            } catch (e: Exception) {
-                Log.e("SpaceFragment", "사진 목록 API 실패", e)
-            }
-        }
+                    for (photo in newPhotos) {
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            try {
+                                val commentResponse = workspacePhotoService.getComments(spaceId, photo.photoId)
+                                val count = commentResponse.data?.size ?: 0
+                                val index = photoDatas.indexOfFirst { it.photoId == photo.photoId }
+                                if (index != -1) {
+                                    photoDatas[index] = photoDatas[index].copy(commentCount = count)
+                                    photoAdapter.notifyItemChanged(index)
+                                }
+                            } catch (e: Exception) {
+                                Log.e("PHOTO_DEBUG", "댓글 개수 조회 실패 photoId=${photo.photoId}", e)
+                            }
+                        }
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<BaseResponse<List<com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoResponseDto>>>,
+                    t: Throwable
+                ) {
+                    Log.e("SpaceFragment", "사진 목록 API 실패", t)
+                }
+            })
     }
 
     private fun showExitDialog() {
@@ -515,12 +550,46 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         }
     }
 
-    private fun updateMemberUi(memberCount: Int) {
+    private fun updateMemberUi(memberProfiles: List<String>?) {
         memberItems.clear()
-        repeat(memberCount.coerceAtLeast(0)) { index ->
-            memberItems.add(MemberItem(id = index.toLong()))
+
+        memberProfiles.orEmpty().forEachIndexed { index, profilePath ->
+            memberItems.add(
+                MemberItem(
+                    id = index.toLong(),
+                    profileImageUrl = buildProfileUrl(profilePath)
+                )
+            )
         }
+
         memberAdapter.notifyDataSetChanged()
+    }
+
+    private fun buildProfileUrl(profilePath: String?): String? {
+        if (profilePath.isNullOrBlank()) return null
+        return if (profilePath.startsWith("http://") || profilePath.startsWith("https://")) {
+            profilePath
+        } else {
+            null
+        }
+    }
+
+    private fun updatePhotoUploaderProfiles() {
+        if (myProfileImageUrl.isNullOrBlank()) return
+        if (photoDatas.isEmpty()) return
+
+        var changed = false
+        for (index in photoDatas.indices) {
+            val photo = photoDatas[index]
+            if (photo.uploaderId == myUserId && photo.userProfileUrl != myProfileImageUrl) {
+                photoDatas[index] = photo.copy(userProfileUrl = myProfileImageUrl)
+                changed = true
+            }
+        }
+
+        if (changed) {
+            photoAdapter.updatePhotos(photoDatas.toList())
+        }
     }
 
     private fun Int.toDp(): Int {
@@ -528,7 +597,8 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     }
 
     private data class MemberItem(
-        val id: Long
+        val id: Long,
+        val profileImageUrl: String?
     )
 
     private inner class MemberAdapter(
@@ -560,7 +630,16 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         ) : RecyclerView.ViewHolder(imageView) {
 
             fun bind(item: MemberItem) {
-                imageView.setImageResource(R.drawable.ic_profile_cat)
+                if (item.profileImageUrl.isNullOrBlank()) {
+                    imageView.setImageResource(R.drawable.ic_profile_cat)
+                } else {
+                    Glide.with(imageView)
+                        .load(item.profileImageUrl)
+                        .placeholder(R.drawable.ic_profile_cat)
+                        .error(R.drawable.ic_profile_cat)
+                        .circleCrop()
+                        .into(imageView)
+                }
             }
         }
     }

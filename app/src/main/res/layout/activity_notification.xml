@@ -74,7 +74,7 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_marginBottom="18dp"
-    android:src="@drawable/ic_seemore"
+    android:src="@drawable/ic_noti_more"
     android:contentDescription="더보기"
     app:layout_constraintBottom_toTopOf="@id/tv_footer_info"
     app:layout_constraintEnd_toEndOf="parent"

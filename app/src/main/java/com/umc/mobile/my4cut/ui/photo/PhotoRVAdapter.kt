@@ -45,14 +45,19 @@ class PhotoRVAdapter(
                 val clickedPosition = bindingAdapterPosition
                 if (clickedPosition == RecyclerView.NO_POSITION) return@setOnClickListener
 
-                val wasFinal = photoList[clickedPosition].isFinal
+                val clickedPhoto = photoList[clickedPosition]
+                val wasFinal = clickedPhoto.isFinal
 
-                photoList.forEachIndexed { index, item ->
-                    item.isFinal = index == clickedPosition && !wasFinal
+                photoList.forEach { it.isFinal = false }
+                clickedPhoto.isFinal = !wasFinal
+
+                if (clickedPhoto.isFinal) {
+                    photoList.removeAt(clickedPosition)
+                    photoList.add(0, clickedPhoto)
                 }
 
                 notifyDataSetChanged()
-                onFinalToggleListener?.invoke(photoList[clickedPosition])
+                onFinalToggleListener?.invoke(clickedPhoto)
             }
 
             binding.root.setOnClickListener {
@@ -79,11 +84,18 @@ class PhotoRVAdapter(
     fun updatePhotos(newPhotos: List<PhotoData>) {
         photoList.clear()
 
-        val sortedList = newPhotos
-            .sortedWith(compareByDescending<PhotoData> { it.isFinal })
-            .reversed()
+        val finalPhotos = newPhotos.filter { it.isFinal }
+        val normalPhotos = newPhotos.filterNot { it.isFinal }
 
-        photoList.addAll(sortedList)
+        photoList.addAll(finalPhotos)
+        photoList.addAll(normalPhotos)
         notifyDataSetChanged()
+    }
+    fun removePhoto(photoId: Long) {
+        val index = photoList.indexOfFirst { it.photoId == photoId }
+        if (index == -1) return
+
+        photoList.removeAt(index)
+        notifyItemRemoved(index)
     }
 }

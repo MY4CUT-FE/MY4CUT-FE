@@ -2,10 +2,13 @@ package com.umc.mobile.my4cut.data.notification.remote
 
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.notification.model.NotificationDto
+import com.umc.mobile.my4cut.data.notification.model.NotificationMarkReadByIdsDto
 import com.umc.mobile.my4cut.data.notification.model.NotificationReadResponseDto
+import com.umc.mobile.my4cut.data.notification.model.NotificationUnreadResponseDto
 import com.umc.mobile.my4cut.data.notification.model.RegisterTokenRequestDto
 import com.umc.mobile.my4cut.data.notification.model.RegisterTokenResponseDto
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -25,6 +28,26 @@ interface NotificationService {
     suspend fun readNotification(
         @Path("id") id: Long
     ): BaseResponse<NotificationReadResponseDto>
+
+    /** 페이지 읽음 처리 */
+    @PATCH("notifications/read-page")
+    suspend fun markPageAsRead(
+        @Body request: NotificationMarkReadByIdsDto
+    ): BaseResponse<Unit>
+
+    /** 읽지 않은 알림 존재 여부 조회 */
+    @GET("notifications/unread-status")
+    suspend fun getUnreadStatus(): BaseResponse<NotificationUnreadResponseDto>
+
+    /** 알림 개별 삭제 */
+    @DELETE("notifications/{id}")
+    suspend fun deleteNotification(
+        @Path("id") id: Long
+    ): BaseResponse<Unit>
+
+    /** 알림 전체 삭제 */
+    @DELETE("notifications")
+    suspend fun deleteAllNotifications(): BaseResponse<Unit>
 
     @POST("/notifications/token")
     suspend fun registerToken(

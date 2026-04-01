@@ -77,17 +77,8 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
                 allFriends.addAll(
                     friends.map {
                         Log.d("FRIEND_API", "nickname=${it.nickname}, profileImageUrl=${it.profileImageUrl}")
-                        val imageUrl = it.profileImageUrl?.let { url ->
-                            if (url.startsWith("http")) {
-                                url
-                            } else {
-                                // 앞에 /가 붙어도 중복 슬래시 방지
-                                val cleanPath = url.removePrefix("/")
-                                val fullUrl = "https://api.my4cut.shop/$cleanPath"
-                                Log.d("FRIEND_API", "finalImageUrl=$fullUrl")
-                                fullUrl
-                            }
-                        }
+                        val imageUrl = normalizeProfileImageUrl(it.profileImageUrl)
+                        Log.d("FRIEND_API", "finalImageUrl=$imageUrl")
                         Friend(
                             friendId = it.friendId,
                             userId = it.userId,
@@ -309,6 +300,16 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    private fun normalizeProfileImageUrl(rawUrl: String?): String? {
+        if (rawUrl.isNullOrBlank()) return null
+
+        return if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+            rawUrl
+        } else {
+            null
         }
     }
 

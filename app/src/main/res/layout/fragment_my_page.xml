@@ -24,7 +24,7 @@
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:layout_marginEnd="20dp"
-        android:src="@drawable/ic_notification"
+        android:src="@drawable/ic_noti_off"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/tv_header_title"
         app:layout_constraintBottom_toBottomOf="@id/tv_header_title"/>

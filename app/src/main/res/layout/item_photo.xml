@@ -29,28 +29,17 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
-            android:background="@drawable/bg_white_radius"
             android:gravity="center"
             android:orientation="horizontal"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="4dp"
             app:layout_constraintEnd_toEndOf="@id/ivPhoto"
             app:layout_constraintTop_toTopOf="parent">
 
             <ImageView
                 android:id="@+id/ivFinalToggle"
-                android:layout_width="10dp"
-                android:layout_height="10dp"
-                android:src="@drawable/ic_final_off" />
-
-            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:fontFamily="@font/suit_regular"
-                android:text="최종본"
-                android:textColor="#565656"
-                android:textSize="8sp" />
+                android:src="@drawable/ic_final_off"
+                android:contentDescription="final toggle" />
         </LinearLayout>
 
         <ImageView

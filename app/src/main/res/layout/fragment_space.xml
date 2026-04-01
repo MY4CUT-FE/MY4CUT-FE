@@ -46,16 +46,6 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
-            android:id="@+id/btnFinalToggle"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_marginEnd="12dp"
-            android:src="@drawable/ic_final_off"
-            app:layout_constraintEnd_toStartOf="@id/btnExitMenu"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
-
-        <ImageView
             android:id="@+id/btnExitMenu"
             android:layout_width="15dp"
             android:layout_height="14dp"
@@ -104,7 +94,7 @@
         app:layout_constraintVertical_bias="0.0"
         app:spanCount="2"
         tools:itemCount="2"
-        tools:layout_editor_absoluteX="121dp"
+        tools:layout_editor_absoluteX="0dp"
         tools:listitem="@layout/item_photo" />
 
     <LinearLayout

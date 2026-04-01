@@ -7,15 +7,16 @@ import androidx.recyclerview.widget.RecyclerView
 import com.umc.mobile.my4cut.databinding.ItemNotificationBinding
 
 class NotificationAdapter(
-    private val items: List<NotificationData>,
+    private val items: MutableList<NotificationData>,
     private val onAcceptClick: (NotificationData) -> Unit,
-    private val onDeclineClick: (NotificationData) -> Unit
+    private val onDeclineClick: (NotificationData) -> Unit,
+    private val onDeleteClick: (NotificationData) -> Unit
 ) : RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
 
     private var visibleCount = minOf(PAGE_SIZE, items.size)
 
     companion object {
-        private const val PAGE_SIZE = 8
+        private const val PAGE_SIZE = 6
     }
 
     inner class ViewHolder(private val binding: ItemNotificationBinding) :
@@ -41,6 +42,9 @@ class NotificationAdapter(
                 binding.ivClose.setOnClickListener(null)
             } else {
                 binding.ivClose.visibility = View.VISIBLE
+                binding.ivClose.setOnClickListener {
+                    onDeleteClick(item)
+                }
             }
 
             // 3. 버튼 클릭 리스너 예시
@@ -62,7 +66,7 @@ class NotificationAdapter(
         holder.bind(items[position])
     }
 
-    override fun getItemCount(): Int = visibleCount
+    override fun getItemCount(): Int = minOf(visibleCount, items.size)
 
     fun loadMore() {
         val previousCount = visibleCount
@@ -74,6 +78,10 @@ class NotificationAdapter(
     }
 
     fun canLoadMore(): Boolean = visibleCount < items.size
+
+    fun syncVisibleCount() {
+        visibleCount = minOf(visibleCount, items.size)
+    }
 
     private fun formatTimeAgo(timeString: String): String {
         return try {

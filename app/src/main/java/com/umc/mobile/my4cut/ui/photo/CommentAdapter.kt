@@ -3,8 +3,10 @@ package com.umc.mobile.my4cut.ui.photo
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.umc.mobile.my4cut.R
 
 class CommentAdapter(
@@ -13,6 +15,7 @@ class CommentAdapter(
 ) : RecyclerView.Adapter<CommentAdapter.ViewHolder>() {
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val ivProfile: ImageView = view.findViewById(R.id.ivCommentProfile)
         val tvName: TextView = view.findViewById(R.id.tvCommentName)
         val tvContent: TextView = view.findViewById(R.id.tvCommentContent)
         val tvTime: TextView = view.findViewById(R.id.tvCommentTime)
@@ -30,11 +33,21 @@ class CommentAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
 
+        if (item.profileImgUrl.isNullOrBlank()) {
+            holder.ivProfile.setImageResource(R.drawable.ic_profile_cat)
+        } else {
+            Glide.with(holder.ivProfile)
+                .load(item.profileImgUrl)
+                .placeholder(R.drawable.ic_profile_cat)
+                .error(R.drawable.ic_profile_cat)
+                .circleCrop()
+                .into(holder.ivProfile)
+        }
+
         holder.tvName.text = item.userName
         holder.tvContent.text = item.content
         holder.tvTime.text = item.time
 
-        // 내 댓글일 때만 삭제 표시
         holder.tvDelete.visibility =
             if (item.isMine) View.VISIBLE else View.GONE
 
