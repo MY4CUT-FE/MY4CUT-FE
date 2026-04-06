@@ -158,12 +158,12 @@ class EntryRegisterActivity : AppCompatActivity() {
                 // Step 3: Day4Cut 생성 요청 구성
                 val images = uploadedFiles.mapIndexed { index, file ->
                     Day4CutImage(
-                        mediaFileId = file.fileId,
+                        mediaFileId = file.mediaId,
                         isThumbnail = (index == typicalImageIndex)  // ✅ 선택된 썸네일
                     )
                 }
 
-                Log.d("EntryRegister", "📊 Uploaded fileIds: ${uploadedFiles.map { it.fileId }}")
+                Log.d("EntryRegister", "📊 Uploaded fileIds: ${uploadedFiles.map { it.mediaId }}")
 
                 // 날짜 변환 ("2026.2.9" -> "2026-02-09")
                 val dateString = intent.getStringExtra("SELECTED_DATE") ?: ""

@@ -477,12 +477,12 @@ class EntryDetailFragment : Fragment() {
 
                 val images = uploadedFiles.mapIndexed { index, file ->
                     Day4CutImage(
-                        mediaFileId = file.fileId,
+                        mediaFileId = file.mediaId,
                         isThumbnail = (index == typicalImageIndex)
                     )
                 }
 
-                Log.d("EntryDetail", "📊 Uploaded fileIds: ${uploadedFiles.map { it.fileId }}")
+                Log.d("EntryDetail", "📊 Uploaded fileIds: ${uploadedFiles.map { it.mediaId }}")
 
                 val request = UpdateDay4CutRequest(
                     date = apiDate!!,

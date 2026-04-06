@@ -222,7 +222,7 @@ class AlbumDetailFragment : Fragment() {
                     val uploadedMediaList = baseResponse?.data
 
                     if (!uploadedMediaList.isNullOrEmpty()) {
-                        val uploadedMediaIds = uploadedMediaList.map { it.fileId }
+                        val uploadedMediaIds = uploadedMediaList.map { it.mediaId }
 
                         // 3. 앨범 사진 추가 API 호출
                         val addRes = RetrofitClient.albumService.addPhotosToAlbum(

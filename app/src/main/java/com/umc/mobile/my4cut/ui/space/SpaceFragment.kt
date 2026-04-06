@@ -514,7 +514,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     RetrofitClient.mediaService.uploadMediaBulk(listOf(multipart))
                 }
 
-                val mediaIds = uploadResponse.data?.map { it.fileId.toLong() } ?: emptyList()
+                val mediaIds = uploadResponse.data?.map { it.mediaId.toLong() } ?: emptyList()
                 if (mediaIds.isEmpty()) {
                     Log.e("SpaceFragment", "❌ 업로드된 미디어 ID가 없습니다.")
                     return@launch

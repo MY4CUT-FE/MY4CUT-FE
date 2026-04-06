@@ -323,8 +323,8 @@ class EntryRegisterActivity : AppCompatActivity() {
 
                         uploadedMediaIds.clear()
                         uploadedFiles.forEach { file ->
-                            uploadedMediaIds.add(file.fileId)
-                            Log.d("EntryRegister", "   ├─ fileId: ${file.fileId}, viewUrl: ${file.viewUrl}")
+                            uploadedMediaIds.add(file.mediaId)
+                            Log.d("EntryRegister", "   ├─ fileId: ${file.mediaId}, viewUrl: ${file.viewUrl}")
                         }
 
                         Log.d("EntryRegister", "📊 Uploaded mediaIds: $uploadedMediaIds")
