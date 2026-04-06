@@ -3,6 +3,7 @@ package com.umc.mobile.my4cut.ui.login
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.graphics.Paint
 import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
@@ -61,6 +62,7 @@ class LoginActivity : AppCompatActivity() {
         initClickListener()
         initTextWatchers()
         initPasswordToggle()
+        initUnderlineLinks()
     }
 
     private fun initClickListener() {
@@ -311,6 +313,11 @@ class LoginActivity : AppCompatActivity() {
             }
             false
         }
+    }
+
+    private fun initUnderlineLinks() {
+        binding.btnSignup.paintFlags = binding.btnSignup.paintFlags or Paint.UNDERLINE_TEXT_FLAG
+        binding.btnForgotPassword.paintFlags = binding.btnForgotPassword.paintFlags or Paint.UNDERLINE_TEXT_FLAG
     }
 
     override fun onDestroy() {
