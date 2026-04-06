@@ -22,7 +22,7 @@ interface MediaService {
 
 // Bulk 업로드 응답 아이템
 data class MediaBulkUploadItem(
-    val fileId: Int,
+    val mediaId: Int,
     val fileKey: String,
     val viewUrl: String
 )
