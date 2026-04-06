@@ -2,6 +2,7 @@ package com.umc.mobile.my4cut.data.auth.remote
 
 import com.umc.mobile.my4cut.data.auth.model.EmailCheckResponse
 import com.umc.mobile.my4cut.data.auth.model.KakaoLoginRequest
+import com.umc.mobile.my4cut.data.auth.model.PasswordResetRequest
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.auth.model.LoginRequest
 import com.umc.mobile.my4cut.data.auth.model.SignUpRequest
@@ -61,4 +62,16 @@ interface AuthService {
     )
     @DELETE("auth/withdraw")
     fun withdraw(): Call<BaseResponse<String>>
+
+    /** 비밀번호 재설정 인증코드 발송 - POST /auth/password/send-code */
+    @POST("auth/password/send-code")
+    fun sendPasswordResetCode(
+        @Body request: Map<String, String>
+    ): Call<BaseResponse<Any>>
+
+    /** 비밀번호 재설정 - POST /auth/password/reset */
+    @POST("auth/password/reset")
+    fun resetPassword(
+        @Body request: PasswordResetRequest
+    ): Call<BaseResponse<Any>>
 }

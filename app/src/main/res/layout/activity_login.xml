@@ -5,8 +5,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@drawable/bg_intro_gradient">
 
+    <!-- 뒤로가기 버튼 -->
     <ImageView
         android:id="@+id/btn_back"
         android:layout_width="48dp"
@@ -19,37 +20,53 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- 로고 -->
     <TextView
-        android:id="@+id/tv_title"
+        android:id="@+id/tv_logo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="20dp"
-        android:text="마이포컷 계정으로 로그인"
-        android:textColor="@color/gray_900"
-        android:textSize="20sp"
-        android:fontFamily="@font/suit_bold"
-        app:layout_constraintTop_toBottomOf="@id/btn_back"
-        app:layout_constraintStart_toStartOf="parent"/>
+        android:layout_marginTop="24dp"
+        android:text="MY4CUT"
+        android:textColor="@color/coral_900"
+        android:textSize="40sp"
+        android:fontFamily="@font/hakgyoansim_ttwimteul"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_back" />
 
+    <TextView
+        android:id="@+id/tv_sub_logo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Scrap Your Memories"
+        android:textColor="@color/coral_800"
+        android:textSize="14sp"
+        android:fontFamily="@font/suit_medium"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_logo" />
+
+    <!-- 이메일 -->
     <TextView
         android:id="@+id/tv_label_email"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="36dp"
+        android:layout_marginStart="20dp"
         android:text="이메일 (아이디)"
         android:textColor="@color/gray_900"
         android:textSize="12sp"
         android:fontFamily="@font/suit_medium"
-        app:layout_constraintStart_toStartOf="@id/tv_title"
-        app:layout_constraintTop_toBottomOf="@id/tv_title" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_sub_logo" />
 
     <EditText
         android:id="@+id/et_email"
         android:layout_width="0dp"
         android:layout_height="52dp"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="20dp"
+        android:layout_marginHorizontal="20dp"
         android:background="@drawable/bg_edittext_rounded"
         android:hint="이메일 입력"
         android:paddingHorizontal="16dp"
@@ -58,34 +75,38 @@
         android:textColor="@color/gray_900"
         android:inputType="textEmailAddress"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@id/tv_label_email"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_label_email" />
 
     <TextView
         android:id="@+id/tv_email_error"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="20dp"
         android:text="아이디가 일치하지 않습니다."
-        android:textColor="#FF0000"
+        android:textColor="@color/modal_red"
         android:textSize="11sp"
         android:fontFamily="@font/suit_regular"
         android:visibility="gone"
         android:drawablePadding="4dp"
         android:gravity="center_vertical"
-        app:layout_constraintEnd_toEndOf="@id/et_email"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/et_email"
-        tools:visibility="visible"/>
+        tools:visibility="gone" />
+
+    <!-- 비밀번호 -->
     <TextView
         android:id="@+id/tv_label_pw"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="20dp"
         android:text="비밀번호"
         android:textColor="@color/gray_900"
         android:textSize="12sp"
         android:fontFamily="@font/suit_medium"
-        app:layout_constraintStart_toStartOf="@id/tv_title"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_email_error" />
 
     <EditText
@@ -93,7 +114,7 @@
         android:layout_width="0dp"
         android:layout_height="52dp"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="20dp"
+        android:layout_marginHorizontal="20dp"
         android:background="@drawable/bg_edittext_rounded"
         android:hint="비밀번호 입력"
         android:paddingHorizontal="16dp"
@@ -104,40 +125,112 @@
         android:drawableEnd="@drawable/ic_visibility_off"
         android:drawableTint="@color/gray_500"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@id/tv_label_pw"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_label_pw" />
 
     <TextView
         android:id="@+id/tv_pw_error"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="20dp"
         android:text="비밀번호가 일치하지 않습니다."
-        android:textColor="#FF0000"
+        android:textColor="@color/modal_red"
         android:textSize="11sp"
         android:fontFamily="@font/suit_regular"
         android:visibility="gone"
         android:drawablePadding="4dp"
         android:gravity="center_vertical"
-        app:layout_constraintEnd_toEndOf="@id/et_password"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/et_password"
-        tools:visibility="visible"/>
+        tools:visibility="gone" />
 
-    <androidx.appcompat.widget.AppCompatButton
+    <!-- 로그인 버튼 -->
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_login"
         android:layout_width="0dp"
         android:layout_height="56dp"
         android:layout_marginHorizontal="20dp"
-        android:layout_marginBottom="24dp"
+        android:layout_marginTop="24dp"
         android:text="로그인"
         android:textColor="@color/white"
         android:textSize="16sp"
         android:fontFamily="@font/suit_bold"
         android:stateListAnimator="@null"
-        android:background="@drawable/selector_btn_next"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
         android:enabled="false"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:backgroundTint="@color/coral_800"
+        app:cornerRadius="12dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_pw_error" />
+
+    <!-- 회원가입 | 비밀번호 찾기 -->
+    <LinearLayout
+        android:id="@+id/ll_auth_links"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_login">
+
+        <TextView
+            android:id="@+id/btn_signup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="회원가입"
+            android:textColor="@color/gray_700"
+            android:textSize="13sp"
+            android:fontFamily="@font/suit_regular"
+            android:paintFlags="8" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="12dp"
+            android:background="@color/gray_500"
+            android:layout_marginHorizontal="4dp" />
+
+        <TextView
+            android:id="@+id/btn_forgot_password"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="비밀번호 찾기"
+            android:textColor="@color/gray_700"
+            android:textSize="13sp"
+            android:fontFamily="@font/suit_regular"
+            android:paintFlags="8" />
+    </LinearLayout>
+
+    <!-- or Sign in with 구분선 -->
+    <TextView
+        android:id="@+id/tv_divider"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="36dp"
+        android:text="- or Sign in with -"
+        android:textColor="@color/gray_500"
+        android:textSize="12sp"
+        android:fontFamily="@font/suit_regular"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ll_auth_links" />
+
+    <!-- 카카오 로그인 버튼 -->
+    <ImageView
+        android:id="@+id/btn_kakao_login"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_marginTop="16dp"
+        android:src="@drawable/ic_kakao"
+        android:scaleType="fitCenter"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_divider" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
