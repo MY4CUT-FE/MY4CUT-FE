@@ -54,12 +54,10 @@
         <item name="android:scrollbarTrackVertical">@null</item>
     </style>
 
-    <!-- Splash Theme  -->
-    <style name="Theme.App.Splash" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="android:windowBackground">@drawable/splash_background</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowActionBar">false</item>
-        <item name="android:windowDisablePreview">true</item>
+    <!-- Splash Theme (Android 12+ 시스템 스플래시) -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#FFD5CD</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.MY4CUT</item>
     </style>
 </resources>
