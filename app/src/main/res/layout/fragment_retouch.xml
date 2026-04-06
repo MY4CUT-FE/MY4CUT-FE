@@ -20,15 +20,15 @@
         android:fontFamily="@font/suit_semibold"
         android:text="리터치 스페이스"
         android:textColor="#1A1A1A"
-        android:textSize="24sp"
+        android:textSize="20sp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
     <ImageView
         android:id="@+id/ivNotification"
-        android:layout_width="25dp"
-        android:layout_height="25dp"
+        android:layout_width="15dp"
+        android:layout_height="17dp"
         android:src="@drawable/ic_noti_off"
         android:contentDescription="notification"
         android:layout_marginEnd="20dp"
