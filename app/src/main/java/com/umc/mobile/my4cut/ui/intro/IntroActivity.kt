@@ -36,7 +36,10 @@ class IntroActivity : AppCompatActivity() {
         val splashScreen = installSplashScreen()
         var keepSplash = true
         splashScreen.setKeepOnScreenCondition { keepSplash }
-        Handler(Looper.getMainLooper()).postDelayed({ keepSplash = false }, 3000)
+        Handler(Looper.getMainLooper()).postDelayed({
+            keepSplash = false
+            checkAutoLogin()
+        }, 2000)
 
         super.onCreate(savedInstanceState)
         binding = ActivityIntroBinding.inflate(layoutInflater)
@@ -45,7 +48,6 @@ class IntroActivity : AppCompatActivity() {
         binding.tvSignup.paintFlags = binding.tvSignup.paintFlags or Paint.UNDERLINE_TEXT_FLAG
 
         initClickListener()
-        checkAutoLogin()
     }
 
     private fun checkAutoLogin() {
