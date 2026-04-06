@@ -370,7 +370,7 @@ class EntryRegisterActivity : AppCompatActivity() {
 
         val images = uploadedMediaIds.mapIndexed { index, mediaId ->
             Day4CutImage(
-                mediaFileId = mediaId,
+                mediaId = mediaId,
                 isThumbnail = (index == typicalImageIndex)  // ✅ 사용자가 선택한 썸네일 인덱스 사용
             )
         }
@@ -392,7 +392,7 @@ class EntryRegisterActivity : AppCompatActivity() {
         Log.d("EntryRegister", "   ├─ emojiType: $emojiType")
         Log.d("EntryRegister", "   └─ images: ${images.size} items")
         images.forEachIndexed { index, image ->
-            Log.d("EntryRegister", "       ├─ [$index] mediaFileId: ${image.mediaFileId}, isThumbnail: ${image.isThumbnail}")
+            Log.d("EntryRegister", "       ├─ [$index] mediaFileId: ${image.mediaId}, isThumbnail: ${image.isThumbnail}")
         }
 
         try {

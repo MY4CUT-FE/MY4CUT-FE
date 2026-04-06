@@ -158,7 +158,7 @@ class EntryRegisterActivity : AppCompatActivity() {
                 // Step 3: Day4Cut 생성 요청 구성
                 val images = uploadedFiles.mapIndexed { index, file ->
                     Day4CutImage(
-                        mediaFileId = file.mediaId,
+                        mediaId = file.mediaId,
                         isThumbnail = (index == typicalImageIndex)  // ✅ 선택된 썸네일
                     )
                 }

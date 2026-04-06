@@ -477,7 +477,7 @@ class EntryDetailFragment : Fragment() {
 
                 val images = uploadedFiles.mapIndexed { index, file ->
                     Day4CutImage(
-                        mediaFileId = file.mediaId,
+                        mediaId = file.mediaId,
                         isThumbnail = (index == typicalImageIndex)
                     )
                 }

@@ -79,8 +79,8 @@ data class UpdateDay4CutRequest(
 )
 
 data class Day4CutImage(
-    @SerializedName("mediaFileId")
-    val mediaFileId: Int,
+    @SerializedName("mediaId")
+    val mediaId: Int,
     @SerializedName("isThumbnail")
     val isThumbnail: Boolean
 )
