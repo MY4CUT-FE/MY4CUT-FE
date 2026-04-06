@@ -37,8 +37,10 @@ class IntroActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val isLauncherStart = intent?.action == Intent.ACTION_MAIN
 
+        // 항상 호출 → postSplashScreenTheme(Theme.MY4CUT) 적용 (MaterialButton 크래시 방지)
+        val splashScreen = installSplashScreen()
+
         if (isLauncherStart) {
-            val splashScreen = installSplashScreen()
             val startTime = SystemClock.elapsedRealtime()
             splashScreen.setKeepOnScreenCondition {
                 SystemClock.elapsedRealtime() - startTime < 2000L
