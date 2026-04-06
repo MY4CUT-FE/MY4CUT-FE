@@ -24,6 +24,7 @@ import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.ActivityIntroBinding
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.login.LoginActivity
+import com.umc.mobile.my4cut.ui.onboarding.OnboardingActivity
 import com.umc.mobile.my4cut.ui.signup.SignUpActivity
 import retrofit2.Call
 import retrofit2.Callback
@@ -34,14 +35,20 @@ class IntroActivity : AppCompatActivity() {
     private lateinit var binding: ActivityIntroBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
-        val startTime = SystemClock.elapsedRealtime()
-        splashScreen.setKeepOnScreenCondition {
-            SystemClock.elapsedRealtime() - startTime < 2000L
+        val isLauncherStart = intent?.action == Intent.ACTION_MAIN
+
+        if (isLauncherStart) {
+            val splashScreen = installSplashScreen()
+            val startTime = SystemClock.elapsedRealtime()
+            splashScreen.setKeepOnScreenCondition {
+                SystemClock.elapsedRealtime() - startTime < 2000L
+            }
+            Handler(Looper.getMainLooper()).postDelayed({
+                startActivity(Intent(this, OnboardingActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                })
+            }, 2000)
         }
-        Handler(Looper.getMainLooper()).postDelayed({
-            checkAutoLogin()
-        }, 2000)
 
         super.onCreate(savedInstanceState)
         binding = ActivityIntroBinding.inflate(layoutInflater)
@@ -50,6 +57,12 @@ class IntroActivity : AppCompatActivity() {
         binding.tvSignup.paintFlags = binding.tvSignup.paintFlags or Paint.UNDERLINE_TEXT_FLAG
 
         initClickListener()
+
+        if (isLauncherStart) {
+            setLoginUiVisibility(false)
+        } else {
+            checkAutoLogin()
+        }
     }
 
     private fun checkAutoLogin() {
