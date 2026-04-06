@@ -44,9 +44,8 @@ class IntroActivity : AppCompatActivity() {
                 SystemClock.elapsedRealtime() - startTime < 2000L
             }
             Handler(Looper.getMainLooper()).postDelayed({
-                startActivity(Intent(this, OnboardingActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                })
+                startActivity(Intent(this, OnboardingActivity::class.java))
+                finish()
             }, 2000)
         }
 
