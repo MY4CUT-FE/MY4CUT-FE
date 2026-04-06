@@ -35,7 +35,7 @@
                 android:layout_marginTop="5dp"
                 android:fontFamily="@font/suit_bold"
                 android:text="My Space"
-                android:textSize="24sp"
+                android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
