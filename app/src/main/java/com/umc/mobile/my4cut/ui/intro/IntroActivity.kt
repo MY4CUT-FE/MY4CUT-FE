@@ -6,6 +6,7 @@ import android.graphics.Paint
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -34,10 +35,11 @@ class IntroActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
-        var keepSplash = true
-        splashScreen.setKeepOnScreenCondition { keepSplash }
+        val startTime = SystemClock.elapsedRealtime()
+        splashScreen.setKeepOnScreenCondition {
+            SystemClock.elapsedRealtime() - startTime < 2000L
+        }
         Handler(Looper.getMainLooper()).postDelayed({
-            keepSplash = false
             checkAutoLogin()
         }, 2000)
 
