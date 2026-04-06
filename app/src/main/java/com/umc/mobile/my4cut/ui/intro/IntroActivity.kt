@@ -4,8 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Paint
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import android.view.View
@@ -45,10 +43,14 @@ class IntroActivity : AppCompatActivity() {
             splashScreen.setKeepOnScreenCondition {
                 SystemClock.elapsedRealtime() - startTime < 2000L
             }
-            Handler(Looper.getMainLooper()).postDelayed({
+            // 스플래시 종료 시점에 OnboardingActivity 시작 (이중 애니메이션 방지)
+            splashScreen.setOnExitAnimationListener { splashView ->
+                splashView.remove()
                 startActivity(Intent(this, OnboardingActivity::class.java))
+                @Suppress("DEPRECATION")
+                overridePendingTransition(0, 0)
                 finish()
-            }, 2000)
+            }
         }
 
         super.onCreate(savedInstanceState)
