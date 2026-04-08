@@ -48,13 +48,9 @@ class PhotoRVAdapter(
                 val clickedPhoto = photoList[clickedPosition]
                 val wasFinal = clickedPhoto.isFinal
 
-                photoList.forEach { it.isFinal = false }
-                clickedPhoto.isFinal = !wasFinal
-
-                if (clickedPhoto.isFinal) {
-                    photoList.removeAt(clickedPosition)
-                    photoList.add(0, clickedPhoto)
-                }
+                // 최종본 맨 앞으로
+//                photoList.forEach { it.isFinal = false }
+//                clickedPhoto.isFinal = !wasFinal
 
                 notifyDataSetChanged()
                 onFinalToggleListener?.invoke(clickedPhoto)
