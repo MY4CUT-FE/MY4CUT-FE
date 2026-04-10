@@ -1,4 +1,4 @@
-package com.umc.mobile.my4cut.ui.space
+package com.umc.mobile.my4cut.ui.space.model
 
 data class CreateSpaceResult(
     val spaceName: String,

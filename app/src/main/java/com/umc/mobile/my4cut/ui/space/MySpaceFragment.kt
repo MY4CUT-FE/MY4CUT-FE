@@ -16,6 +16,7 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.FragmentMySpaceBinding
+import com.umc.mobile.my4cut.ui.space.model.Space
 
 class MySpaceFragment : Fragment() {
 
