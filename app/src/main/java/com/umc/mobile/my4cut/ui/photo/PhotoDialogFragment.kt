@@ -2,6 +2,7 @@ package com.umc.mobile.my4cut.ui.photo
 
 import android.app.DownloadManager
 import android.content.Context
+import android.graphics.Color
 import android.net.Uri
 import android.os.Environment
 import android.webkit.URLUtil
@@ -34,6 +35,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import androidx.core.graphics.toColorInt
 
 class PhotoDialogFragment : DialogFragment() {
 
@@ -196,6 +198,8 @@ class PhotoDialogFragment : DialogFragment() {
         rvChatList = view.findViewById(R.id.rvChatList)
         ivToggleComment = view.findViewById(R.id.ivToggleComment)
         etComment = view.findViewById(R.id.text)
+        etComment.setHintTextColor("#8F8F8F".toColorInt())
+        etComment.setTextColor("#1A1A1A".toColorInt())
 
         rvChatList.visibility = View.VISIBLE
         etComment.visibility = View.VISIBLE
