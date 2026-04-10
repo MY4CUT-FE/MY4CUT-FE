@@ -210,8 +210,8 @@ class PhotoDialogFragment : DialogFragment() {
         // 닉네임 표시
         tvUserName.text = uploaderNickname ?: ""
 
-        // 시간 포맷 n분 전 / n시간 전 방식으로 표시
-        tvDate.text = createdAt?.let { formatDateTimeSafe(it) } ?: ""
+        // 시간 포맷
+        tvDate.text = createdAt?.let { formatAbsoluteDateTime(it) } ?: ""
 
         // 프로필 이미지 표시 (없으면 기본 이미지)
         if (!uploaderProfileUrl.isNullOrEmpty()) {
@@ -271,9 +271,26 @@ class PhotoDialogFragment : DialogFragment() {
             OffsetDateTime.parse(serverTime).atZoneSameInstant(seoulZone)
         } catch (_: Exception) {
             val normalized = serverTime.removeSuffix("Z")
-            LocalDateTime.parse(normalized)
-                .atZone(ZoneOffset.UTC)
-                .withZoneSameInstant(seoulZone)
+
+            val localDateTime = try {
+                LocalDateTime.parse(normalized, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            } catch (_: Exception) {
+                try {
+                    LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                } catch (_: Exception) {
+                    try {
+                        LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                    } catch (_: Exception) {
+                        try {
+                            LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"))
+                        } catch (_: Exception) {
+                            LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
+                        }
+                    }
+                }
+            }
+
+            localDateTime.atZone(ZoneOffset.UTC).withZoneSameInstant(seoulZone)
         }
     }
 
@@ -501,7 +518,7 @@ class PhotoDialogFragment : DialogFragment() {
     /** 댓글 목록 갱신 */
     fun updateComments(list: List<CommentData>) {
         commentAdapter.updateData(list)
-        tvChat.text = "댓글 ${list.size}"
+        tvChat.text = "댓글  ${list.size}"
 
         // 마지막 댓글로 자동 스크롤
         if (list.isNotEmpty()) {
