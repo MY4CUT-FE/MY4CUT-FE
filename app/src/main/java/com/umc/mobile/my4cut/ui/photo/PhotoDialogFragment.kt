@@ -50,6 +50,7 @@ class PhotoDialogFragment : DialogFragment() {
     private lateinit var tvChat: TextView
     private lateinit var rvChatList: RecyclerView
     private lateinit var ivToggleComment: ImageView
+    private lateinit var tvConfirm: TextView
 
     private lateinit var etComment: EditText
 
@@ -194,6 +195,7 @@ class PhotoDialogFragment : DialogFragment() {
         tvUserName = view.findViewById(R.id.tvUserName)
         tvDate = view.findViewById(R.id.tvDate)
         tvChat = view.findViewById(R.id.tvChat)
+        tvConfirm = view.findViewById(R.id.mainText)
 
         rvChatList = view.findViewById(R.id.rvChatList)
         ivToggleComment = view.findViewById(R.id.ivToggleComment)
@@ -345,6 +347,8 @@ class PhotoDialogFragment : DialogFragment() {
             }
         }
     }
+
+
 
     private fun updateDeleteButtonVisibility() {
         // View가 아직 초기화되지 않은 경우 방어
@@ -535,7 +539,7 @@ class PhotoDialogFragment : DialogFragment() {
         super.onStart()
         dialog?.window?.setLayout(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            (resources.displayMetrics.heightPixels * 0.85).toInt(),
         )
     }
 
