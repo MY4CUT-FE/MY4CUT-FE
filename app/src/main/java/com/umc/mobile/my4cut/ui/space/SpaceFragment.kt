@@ -463,28 +463,6 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         dialog.show(parentFragmentManager, "EditSpaceDialog")
     }
 
-
-    private fun showMaxSpaceDialog() {
-        val dialogBinding = DialogExitBinding.inflate(layoutInflater)
-
-        dialogBinding.tvTitle.text = "스페이스를 더 만들 수 없어요"
-        dialogBinding.tvMessage.text = "스페이스는 최대 4개까지 만들 수 있어요."
-        dialogBinding.btnExit.text = "확인"
-
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setView(dialogBinding.root)
-            .create()
-
-        dialogBinding.btnCancel.visibility = View.GONE
-
-        dialogBinding.btnExit.setOnClickListener {
-            dialog.dismiss()
-        }
-
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialog.show()
-    }
-
     private fun uploadImageToServer(uri: Uri) {
         lifecycleScope.launch {
             try {

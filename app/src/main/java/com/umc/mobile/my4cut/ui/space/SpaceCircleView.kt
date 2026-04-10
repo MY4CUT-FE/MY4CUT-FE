@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.ui.space.model.Space
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin

@@ -26,6 +26,7 @@ import com.umc.mobile.my4cut.data.workspace.model.WorkspaceCreateRequestDto
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
 import com.umc.mobile.my4cut.data.auth.local.TokenManager
+import com.umc.mobile.my4cut.ui.space.model.CreateSpaceResult
 
 class CreateSpaceDialogFragment : DialogFragment() {
 

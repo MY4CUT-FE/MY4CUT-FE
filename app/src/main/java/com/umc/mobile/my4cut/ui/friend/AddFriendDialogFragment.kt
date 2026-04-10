@@ -155,7 +155,7 @@ class AddFriendDialogFragment : DialogFragment() {
             } catch (e: Exception) {
                 Toast.makeText(
                     requireContext(),
-                    "네트워크 오류가 발생했어요",
+                    "존재하지 않는 코드예요",
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -191,7 +191,7 @@ class AddFriendDialogFragment : DialogFragment() {
                     Toast.makeText(requireContext(), response.message, Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "네트워크 오류가 발생했어요", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "이미 존재하는 친구예요", Toast.LENGTH_SHORT).show()
             }
         }
     }

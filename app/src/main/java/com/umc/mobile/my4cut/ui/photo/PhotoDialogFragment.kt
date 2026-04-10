@@ -1,5 +1,13 @@
 package com.umc.mobile.my4cut.ui.photo
 
+import android.app.DownloadManager
+import android.content.Context
+import android.graphics.Color
+import android.net.Uri
+import android.os.Environment
+import android.webkit.URLUtil
+import android.widget.Toast
+
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
@@ -21,13 +29,19 @@ import com.umc.mobile.my4cut.data.photo.model.CommentCreateRequest
 import com.umc.mobile.my4cut.data.photo.model.CommentDto
 import com.bumptech.glide.Glide
 import java.time.Duration
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import androidx.core.graphics.toColorInt
 
 class PhotoDialogFragment : DialogFragment() {
 
     private lateinit var ivClose: ImageView
     private lateinit var ivDelete: ImageView
+    private lateinit var ivSave: ImageView
     private lateinit var ivSend: ImageView
     private lateinit var ivProfile: ImageView
     private lateinit var ivMainPhoto: ImageView
@@ -36,6 +50,7 @@ class PhotoDialogFragment : DialogFragment() {
     private lateinit var tvChat: TextView
     private lateinit var rvChatList: RecyclerView
     private lateinit var ivToggleComment: ImageView
+    private lateinit var tvConfirm: TextView
 
     private lateinit var etComment: EditText
 
@@ -172,6 +187,7 @@ class PhotoDialogFragment : DialogFragment() {
     private fun initViews(view: View) {
         ivClose = view.findViewById(R.id.ivClose)
         ivDelete = view.findViewById(R.id.ivDelete)
+        ivSave = view.findViewById(R.id.ivSave)
         ivSend = view.findViewById(R.id.ivSend)
         ivProfile = view.findViewById(R.id.ivProfile)
         ivMainPhoto = view.findViewById(R.id.ivMainPhoto)
@@ -179,10 +195,13 @@ class PhotoDialogFragment : DialogFragment() {
         tvUserName = view.findViewById(R.id.tvUserName)
         tvDate = view.findViewById(R.id.tvDate)
         tvChat = view.findViewById(R.id.tvChat)
+        tvConfirm = view.findViewById(R.id.mainText)
 
         rvChatList = view.findViewById(R.id.rvChatList)
         ivToggleComment = view.findViewById(R.id.ivToggleComment)
         etComment = view.findViewById(R.id.text)
+        etComment.setHintTextColor("#8F8F8F".toColorInt())
+        etComment.setTextColor("#1A1A1A".toColorInt())
 
         rvChatList.visibility = View.VISIBLE
         etComment.visibility = View.VISIBLE
@@ -193,8 +212,8 @@ class PhotoDialogFragment : DialogFragment() {
         // 닉네임 표시
         tvUserName.text = uploaderNickname ?: ""
 
-        // 시간 포맷 n분 전 / n시간 전 방식으로 표시
-        tvDate.text = createdAt?.let { formatDateTimeSafe(it) } ?: ""
+        // 시간 포맷
+        tvDate.text = createdAt?.let { formatAbsoluteDateTime(it) } ?: ""
 
         // 프로필 이미지 표시 (없으면 기본 이미지)
         if (!uploaderProfileUrl.isNullOrEmpty()) {
@@ -224,8 +243,8 @@ class PhotoDialogFragment : DialogFragment() {
 
     private fun formatDateTimeSafe(serverTime: String): String {
         return try {
-            val time = OffsetDateTime.parse(serverTime)
-            val now = OffsetDateTime.now()
+            val time = parseServerDateTime(serverTime)
+            val now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"))
             val diff = Duration.between(time, now)
 
             when {
@@ -235,30 +254,45 @@ class PhotoDialogFragment : DialogFragment() {
                 else -> time.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
             }
         } catch (e: Exception) {
-            try {
-                // Offset 없는 LocalDateTime 형식 대응
-                val time = java.time.LocalDateTime.parse(serverTime.replace("Z", ""))
-                val now = java.time.LocalDateTime.now()
-                val diff = Duration.between(time, now)
-
-                when {
-                    diff.toMinutes() < 1 -> "방금 전"
-                    diff.toMinutes() < 60 -> "${diff.toMinutes()}분 전"
-                    diff.toHours() < 24 -> "${diff.toHours()}시간 전"
-                    else -> time.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
-                }
-            } catch (e2: Exception) {
-                serverTime
-            }
+            serverTime
         }
     }
 
     private fun formatAbsoluteDateTime(serverTime: String): String {
         return try {
-            val time = OffsetDateTime.parse(serverTime)
-            time.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
+            parseServerDateTime(serverTime).format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
         } catch (e: Exception) {
             serverTime
+        }
+    }
+
+    private fun parseServerDateTime(serverTime: String): ZonedDateTime {
+        val seoulZone = ZoneId.of("Asia/Seoul")
+
+        return try {
+            OffsetDateTime.parse(serverTime).atZoneSameInstant(seoulZone)
+        } catch (_: Exception) {
+            val normalized = serverTime.removeSuffix("Z")
+
+            val localDateTime = try {
+                LocalDateTime.parse(normalized, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            } catch (_: Exception) {
+                try {
+                    LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                } catch (_: Exception) {
+                    try {
+                        LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                    } catch (_: Exception) {
+                        try {
+                            LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"))
+                        } catch (_: Exception) {
+                            LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
+                        }
+                    }
+                }
+            }
+
+            localDateTime.atZone(ZoneOffset.UTC).withZoneSameInstant(seoulZone)
         }
     }
 
@@ -287,6 +321,10 @@ class PhotoDialogFragment : DialogFragment() {
             showDeletePhotoDialog()
         }
 
+        ivSave.setOnClickListener {
+            downloadPhoto()
+        }
+
         // 댓글 전송
         ivSend.setOnClickListener {
             sendComment()
@@ -309,6 +347,8 @@ class PhotoDialogFragment : DialogFragment() {
             }
         }
     }
+
+
 
     private fun updateDeleteButtonVisibility() {
         // View가 아직 초기화되지 않은 경우 방어
@@ -391,6 +431,49 @@ class PhotoDialogFragment : DialogFragment() {
         }
     }
 
+    private fun downloadPhoto() {
+        val url = photoUrl
+        if (url.isNullOrBlank()) {
+            Toast.makeText(requireContext(), "다운로드할 사진이 없어요.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        runCatching {
+            val request = DownloadManager.Request(Uri.parse(url)).apply {
+                setTitle("MY4CUT 사진 다운로드")
+                setDescription(uploaderNickname?.ifBlank { "사진을 다운로드하고 있어요." } ?: "사진을 다운로드하고 있어요.")
+                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                setAllowedOverMetered(true)
+                setAllowedOverRoaming(true)
+
+                val token = requireContext()
+                    .getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                    .getString("access_token", null)
+                if (!token.isNullOrBlank()) {
+                    addRequestHeader("Authorization", "Bearer $token")
+                }
+
+                val fileName = buildDownloadFileName(url)
+                setDestinationInExternalPublicDir(
+                    Environment.DIRECTORY_PICTURES,
+                    "MY4CUT/$fileName"
+                )
+            }
+
+            val downloadManager = requireContext().getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            downloadManager.enqueue(request)
+            Toast.makeText(requireContext(), "사진 다운로드를 시작했어요.", Toast.LENGTH_SHORT).show()
+        }.onFailure { e ->
+            Log.e("PhotoDialog", "사진 다운로드 실패", e)
+            Toast.makeText(requireContext(), "사진 다운로드에 실패했어요.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun buildDownloadFileName(url: String): String {
+        val guessedName = URLUtil.guessFileName(url, null, "image/jpeg")
+        return if (guessedName.contains('.')) guessedName else "my4cut_$photoId.jpg"
+    }
+
     private fun loadComments() {
         if (workspaceId == -1L || photoId == -1L) {
             Log.e("PhotoDialog", "workspaceId 또는 photoId가 없음")
@@ -420,8 +503,7 @@ class PhotoDialogFragment : DialogFragment() {
                         commentId = dto.id,
                         profileImgUrl = dto.profileImageUrl,
                         userName = dto.nickname,
-                        // 댓글 시간은 항상 n분 전 형식으로 표시
-                        time = formatDateTimeSafe(dto.createdAt),
+                        time = dto.createdAt,
                         content = dto.content,
                         isMine = isMine
                     )
@@ -440,7 +522,7 @@ class PhotoDialogFragment : DialogFragment() {
     /** 댓글 목록 갱신 */
     fun updateComments(list: List<CommentData>) {
         commentAdapter.updateData(list)
-        tvChat.text = "댓글 ${list.size}"
+        tvChat.text = "댓글  ${list.size}"
 
         // 마지막 댓글로 자동 스크롤
         if (list.isNotEmpty()) {
@@ -457,7 +539,7 @@ class PhotoDialogFragment : DialogFragment() {
         super.onStart()
         dialog?.window?.setLayout(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            (resources.displayMetrics.heightPixels * 0.85).toInt(),
         )
     }
 

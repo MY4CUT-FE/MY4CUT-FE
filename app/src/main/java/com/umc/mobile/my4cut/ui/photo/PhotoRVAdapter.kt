@@ -7,6 +7,13 @@ import com.umc.mobile.my4cut.databinding.ItemPhotoBinding
 import com.bumptech.glide.Glide
 import com.umc.mobile.my4cut.R
 
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+
 class PhotoRVAdapter(
     private val photoList: MutableList<PhotoData>
 ) : RecyclerView.Adapter<PhotoRVAdapter.PhotoViewHolder>() {
@@ -33,7 +40,7 @@ class PhotoRVAdapter(
                 .into(binding.ivUserIcon)
 
             binding.tvUserName.text = photo.userName
-            binding.tvDateTime.text = photo.dateTime
+            binding.tvDateTime.text = formatAbsoluteDateTime(photo.dateTime)
             binding.tvCommentCount.text = photo.commentCount.toString()
 
             binding.ivFinalToggle.setImageResource(
@@ -46,23 +53,52 @@ class PhotoRVAdapter(
                 if (clickedPosition == RecyclerView.NO_POSITION) return@setOnClickListener
 
                 val clickedPhoto = photoList[clickedPosition]
-                val wasFinal = clickedPhoto.isFinal
+                clickedPhoto.isFinal = !clickedPhoto.isFinal
 
-                photoList.forEach { it.isFinal = false }
-                clickedPhoto.isFinal = !wasFinal
-
-                if (clickedPhoto.isFinal) {
-                    photoList.removeAt(clickedPosition)
-                    photoList.add(0, clickedPhoto)
-                }
-
-                notifyDataSetChanged()
+                notifyItemChanged(clickedPosition)
                 onFinalToggleListener?.invoke(clickedPhoto)
             }
 
             binding.root.setOnClickListener {
                 onItemClickListener?.invoke(photo)
             }
+        }
+    }
+    private fun formatAbsoluteDateTime(serverTime: String): String {
+        return try {
+            parseServerDateTime(serverTime).format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
+        } catch (_: Exception) {
+            serverTime
+        }
+    }
+
+    private fun parseServerDateTime(serverTime: String): ZonedDateTime {
+        val seoulZone = ZoneId.of("Asia/Seoul")
+
+        return try {
+            OffsetDateTime.parse(serverTime).atZoneSameInstant(seoulZone)
+        } catch (_: Exception) {
+            val normalized = serverTime.removeSuffix("Z")
+
+            val localDateTime = try {
+                LocalDateTime.parse(normalized, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            } catch (_: Exception) {
+                try {
+                    LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                } catch (_: Exception) {
+                    try {
+                        LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                    } catch (_: Exception) {
+                        try {
+                            LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"))
+                        } catch (_: Exception) {
+                            LocalDateTime.parse(normalized, DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
+                        }
+                    }
+                }
+            }
+
+            localDateTime.atZone(ZoneOffset.UTC).withZoneSameInstant(seoulZone)
         }
     }
 

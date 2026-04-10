@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.umc.mobile.my4cut.R
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.bumptech.glide.Glide
+import com.umc.mobile.my4cut.ui.space.model.MemberUiModel
 
 class MemberAdapter : RecyclerView.Adapter<MemberAdapter.MemberViewHolder>() {
 

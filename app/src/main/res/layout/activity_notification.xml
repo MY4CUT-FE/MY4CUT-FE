@@ -37,14 +37,21 @@
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 
+<ImageView
+    android:id="@+id/iv_delete_icon"
+    android:layout_width="13dp"
+    android:layout_height="13dp"
+    android:layout_marginEnd="4dp"
+    android:src="@drawable/ic_trash"
+    app:layout_constraintEnd_toStartOf="@id/tv_delete_all"
+    app:layout_constraintTop_toTopOf="@id/tv_delete_all"
+    app:layout_constraintBottom_toBottomOf="@id/tv_delete_all" />
 <TextView
     android:id="@+id/tv_delete_all"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_marginTop="10dp"
     android:layout_marginEnd="20dp"
-    android:drawableEnd="@drawable/ic_trash"
-    android:drawablePadding="4dp"
     android:fontFamily="@font/suit_medium"
     android:text="전체 삭제"
     android:textColor="#8C8C8C"

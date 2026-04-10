@@ -8,8 +8,8 @@
 
     <ImageView
         android:id="@+id/ivCommentProfile"
-        android:layout_width="10dp"
-        android:layout_height="10dp"
+        android:layout_width="17dp"
+        android:layout_height="17dp"
         android:src="@drawable/ic_profile_cat"
         style="@style/CircleImage"
         app:layout_constraintStart_toStartOf="parent"
@@ -23,7 +23,7 @@
         android:fontFamily="@font/suit_regular"
         android:text="에블린"
         android:textColor="#1A1A1A"
-        android:textSize="10sp"
+        android:textSize="13sp"
         app:layout_constraintBottom_toBottomOf="@id/ivCommentProfile"
         app:layout_constraintStart_toEndOf="@id/ivCommentProfile"
         app:layout_constraintTop_toTopOf="@id/ivCommentProfile" />
@@ -36,7 +36,7 @@
         android:fontFamily="@font/suit_regular"
         android:text="20분 전"
         android:textColor="#595959"
-        android:textSize="6sp"
+        android:textSize="9sp"
         app:layout_constraintBottom_toBottomOf="@id/tvCommentName"
         app:layout_constraintStart_toEndOf="@id/tvCommentName"
         app:layout_constraintTop_toTopOf="@id/tvCommentName" />
@@ -48,7 +48,7 @@
         android:fontFamily="@font/suit_regular"
         android:text="삭제"
         android:textColor="#8F8F8F"
-        android:textSize="6sp"
+        android:textSize="9sp"
         app:layout_constraintBottom_toBottomOf="@id/tvCommentName"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/tvCommentName" />
@@ -61,7 +61,7 @@
         android:fontFamily="@font/suit_regular"
         android:text="올릴 때 2번째 가리고 ㄱㄱ"
         android:textColor="#1A1A1A"
-        android:textSize="8sp"
+        android:textSize="11sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/ivCommentProfile"
         app:layout_constraintTop_toBottomOf="@id/ivCommentProfile" />

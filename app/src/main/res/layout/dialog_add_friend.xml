@@ -120,6 +120,7 @@
             android:layout_height="wrap_content"
             android:text="화운"
             android:textSize="14sp"
+            android:fontFamily="@font/suit_bold"
             android:textColor="#1A1A1A"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="20dp"

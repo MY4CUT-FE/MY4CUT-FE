@@ -16,6 +16,7 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.FragmentMySpaceBinding
+import com.umc.mobile.my4cut.ui.space.model.Space
 
 class MySpaceFragment : Fragment() {
 
@@ -65,15 +66,17 @@ class MySpaceFragment : Fragment() {
         }
 
         binding.tvAddSpace.setOnClickListener {
-            if (spaces.size >= 4) return@setOnClickListener
+            if (spaces.size >= 4) {
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    "스페이스는 최대 4개까지 생성할 수 있어요",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
 
             val dialog = CreateSpaceDialogFragment()
             dialog.show(parentFragmentManager, "CreateSpaceDialog")
-        }
-
-        // 배경 원 클릭 이벤트 (필요 시 수정)
-        binding.viewOrangeCircle.setOnClickListener {
-            // ... 이동 로직
         }
 
         updateSpaceUi()
@@ -231,10 +234,6 @@ class MySpaceFragment : Fragment() {
 
         spaces.add(newSpace)
         updateSpaceUi()
-    }
-
-    private fun removeExpiredSpaces() {
-        // 서버에서 만료 관리하므로 클라이언트에서 삭제하지 않음
     }
 
     override fun onStart() {

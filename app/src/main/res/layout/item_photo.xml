@@ -36,8 +36,8 @@
 
             <ImageView
                 android:id="@+id/ivFinalToggle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="53dp"
+                android:layout_height="30dp"
                 android:src="@drawable/ic_final_off"
                 android:contentDescription="final toggle" />
         </LinearLayout>

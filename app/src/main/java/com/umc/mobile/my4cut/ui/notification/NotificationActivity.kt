@@ -11,6 +11,10 @@ import androidx.lifecycle.lifecycleScope
 import com.umc.mobile.my4cut.network.RetrofitClient
 import kotlinx.coroutines.launch
 import android.view.View
+import android.app.Dialog
+import android.view.Window
+import android.view.WindowManager
+import com.umc.mobile.my4cut.databinding.DialogDeleteNotiAllBinding
 
 class NotificationActivity : AppCompatActivity() {
 
@@ -31,17 +35,42 @@ class NotificationActivity : AppCompatActivity() {
             finish()
         }
         binding.tvDeleteAll.setOnClickListener {
+            showDeleteAllDialog()
+        }
+    }
+
+    private fun showDeleteAllDialog() {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+
+        val dialogBinding = DialogDeleteNotiAllBinding.inflate(layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+        dialog.setCancelable(true)
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val params = dialog.window?.attributes
+        params?.width = (resources.displayMetrics.widthPixels * 0.9).toInt()
+        dialog.window?.attributes = params
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnExit.setOnClickListener {
             lifecycleScope.launch {
                 try {
                     RetrofitClient.notificationService.deleteAllNotifications()
                     binding.rvNotification.adapter = null
                     binding.btnMore.visibility = View.GONE
                     Toast.makeText(this@NotificationActivity, "전체 삭제되었습니다.", Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
                 } catch (e: Exception) {
                     Toast.makeText(this@NotificationActivity, "전체 삭제 실패: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
+
+        dialog.show()
     }
 
     private fun setupRecyclerView() {
