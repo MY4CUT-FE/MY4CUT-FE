@@ -4,5 +4,9 @@
     <string name="nav_home">홈</string>
     <string name="nav_retouch">리터치\n스페이스</string>
     <string name="nav_album">MY\n앨범</string>
-    <string name="nav_mypage">마이\n페이지</string>
+    <string name="nav_photo">포토부스\nINFO</string>
+    <string name="nav_pose">포즈추천</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
 </resources>

@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.umc.mobile.my4cut.databinding.ActivityMainBinding
+import com.umc.mobile.my4cut.ui.booth.BoothFragment
 import com.umc.mobile.my4cut.ui.home.HomeFragment
 import com.umc.mobile.my4cut.ui.myalbum.CalendarData
 import com.umc.mobile.my4cut.ui.myalbum.CalendarMainFragment
@@ -115,8 +116,12 @@ class MainActivity : AppCompatActivity() {
                     changeFragment(CalendarMainFragment())
                     true
                 }
-                R.id.menu_mypage -> {
-                    changeFragment(MyPageFragment())
+                R.id.menu_photo -> {
+                    changeFragment(BoothFragment())
+                    true
+                }
+                R.id.menu_pose -> {
+                    changeFragment(BoothFragment())
                     true
                 }
                 else -> false
@@ -155,11 +160,4 @@ class MainActivity : AppCompatActivity() {
             .commitAllowingStateLoss()
     }
 
-    /** SpaceFragment 열기 (리터치 → 스페이스 이동용 외부 호출 함수) */
-    fun openSpaceFragment() {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fcv_main, SpaceFragment())
-            .addToBackStack(null)
-            .commitAllowingStateLoss()
-    }
 }
