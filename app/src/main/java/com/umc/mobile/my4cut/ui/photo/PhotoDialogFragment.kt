@@ -28,7 +28,11 @@ import com.umc.mobile.my4cut.data.photo.model.CommentCreateRequest
 import com.umc.mobile.my4cut.data.photo.model.CommentDto
 import com.bumptech.glide.Glide
 import java.time.Duration
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 class PhotoDialogFragment : DialogFragment() {
@@ -233,8 +237,8 @@ class PhotoDialogFragment : DialogFragment() {
 
     private fun formatDateTimeSafe(serverTime: String): String {
         return try {
-            val time = OffsetDateTime.parse(serverTime)
-            val now = OffsetDateTime.now()
+            val time = parseServerDateTime(serverTime)
+            val now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"))
             val diff = Duration.between(time, now)
 
             when {
@@ -244,30 +248,28 @@ class PhotoDialogFragment : DialogFragment() {
                 else -> time.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
             }
         } catch (e: Exception) {
-            try {
-                // Offset 없는 LocalDateTime 형식 대응
-                val time = java.time.LocalDateTime.parse(serverTime.replace("Z", ""))
-                val now = java.time.LocalDateTime.now()
-                val diff = Duration.between(time, now)
-
-                when {
-                    diff.toMinutes() < 1 -> "방금 전"
-                    diff.toMinutes() < 60 -> "${diff.toMinutes()}분 전"
-                    diff.toHours() < 24 -> "${diff.toHours()}시간 전"
-                    else -> time.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
-                }
-            } catch (e2: Exception) {
-                serverTime
-            }
+            serverTime
         }
     }
 
     private fun formatAbsoluteDateTime(serverTime: String): String {
         return try {
-            val time = OffsetDateTime.parse(serverTime)
-            time.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
+            parseServerDateTime(serverTime).format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
         } catch (e: Exception) {
             serverTime
+        }
+    }
+
+    private fun parseServerDateTime(serverTime: String): ZonedDateTime {
+        val seoulZone = ZoneId.of("Asia/Seoul")
+
+        return try {
+            OffsetDateTime.parse(serverTime).atZoneSameInstant(seoulZone)
+        } catch (_: Exception) {
+            val normalized = serverTime.removeSuffix("Z")
+            LocalDateTime.parse(normalized)
+                .atZone(ZoneOffset.UTC)
+                .withZoneSameInstant(seoulZone)
         }
     }
 
@@ -476,8 +478,7 @@ class PhotoDialogFragment : DialogFragment() {
                         commentId = dto.id,
                         profileImgUrl = dto.profileImageUrl,
                         userName = dto.nickname,
-                        // 댓글 시간은 항상 n분 전 형식으로 표시
-                        time = formatDateTimeSafe(dto.createdAt),
+                        time = dto.createdAt,
                         content = dto.content,
                         isMine = isMine
                     )

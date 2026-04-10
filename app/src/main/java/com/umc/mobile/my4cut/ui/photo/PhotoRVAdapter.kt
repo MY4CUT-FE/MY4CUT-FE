@@ -46,13 +46,9 @@ class PhotoRVAdapter(
                 if (clickedPosition == RecyclerView.NO_POSITION) return@setOnClickListener
 
                 val clickedPhoto = photoList[clickedPosition]
-                val wasFinal = clickedPhoto.isFinal
+                clickedPhoto.isFinal = !clickedPhoto.isFinal
 
-                // 최종본 맨 앞으로
-//                photoList.forEach { it.isFinal = false }
-//                clickedPhoto.isFinal = !wasFinal
-
-                notifyDataSetChanged()
+                notifyItemChanged(clickedPosition)
                 onFinalToggleListener?.invoke(clickedPhoto)
             }
 
