@@ -108,15 +108,15 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="30dp"
+            android:layout_height="20dp"
             android:src="@drawable/ic_upload" />
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
             android:text="네컷 업로드"
-            android:textSize="7sp"
+            android:textSize="9sp"
             android:textColor="#391801"
             android:gravity="center"/>
     </LinearLayout>

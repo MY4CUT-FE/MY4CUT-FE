@@ -17,8 +17,12 @@
         android:title="@string/nav_album" />
 
     <item
-        android:id="@+id/menu_mypage"
-        android:icon="@drawable/selector_nav_mypage"
-        android:title="@string/nav_mypage" />
+        android:id="@+id/menu_photo"
+        android:icon="@drawable/selector_nav_photo"
+        android:title="@string/nav_photo" />
 
+    <item
+        android:id="@+id/menu_pose"
+        android:icon="@drawable/selector_nav_pose"
+        android:title="@string/nav_pose" />
 </menu>
