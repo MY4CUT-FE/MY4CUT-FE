@@ -32,6 +32,11 @@ class IntroActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityIntroBinding
 
+    companion object {
+        // TODO: [MOCK] 자동 로그인 / 카카오 로그인 구현 완료 후 false로 변경
+        private const val MOCK_LOGIN_ENABLED = true
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val isLauncherStart = intent?.action == Intent.ACTION_MAIN
 
@@ -69,9 +74,18 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private fun checkAutoLogin() {
-        // 로그인 UI 숨기기 (자동 로그인 결과에 따라 다시 표시)
         setLoginUiVisibility(false)
 
+        // =====================================================================
+        // TODO: [MOCK] 자동 로그인 구현 완료 후 아래 블록 제거
+        if (MOCK_LOGIN_ENABLED) {
+            Log.d("AutoLogin", "[MOCK] 자동 로그인 우회 → 로그인 UI 표시")
+            setLoginUiVisibility(true)
+            return
+        }
+        // =====================================================================
+
+        // TODO: [실제 구현] 토큰 유효성 확인 → 유효 시 navigateToMain(), 만료 시 refresh 시도
         // access token이 유효하면 바로 이동 (네트워크 요청 불필요)
         if (TokenManager.isAccessTokenValid(this)) {
             Log.d("AutoLogin", "Access token valid, skipping login")
@@ -150,6 +164,16 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private fun startKakaoLogin() {
+        // =====================================================================
+        // TODO: [MOCK] 실제 카카오 로그인 구현 완료 후 아래 블록 제거
+        if (MOCK_LOGIN_ENABLED) {
+            Log.d("KakaoLogin", "[MOCK] 목업 카카오 로그인 → MainActivity 이동")
+            navigateToMain()
+            return
+        }
+        // =====================================================================
+
+        // TODO: [실제 구현] 카카오 SDK 로그인 → sendKakaoTokenToServer() 호출
         val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
             if (error != null) {
                 Log.e("KakaoLogin", "카카오 로그인 실패", error)

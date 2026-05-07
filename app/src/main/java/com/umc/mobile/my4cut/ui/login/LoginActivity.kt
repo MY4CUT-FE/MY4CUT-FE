@@ -50,6 +50,9 @@ class LoginActivity : AppCompatActivity() {
     companion object {
         private const val PREFS_NAME = "my4cut_prefs"
         private const val KEY_FCM_TOKEN = "fcm_token"
+
+        // TODO: [MOCK] 로그인 API 구현 완료 후 false로 변경
+        private const val MOCK_LOGIN_ENABLED = true
     }
 
     private val fcmRegisterScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -81,6 +84,15 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.btnLogin.setOnClickListener {
+            // =====================================================================
+            // TODO: [MOCK] 실제 로그인 API 구현 완료 후 아래 블록 제거
+            if (MOCK_LOGIN_ENABLED) {
+                navigateToMainWithMock()
+                return@setOnClickListener
+            }
+            // =====================================================================
+
+            // TODO: [실제 구현] 서버 이메일/비밀번호 로그인 API 호출
             val email = binding.etEmail.text.toString()
             val password = binding.etPassword.text.toString()
 
@@ -176,6 +188,15 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun startKakaoLogin() {
+        // =====================================================================
+        // TODO: [MOCK] 실제 카카오 로그인 구현 완료 후 아래 블록 제거
+        if (MOCK_LOGIN_ENABLED) {
+            navigateToMainWithMock()
+            return
+        }
+        // =====================================================================
+
+        // TODO: [실제 구현] 카카오 SDK 로그인 → sendKakaoTokenToServer() 호출
         val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
             if (error != null) {
                 Log.e("KakaoLogin", "카카오 로그인 실패", error)
@@ -197,6 +218,15 @@ class LoginActivity : AppCompatActivity() {
         } else {
             UserApiClient.instance.loginWithKakaoAccount(this, callback = callback)
         }
+    }
+
+    // TODO: [MOCK] 로그인 API 구현 완료 후 해당 함수 전체 제거
+    private fun navigateToMainWithMock() {
+        Log.d("LoginActivity", "[MOCK] 목업 로그인 → MainActivity 이동")
+        Toast.makeText(this, "로그인 성공 (임시 목업)", Toast.LENGTH_SHORT).show()
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
     }
 
     private fun sendKakaoTokenToServer(kakaoAccessToken: String) {
