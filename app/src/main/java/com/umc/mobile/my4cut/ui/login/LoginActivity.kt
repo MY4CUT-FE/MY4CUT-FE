@@ -66,6 +66,7 @@ class LoginActivity : AppCompatActivity() {
         initTextWatchers()
         initPasswordToggle()
         initUnderlineLinks()
+        checkInputValidity() // 목업 모드 시 버튼 초기 활성화
     }
 
     private fun initClickListener() {
@@ -316,6 +317,12 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun checkInputValidity() {
+        // TODO: [MOCK] 로그인 API 구현 완료 후 아래 조건 제거
+        if (MOCK_LOGIN_ENABLED) {
+            binding.btnLogin.isEnabled = true
+            return
+        }
+        // TODO: [실제 구현] 이메일/비밀번호 입력 여부로 버튼 활성화
         val email = binding.etEmail.text.toString()
         val password = binding.etPassword.text.toString()
         binding.btnLogin.isEnabled = email.isNotEmpty() && password.isNotEmpty()
