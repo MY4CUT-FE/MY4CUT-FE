@@ -53,4 +53,11 @@ interface WorkspacePhotoService {
         @Path("workspaceId") workspaceId: Long,
         @Path("id") photoId: Long
     ): BaseResponse<Unit>
+
+    /** 최종본 on/off */
+    @PATCH("workspaces/{workspaceId}/photos/{photoId}/final")
+    suspend fun selectFinalPhoto(
+        @Path("workspaceId") workspaceId: Long,
+        @Path("photoId") photoId: Long
+    ): BaseResponse<Unit>
 }
