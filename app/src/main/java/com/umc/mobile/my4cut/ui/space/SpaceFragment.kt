@@ -170,15 +170,13 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                 binding.tvTitle.text = data.name
 
                 existingMemberIds.clear()
-                data.ownerId?.let { ownerId ->
-                    existingMemberIds.add(ownerId.toLong())
-                }
+                existingMemberIds.addAll(data.alreadyInvitedFriendIds.orEmpty())
 
                 updateMemberUi(data.memberProfiles)
 
                 Log.d(
                     "SpaceFragment",
-                    "edit dialog memberIds=$existingMemberIds (현재 응답에서는 ownerId만 확보 가능)"
+                    "edit dialog excludedUserIds=$existingMemberIds"
                 )
 
                 // 현재 로그인 사용자 정보 조회 → 방장 여부 판단
