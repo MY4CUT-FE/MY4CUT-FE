@@ -4,10 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Paint
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.kakao.sdk.auth.model.OAuthToken
 import com.kakao.sdk.common.model.ClientError
 import com.kakao.sdk.common.model.ClientErrorCause
@@ -20,6 +22,7 @@ import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.ActivityIntroBinding
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.login.LoginActivity
+import com.umc.mobile.my4cut.ui.onboarding.OnboardingActivity
 import com.umc.mobile.my4cut.ui.signup.SignUpActivity
 import retrofit2.Call
 import retrofit2.Callback
@@ -29,7 +32,36 @@ class IntroActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityIntroBinding
 
+    companion object {
+        private const val MOCK_LOGIN_ENABLED = false
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        val isLauncherStart = intent?.action == Intent.ACTION_MAIN
+
+        // 항상 호출 → postSplashScreenTheme(Theme.MY4CUT) 적용 (MaterialButton 크래시 방지)
+        val splashScreen = installSplashScreen()
+
+        if (isLauncherStart) {
+            val startTime = SystemClock.elapsedRealtime()
+            splashScreen.setKeepOnScreenCondition {
+                SystemClock.elapsedRealtime() - startTime < 2000L
+            }
+            // 스플래시 종료 시점에 자동 로그인 체크 후 분기
+            splashScreen.setOnExitAnimationListener { splashView ->
+                splashView.remove()
+                // 저장된 토큰이 유효하면 바로 홈으로, 아니면 온보딩으로
+                if (TokenManager.isAccessTokenValid(this)) {
+                    navigateToMain()
+                } else {
+                    startActivity(Intent(this, OnboardingActivity::class.java))
+                    @Suppress("DEPRECATION")
+                    overridePendingTransition(0, 0)
+                }
+                finish()
+            }
+        }
+
         super.onCreate(savedInstanceState)
         binding = ActivityIntroBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -37,13 +69,27 @@ class IntroActivity : AppCompatActivity() {
         binding.tvSignup.paintFlags = binding.tvSignup.paintFlags or Paint.UNDERLINE_TEXT_FLAG
 
         initClickListener()
-        checkAutoLogin()
+
+        if (isLauncherStart) {
+            setLoginUiVisibility(false)
+        } else {
+            checkAutoLogin()
+        }
     }
 
     private fun checkAutoLogin() {
-        // 로그인 UI 숨기기 (자동 로그인 결과에 따라 다시 표시)
         setLoginUiVisibility(false)
 
+        // =====================================================================
+        // TODO: [MOCK] 자동 로그인 구현 완료 후 아래 블록 제거
+        if (MOCK_LOGIN_ENABLED) {
+            Log.d("AutoLogin", "[MOCK] 자동 로그인 우회 → 로그인 UI 표시")
+            setLoginUiVisibility(true)
+            return
+        }
+        // =====================================================================
+
+        // TODO: [실제 구현] 토큰 유효성 확인 → 유효 시 navigateToMain(), 만료 시 refresh 시도
         // access token이 유효하면 바로 이동 (네트워크 요청 불필요)
         if (TokenManager.isAccessTokenValid(this)) {
             Log.d("AutoLogin", "Access token valid, skipping login")
@@ -122,6 +168,16 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private fun startKakaoLogin() {
+        // =====================================================================
+        // TODO: [MOCK] 실제 카카오 로그인 구현 완료 후 아래 블록 제거
+        if (MOCK_LOGIN_ENABLED) {
+            Log.d("KakaoLogin", "[MOCK] 목업 카카오 로그인 → MainActivity 이동")
+            navigateToMain()
+            return
+        }
+        // =====================================================================
+
+        // TODO: [실제 구현] 카카오 SDK 로그인 → sendKakaoTokenToServer() 호출
         val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
             if (error != null) {
                 Log.e("KakaoLogin", "카카오 로그인 실패", error)

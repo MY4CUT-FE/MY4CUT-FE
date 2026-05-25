@@ -1,5 +1,6 @@
 package com.umc.mobile.my4cut.ui.pose
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
@@ -8,6 +9,7 @@ import android.view.Gravity
 import android.view.View
 import android.widget.PopupMenu
 import android.widget.Toast
+import com.umc.mobile.my4cut.MainActivity
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.tabs.TabLayout
@@ -42,7 +44,14 @@ class PoseRecommendActivity : AppCompatActivity() {
 
     private fun initViews() {
         // 1. 뒤로가기
-        binding.btnBack.setOnClickListener { finish() }
+        binding.btnBack.setOnClickListener {
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("NAVIGATE_TO_HOME", true)
+            }
+            startActivity(intent)
+            finish()
+        }
 
         // 2. 탭 설정
         val tabTitles = listOf("전체", "1인", "2인", "3인", "4인")

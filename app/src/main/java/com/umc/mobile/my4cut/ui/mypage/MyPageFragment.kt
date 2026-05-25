@@ -26,7 +26,7 @@ import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 import com.umc.mobile.my4cut.databinding.FragmentMyPageBinding
 import com.umc.mobile.my4cut.network.RetrofitClient
-import com.umc.mobile.my4cut.ui.intro.IntroActivity
+import com.umc.mobile.my4cut.ui.onboarding.OnboardingActivity
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 import kotlinx.coroutines.runBlocking
 import retrofit2.Call
@@ -216,15 +216,24 @@ class MyPageFragment : Fragment() {
     }
 
     private fun goToIntro() {
-        val intent = Intent(requireContext(), IntroActivity::class.java).apply {
+        // 로그아웃·탈퇴 후 온보딩 화면으로 이동, 백스택 전체 제거
+        val intent = Intent(requireContext(), OnboardingActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         startActivity(intent)
     }
 
     private fun clearUserPrefs() {
+        // 토큰 삭제
         TokenManager.clear(requireContext())
+        // 사용자 정보 캐시 삭제
         requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+            .edit().clear().apply()
+        // FCM 토큰 캐시 삭제
+        requireContext().getSharedPreferences("my4cut_prefs", Context.MODE_PRIVATE)
+            .edit().clear().apply()
+        // 포즈 북마크 삭제
+        requireContext().getSharedPreferences("pose_bookmarks", Context.MODE_PRIVATE)
             .edit().clear().apply()
     }
 

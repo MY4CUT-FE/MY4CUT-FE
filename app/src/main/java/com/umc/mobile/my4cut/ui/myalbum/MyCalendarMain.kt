@@ -127,10 +127,6 @@ class MyCalendarMain @JvmOverloads constructor(
                 updateYearMonthText()
             }
 
-            binding.mcCustom.setOnTouchListener { _, event ->
-                event.action == MotionEvent.ACTION_MOVE
-            }
-
             val today = LocalDate.now()
             selectedDate = today
             val todayData = datesWithDataMap[today]
@@ -153,6 +149,8 @@ class MyCalendarMain @JvmOverloads constructor(
             mcCustom.monthScrollListener = { month ->
                 currentMonth = month.yearMonth
                 updateYearMonthText()
+
+                onMonthChangeListener?.invoke(currentMonth.year, currentMonth.monthValue)
             }
 
             mcCustom.monthHeaderBinder = object : MonthHeaderFooterBinder<MainMonthViewContainer> {
@@ -281,7 +279,7 @@ class MyCalendarMain @JvmOverloads constructor(
         binding.tvYearMonth.text = "${currentMonth.monthValue}월"
 
         // 월이 바뀔 때 리스너 실행
-        onMonthChangeListener?.invoke(currentMonth.year, currentMonth.monthValue)
+//        onMonthChangeListener?.invoke(currentMonth.year, currentMonth.monthValue)
     }
 }
 

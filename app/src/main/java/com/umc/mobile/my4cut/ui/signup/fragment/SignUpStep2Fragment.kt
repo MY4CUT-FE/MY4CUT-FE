@@ -1,11 +1,11 @@
 package com.umc.mobile.my4cut.ui.signup.fragment
 
 import android.annotation.SuppressLint
-import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -14,14 +14,23 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.FragmentSignUpStep2Binding
+import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.ui.signup.AuthViewModel
 import com.umc.mobile.my4cut.ui.signup.SignUpActivity
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class SignUpStep2Fragment : Fragment() {
 
     private var _binding: FragmentSignUpStep2Binding? = null
     private val binding get() = _binding!!
+
+    private val viewModel: AuthViewModel by activityViewModels()
 
     private var isEmailVerified = false
     private var isPasswordMatched = false
@@ -46,7 +55,6 @@ class SignUpStep2Fragment : Fragment() {
         val toggleListener = View.OnTouchListener { v, event ->
             if (event.action == MotionEvent.ACTION_UP) {
                 val editText = v as EditText
-                // 오른쪽 아이콘(눈알) 영역 클릭 감지
                 if (editText.compoundDrawables[2] != null) {
                     if (event.rawX >= (editText.right - editText.compoundDrawables[2].bounds.width())) {
                         val selection = editText.selectionEnd
@@ -72,134 +80,189 @@ class SignUpStep2Fragment : Fragment() {
     private fun initClickListener() {
         binding.btnBack.setOnClickListener { requireActivity().finish() }
 
-        // ✅ 중복 확인 버튼 - GET 방식으로 서버 체크
-        binding.btnCheckDuplicate.setOnClickListener {
+        // 인증코드 발송 버튼
+        binding.btnSendVerification.setOnClickListener {
             val email = binding.etEmail.text.toString()
-
             if (email.isEmpty()) {
                 Toast.makeText(requireContext(), "이메일을 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-
-            // 이메일 형식 체크
             if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                isEmailVerified = false
-                updateEmailStatusUI(false, "올바른 이메일 형식이 아닙니다.")
-                checkInputValidity()
+                showEmailError("올바른 이메일 형식이 아닙니다.")
                 return@setOnClickListener
             }
-
-            // ✅ 서버에 중복 체크 (GET 방식)
-            checkEmailDuplicateOnServer(email)
+            sendVerificationCode(email)
         }
 
+        // 인증 버튼
+        binding.btnVerify.setOnClickListener {
+            val code = binding.etVerificationCode.text.toString()
+            if (code.isEmpty()) {
+                Toast.makeText(requireContext(), "인증코드를 입력해주세요.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val email = binding.etEmail.text.toString()
+            verifyCode(email, code)
+        }
+
+        // 다음 버튼
         binding.btnNext.setOnClickListener {
             val email = binding.etEmail.text.toString()
             val password = binding.etPassword.text.toString()
 
-            // Step3로 데이터 전달
+            if (!viewModel.isValidPassword(password)) {
+                Toast.makeText(
+                    requireContext(),
+                    "영어/숫자/특수기호 포함 8~15자로 작성해주세요.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+
             val fragment = SignUpStep3Fragment()
             val bundle = Bundle()
             bundle.putString("email", email)
             bundle.putString("password", password)
             fragment.arguments = bundle
-
             (activity as? SignUpActivity)?.changeFragment(fragment)
         }
     }
 
-    /**
-     * ✅ GET 방식으로 이메일 중복 체크
-     * GET /auth/check-email?email={email}
-     */
-    private fun checkEmailDuplicateOnServer(email: String) {
-        // 로딩 표시
-        binding.btnCheckDuplicate.isEnabled = false
-        binding.tvEmailStatus.visibility = View.VISIBLE
-        binding.tvEmailStatus.text = "확인 중..."
-        binding.tvEmailStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.gray_500))
+    /** POST /auth/email/send - 이메일 인증코드 발송 */
+    private fun sendVerificationCode(email: String) {
+        binding.btnSendVerification.isEnabled = false
 
-        android.util.Log.d("SignUpStep2", "📤 중복 체크 시작 (GET): $email")
-
-        com.umc.mobile.my4cut.network.RetrofitClient.authServiceNoAuth.checkEmailDuplicateGet(email)
-            .enqueue(object : retrofit2.Callback<com.umc.mobile.my4cut.data.base.BaseResponse<com.umc.mobile.my4cut.data.auth.model.EmailCheckResponse>> {
-
+        RetrofitClient.authServiceNoAuth.sendEmailVerificationCode(mapOf("email" to email))
+            .enqueue(object : Callback<BaseResponse<String>> {
                 override fun onResponse(
-                    call: retrofit2.Call<com.umc.mobile.my4cut.data.base.BaseResponse<com.umc.mobile.my4cut.data.auth.model.EmailCheckResponse>>,
-                    response: retrofit2.Response<com.umc.mobile.my4cut.data.base.BaseResponse<com.umc.mobile.my4cut.data.auth.model.EmailCheckResponse>>
+                    call: Call<BaseResponse<String>>,
+                    response: Response<BaseResponse<String>>
                 ) {
-                    binding.btnCheckDuplicate.isEnabled = true
+                    binding.btnSendVerification.isEnabled = true
 
-                    android.util.Log.d("SignUpStep2", "📨 응답 코드: ${response.code()}")
+                    // 서버 응답 전체를 Logcat에 출력 (디버깅용)
+                    val errorBody = try { response.errorBody()?.string() } catch (e: Exception) { null }
+                    Log.d("SignUp_Send", "http=${response.code()}")
+                    Log.d("SignUp_Send", "body=${response.body()}")
+                    Log.d("SignUp_Send", "errorBody=$errorBody")
 
-                    if (response.isSuccessful && response.body() != null) {
-                        val responseData = response.body()?.data
-
-                        android.util.Log.d("SignUpStep2", "📨 응답 데이터: $responseData")
-
-                        if (responseData != null) {
-                            if (responseData.duplicated) {
-                                // ❌ 중복된 이메일 (duplicated: true)
-                                isEmailVerified = false
-                                updateEmailStatusUI(false, "이미 사용 중인 이메일입니다.")
-                                android.util.Log.d("SignUpStep2", "❌ 이메일 중복: ${responseData.email}")
-                            } else {
-                                // ✅ 사용 가능한 이메일 (duplicated: false)
-                                isEmailVerified = true
-                                updateEmailStatusUI(true, "사용 가능한 아이디예요.")
-                                android.util.Log.d("SignUpStep2", "✅ 이메일 사용 가능: ${responseData.email}")
-                            }
-                        } else {
-                            // 데이터가 null인 경우
-                            isEmailVerified = false
-                            Toast.makeText(requireContext(), "중복 확인 중 오류가 발생했습니다", Toast.LENGTH_SHORT).show()
-                            android.util.Log.e("SignUpStep2", "⚠️ 응답 데이터가 null입니다")
-                        }
+                    if (response.isSuccessful) {
+                        showSendGuide(email)
                     } else {
-                        // 응답 실패
-                        isEmailVerified = false
-                        val errorBody = try {
-                            response.errorBody()?.string()
-                        } catch (e: Exception) {
-                            null
+                        val message = when (response.code()) {
+                            400 -> "올바른 이메일 형식이 아닙니다."
+                            409 -> "이미 가입된 이메일입니다."
+                            500 -> "서버 오류가 발생했습니다.\nLogcat > SignUp_Send 태그를 확인해주세요."
+                            else -> "인증코드 발송에 실패했습니다. (${response.code()})"
                         }
-                        android.util.Log.e("SignUpStep2", "❌ 중복 체크 실패: ${response.code()}, $errorBody")
-                        Toast.makeText(requireContext(), "중복 확인에 실패했습니다", Toast.LENGTH_SHORT).show()
+                        showEmailError(message)
                     }
-
-                    checkInputValidity()
                 }
 
-                override fun onFailure(
-                    call: retrofit2.Call<com.umc.mobile.my4cut.data.base.BaseResponse<com.umc.mobile.my4cut.data.auth.model.EmailCheckResponse>>,
-                    t: Throwable
-                ) {
-                    binding.btnCheckDuplicate.isEnabled = true
-                    isEmailVerified = false
-                    android.util.Log.e("SignUpStep2", "💥 네트워크 오류", t)
-                    Toast.makeText(requireContext(), "네트워크 오류가 발생했습니다", Toast.LENGTH_SHORT).show()
-                    checkInputValidity()
+                override fun onFailure(call: Call<BaseResponse<String>>, t: Throwable) {
+                    binding.btnSendVerification.isEnabled = true
+                    Log.e("SignUp_Send", "failure", t)
+                    Toast.makeText(requireContext(), "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
                 }
             })
     }
 
-    private fun updateEmailStatusUI(isSuccess: Boolean, message: String) {
+    /** POST /auth/email/verify - 인증코드 검증 */
+    private fun verifyCode(email: String, code: String) {
+        binding.btnVerify.isEnabled = false
+
+        val request = mapOf("email" to email, "code" to code)
+        RetrofitClient.authServiceNoAuth.verifyEmailCode(request)
+            .enqueue(object : Callback<BaseResponse<String>> {
+                override fun onResponse(
+                    call: Call<BaseResponse<String>>,
+                    response: Response<BaseResponse<String>>
+                ) {
+                    binding.btnVerify.isEnabled = true
+                    Log.d("SignUp", "verifyCode http=${response.code()}, body=${response.body()}")
+
+                    if (response.isSuccessful) {
+                        showVerificationComplete()
+                    } else {
+                        val errorCode = response.code()
+                        val message = when (errorCode) {
+                            400 -> "인증코드가 올바르지 않습니다."
+                            410 -> "인증코드가 만료되었습니다. 다시 발송해주세요."
+                            else -> "인증에 실패했습니다. (${errorCode})"
+                        }
+                        showVerificationError(message)
+                    }
+                }
+
+                override fun onFailure(call: Call<BaseResponse<String>>, t: Throwable) {
+                    binding.btnVerify.isEnabled = true
+                    Log.e("SignUp", "verifyCode failure", t)
+                    Toast.makeText(requireContext(), "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
+                }
+            })
+    }
+
+    /** 인증코드 발송 후 안내 문구 + 입력 영역 표시 */
+    private fun showSendGuide(email: String) {
+        binding.etEmail.setBackgroundResource(R.drawable.bg_edittext_rounded)
+        binding.tvEmailStatus.visibility = View.VISIBLE
+        binding.tvEmailStatus.text = "${email}로 인증 코드를 발송했습니다.\n메일을 확인하고 인증코드 6자리를 입력해 주세요."
+        binding.tvEmailStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.gray_500))
+        binding.tvEmailStatus.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+        binding.etVerificationCode.visibility = View.VISIBLE
+        binding.btnVerify.visibility = View.VISIBLE
+        // 재발송 시 인증 상태 초기화
+        binding.tvVerificationStatus.visibility = View.GONE
+        binding.etVerificationCode.setBackgroundResource(R.drawable.bg_edittext_rounded)
+        isEmailVerified = false
+        viewModel.setEmailVerified(false)
+        checkInputValidity()
+    }
+
+    /** 이메일 에러 표시 */
+    private fun showEmailError(message: String) {
+        isEmailVerified = false
+        viewModel.setEmailVerified(false)
+        binding.etEmail.setBackgroundResource(R.drawable.bg_edittext_error)
         binding.tvEmailStatus.visibility = View.VISIBLE
         binding.tvEmailStatus.text = message
+        val color = ContextCompat.getColor(requireContext(), R.color.modal_red)
+        binding.tvEmailStatus.setTextColor(color)
+        binding.tvEmailStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_error_circle, 0, 0, 0)
+        binding.tvEmailStatus.compoundDrawables[0]?.setTint(color)
+        binding.etVerificationCode.visibility = View.GONE
+        binding.btnVerify.visibility = View.GONE
+        binding.tvVerificationStatus.visibility = View.GONE
+        checkInputValidity()
+    }
 
-        if (isSuccess) {
-            val color = ContextCompat.getColor(requireContext(), R.color.success_green)
-            binding.tvEmailStatus.setTextColor(color)
-            binding.tvEmailStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_check_circle, 0, 0, 0)
-            binding.tvEmailStatus.compoundDrawables[0]?.setTint(color)
-            binding.etEmail.setBackgroundResource(R.drawable.bg_edittext_success)
-        } else {
-            val color = Color.RED
-            binding.tvEmailStatus.setTextColor(color)
-            binding.tvEmailStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_error_circle, 0, 0, 0)
-            binding.tvEmailStatus.compoundDrawables[0]?.setTint(color)
-            binding.etEmail.setBackgroundResource(R.drawable.bg_edittext_rounded)
-        }
+    /** 인증 완료 UI */
+    private fun showVerificationComplete() {
+        isEmailVerified = true
+        viewModel.setEmailVerified(true)
+        binding.etEmail.setBackgroundResource(R.drawable.bg_edittext_success)
+        binding.etVerificationCode.setBackgroundResource(R.drawable.bg_edittext_success)
+        binding.tvVerificationStatus.visibility = View.VISIBLE
+        binding.tvVerificationStatus.text = "인증이 완료되었어요."
+        val color = ContextCompat.getColor(requireContext(), R.color.success_green)
+        binding.tvVerificationStatus.setTextColor(color)
+        binding.tvVerificationStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_check_circle, 0, 0, 0)
+        binding.tvVerificationStatus.compoundDrawables[0]?.setTint(color)
+        checkInputValidity()
+    }
+
+    /** 인증 실패 UI */
+    private fun showVerificationError(message: String) {
+        isEmailVerified = false
+        viewModel.setEmailVerified(false)
+        binding.etVerificationCode.setBackgroundResource(R.drawable.bg_edittext_error)
+        binding.tvVerificationStatus.visibility = View.VISIBLE
+        binding.tvVerificationStatus.text = message
+        val color = ContextCompat.getColor(requireContext(), R.color.modal_red)
+        binding.tvVerificationStatus.setTextColor(color)
+        binding.tvVerificationStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_error_circle, 0, 0, 0)
+        binding.tvVerificationStatus.compoundDrawables[0]?.setTint(color)
+        checkInputValidity()
     }
 
     private fun initTextWatchers() {
@@ -216,10 +279,15 @@ class SignUpStep2Fragment : Fragment() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                // 이메일 수정 시 인증 상태 초기화
+                // 이메일 수정 시 인증 상태 전체 초기화
                 isEmailVerified = false
+                viewModel.setEmailVerified(false)
                 binding.tvEmailStatus.visibility = View.GONE
+                binding.etVerificationCode.visibility = View.GONE
+                binding.btnVerify.visibility = View.GONE
+                binding.tvVerificationStatus.visibility = View.GONE
                 binding.etEmail.setBackgroundResource(R.drawable.bg_edittext_rounded)
+                binding.etVerificationCode.setBackgroundResource(R.drawable.bg_edittext_rounded)
                 checkInputValidity()
             }
         })
@@ -241,7 +309,7 @@ class SignUpStep2Fragment : Fragment() {
 
         if (pw == pwCheck) {
             binding.tvPwStatus.visibility = View.VISIBLE
-            binding.tvPwStatus.text = "비밀번호가 일치해요."
+            binding.tvPwStatus.text = "비밀번호가 일치합니다."
             val color = ContextCompat.getColor(requireContext(), R.color.success_green)
             binding.tvPwStatus.setTextColor(color)
             binding.tvPwStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_check_circle, 0, 0, 0)
@@ -251,7 +319,7 @@ class SignUpStep2Fragment : Fragment() {
         } else {
             binding.tvPwStatus.visibility = View.VISIBLE
             binding.tvPwStatus.text = "비밀번호가 일치하지 않습니다."
-            val color = Color.RED
+            val color = ContextCompat.getColor(requireContext(), R.color.modal_red)
             binding.tvPwStatus.setTextColor(color)
             binding.tvPwStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_error_circle, 0, 0, 0)
             binding.tvPwStatus.compoundDrawables[0]?.setTint(color)
@@ -263,7 +331,6 @@ class SignUpStep2Fragment : Fragment() {
     private fun checkInputValidity() {
         val email = binding.etEmail.text.toString()
         val pw = binding.etPassword.text.toString()
-
         binding.btnNext.isEnabled = email.isNotEmpty() && isEmailVerified && pw.isNotEmpty() && isPasswordMatched
     }
 

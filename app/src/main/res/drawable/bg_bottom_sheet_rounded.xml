@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BottomSheetDialog용 상단 모서리 둥근 흰색 배경 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/white"/>
+    <corners android:topLeftRadius="20dp" android:topRightRadius="20dp"/>
+</shape>
