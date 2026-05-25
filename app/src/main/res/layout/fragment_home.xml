@@ -21,6 +21,17 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
+        android:id="@+id/iv_mypage"
+        android:layout_width="wrap_content"
+        android:layout_height="19dp"
+        android:adjustViewBounds="true"
+        android:src="@drawable/ic_mypage_home"
+        android:layout_marginEnd="12dp"
+        app:layout_constraintBottom_toBottomOf="@id/tv_logo"
+        app:layout_constraintEnd_toStartOf="@id/iv_notification"
+        app:layout_constraintTop_toTopOf="@id/tv_logo" />
+
+    <ImageView
         android:id="@+id/iv_notification"
         android:layout_width="18dp"
         android:layout_height="20dp"
@@ -84,7 +95,7 @@
             android:layout_height="wrap_content"
             android:clipChildren="false"
             android:clipToPadding="false"
-            android:paddingBottom="50dp">
+            android:paddingBottom="12dp">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/cl_pose_recommend"
@@ -130,6 +141,7 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
+            <!-- [수정] 오늘의 네컷 기록 타이틀 상단 마진: 8dp → 24dp -->
             <TextView
                 android:id="@+id/tv_record_title"
                 android:layout_width="wrap_content"
@@ -138,15 +150,15 @@
                 android:fontFamily="@font/suit_bold"
                 android:textSize="21sp"
                 android:textColor="#1A1A1A"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="24dp"
                 android:layout_marginStart="20dp"
                 app:layout_constraintTop_toBottomOf="@id/cl_pose_recommend"
                 app:layout_constraintStart_toStartOf="parent"/>
 
             <ImageView
                 android:id="@+id/iv_calendar_back"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
                 android:src="@drawable/ic_calendar_left"
                 android:layout_marginStart="10dp"
                 app:layout_constraintStart_toStartOf="parent"
@@ -168,8 +180,8 @@
 
             <ImageView
                 android:id="@+id/iv_calendar_next"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
                 android:src="@drawable/ic_calendar_right"
                 android:layout_marginEnd="10dp"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -182,7 +194,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="20dp"
                 android:layout_marginTop="12dp"
-                android:layout_marginBottom="30dp"
+                android:layout_marginBottom="8dp"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="8dp"
                 app:cardUseCompatPadding="true"
@@ -218,6 +230,7 @@
                         app:layout_constraintTop_toTopOf="@id/v_date_line"
                         app:layout_constraintBottom_toBottomOf="@id/v_date_line"/>
 
+                    <!-- 빈 상태: 기록 없음 -->
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/cl_empty_state"
                         android:layout_width="match_parent"
@@ -227,6 +240,15 @@
                         app:layout_constraintTop_toBottomOf="@id/v_date_line"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintEnd_toEndOf="parent">
+
+                        <ImageView
+                            android:id="@+id/iv_empty_char"
+                            android:layout_width="98dp"
+                            android:layout_height="66dp"
+                            android:src="@drawable/img_empty_state_character"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -240,17 +262,9 @@
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toBottomOf="@id/iv_empty_char" />
 
-                        <ImageView
-                            android:id="@+id/iv_empty_char"
-                            android:layout_width="98dp"
-                            android:layout_height="66dp"
-                            android:src="@drawable/img_empty_state_character"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
-
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
+                    <!-- 기록 있음: 사진 + (일기/이모지) -->
                     <LinearLayout
                         android:id="@+id/ll_filled_state"
                         android:layout_width="match_parent"
@@ -263,6 +277,7 @@
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintEnd_toEndOf="parent">
 
+                        <!-- 사진 영역: 항상 표시 -->
                         <ImageView
                             android:id="@+id/iv_home_photo"
                             android:layout_width="match_parent"
@@ -272,21 +287,29 @@
                             android:src="@drawable/img_ex_photo"
                             android:minHeight="350dp"/>
 
+                        <!-- [핵심] 일기+이모지 영역: content가 있을 때만 표시 -->
                         <androidx.constraintlayout.widget.ConstraintLayout
+                            android:id="@+id/cl_diary_emoji_section"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp">
+                            android:layout_marginTop="16dp"
+                            android:visibility="gone"
+                            tools:visibility="visible">
 
+                            <!-- 이모지 아이콘: emojiType 없으면 코드에서 배경 원만 표시 -->
                             <ImageView
                                 android:id="@+id/iv_mood_icon"
                                 android:layout_width="48dp"
                                 android:layout_height="48dp"
+                                android:padding="8dp"
                                 android:src="@drawable/img_mood_happy"
                                 app:layout_constraintEnd_toEndOf="parent"
                                 app:layout_constraintBottom_toBottomOf="parent"
                                 app:layout_constraintTop_toTopOf="parent"/>
 
+                            <!-- 일기 줄 영역: 코드에서 동적으로 채워짐 -->
                             <LinearLayout
+                                android:id="@+id/ll_diary_lines"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:orientation="vertical"
@@ -294,39 +317,7 @@
                                 app:layout_constraintStart_toStartOf="parent"
                                 app:layout_constraintEnd_toStartOf="@id/iv_mood_icon"
                                 app:layout_constraintTop_toTopOf="parent"
-                                app:layout_constraintBottom_toBottomOf="parent">
-
-                                <TextView
-                                    android:id="@+id/tv_diary_line_1"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="꺄 드디어 시험 끝!!"
-                                    android:fontFamily="@font/suit_medium"
-                                    android:textColor="#1A1A1A"
-                                    android:textSize="14sp"
-                                    android:paddingVertical="6dp"/>
-
-                                <View
-                                    android:layout_width="match_parent"
-                                    android:layout_height="1dp"
-                                    android:background="#F0F0F0"/>
-
-                                <TextView
-                                    android:id="@+id/tv_diary_line_2"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="와중에 포니테일 맘에 든당"
-                                    android:fontFamily="@font/suit_medium"
-                                    android:textColor="#1A1A1A"
-                                    android:textSize="14sp"
-                                    android:paddingVertical="6dp"/>
-
-                                <View
-                                    android:layout_width="match_parent"
-                                    android:layout_height="1dp"
-                                    android:background="#F0F0F0"/>
-
-                            </LinearLayout>
+                                app:layout_constraintBottom_toBottomOf="parent" />
 
                         </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -33,8 +33,7 @@ class IntroActivity : AppCompatActivity() {
     private lateinit var binding: ActivityIntroBinding
 
     companion object {
-        // TODO: [MOCK] 자동 로그인 / 카카오 로그인 구현 완료 후 false로 변경
-        private const val MOCK_LOGIN_ENABLED = true
+        private const val MOCK_LOGIN_ENABLED = false
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,12 +47,17 @@ class IntroActivity : AppCompatActivity() {
             splashScreen.setKeepOnScreenCondition {
                 SystemClock.elapsedRealtime() - startTime < 2000L
             }
-            // 스플래시 종료 시점에 OnboardingActivity 시작 (이중 애니메이션 방지)
+            // 스플래시 종료 시점에 자동 로그인 체크 후 분기
             splashScreen.setOnExitAnimationListener { splashView ->
                 splashView.remove()
-                startActivity(Intent(this, OnboardingActivity::class.java))
-                @Suppress("DEPRECATION")
-                overridePendingTransition(0, 0)
+                // 저장된 토큰이 유효하면 바로 홈으로, 아니면 온보딩으로
+                if (TokenManager.isAccessTokenValid(this)) {
+                    navigateToMain()
+                } else {
+                    startActivity(Intent(this, OnboardingActivity::class.java))
+                    @Suppress("DEPRECATION")
+                    overridePendingTransition(0, 0)
+                }
                 finish()
             }
         }

@@ -5,34 +5,23 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_intro_gradient">
+    android:background="@color/white">
 
-    <!-- 뒤로가기 버튼 -->
-    <ImageView
-        android:id="@+id/btn_back"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginTop="8dp"
-        android:src="@drawable/ic_arrow_back_24"
-        android:padding="12dp"
-        app:tint="@color/gray_900"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <!-- [수정] 뒤로가기 버튼 삭제 -->
 
-    <!-- 로고 -->
+    <!-- [수정] 로고: 상단 뷰 삭제로 parent 상단에 직접 연결 -->
     <TextView
         android:id="@+id/tv_logo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="80dp"
         android:text="MY4CUT"
         android:textColor="@color/coral_900"
         android:textSize="40sp"
         android:fontFamily="@font/hakgyoansim_ttwimteul"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_back" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/tv_sub_logo"
@@ -205,30 +194,30 @@
             android:fontFamily="@font/suit_regular" />
     </LinearLayout>
 
-    <!-- or Sign in with 구분선 -->
+    <!-- [수정] or Sign in with 구분선: 화면 최하단으로 이동, 카카오 버튼 위에 배치 -->
     <TextView
         android:id="@+id/tv_divider"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="36dp"
+        android:layout_marginBottom="8dp"
         android:text="- or Sign in with -"
         android:textColor="@color/gray_500"
         android:textSize="12sp"
         android:fontFamily="@font/suit_regular"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ll_auth_links" />
+        app:layout_constraintBottom_toTopOf="@id/btn_kakao_login" />
 
-    <!-- 카카오 로그인 버튼 -->
+    <!-- [수정] 카카오 로그인 버튼: 화면 최하단으로 이동 -->
     <ImageView
         android:id="@+id/btn_kakao_login"
         android:layout_width="52dp"
         android:layout_height="52dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginBottom="40dp"
         android:src="@drawable/ic_kakao"
         android:scaleType="fitCenter"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_divider" />
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

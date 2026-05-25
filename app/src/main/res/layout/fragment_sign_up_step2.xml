@@ -239,21 +239,21 @@
         app:layout_constraintStart_toStartOf="@id/tv_label_pw"
         app:layout_constraintTop_toBottomOf="@id/et_password" />
 
+    <!-- [수정] start constraint 추가 및 textColor 하드코딩 제거 (코드에서 동적으로 지정) -->
     <TextView
         android:id="@+id/tv_pw_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:text="비밀번호가 일치하지 않습니다."
-        android:textColor="#FF0000"
         android:textSize="11sp"
         android:fontFamily="@font/suit_regular"
         android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="@id/et_password_check"
-        app:layout_constraintTop_toBottomOf="@id/et_password_check"
         android:drawablePadding="4dp"
         android:gravity="center_vertical"
-        tools:visibility="visible" />
+        app:layout_constraintStart_toStartOf="@id/et_password_check"
+        app:layout_constraintTop_toBottomOf="@id/et_password_check"
+        tools:visibility="visible"
+        tools:text="비밀번호가 일치하지 않습니다." />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btn_next"

@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.data.auth.local.TokenManager
 import com.umc.mobile.my4cut.data.auth.model.LoginRequest
@@ -19,6 +20,7 @@ import com.umc.mobile.my4cut.data.auth.model.TokenResult
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.FragmentSignUpStep3Binding
 import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.ui.signup.AuthViewModel
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -27,6 +29,8 @@ class SignUpStep3Fragment : Fragment() {
 
     private var _binding: FragmentSignUpStep3Binding? = null
     private val binding get() = _binding!!
+
+    private val viewModel: AuthViewModel by activityViewModels()
 
     private var emailStr = ""
     private var passwordStr = ""
@@ -57,13 +61,23 @@ class SignUpStep3Fragment : Fragment() {
         binding.btnNext.setOnClickListener {
             val nickname = binding.etNickname.text.toString()
 
+            // 닉네임 형식 검사: 한글/영어만 허용, 최대 7자
+            if (!viewModel.isValidNickname(nickname)) {
+                Toast.makeText(
+                    requireContext(),
+                    "한글/영어 포함 최대 7자로 작성해주세요.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+
             val request = SignUpRequest(
                 email = emailStr,
                 password = passwordStr,
                 nickname = nickname
             )
 
-            RetrofitClient.authService.signUp(request)
+            RetrofitClient.authServiceNoAuth.signUp(request)
                 .enqueue(object : Callback<BaseResponse<Any>> {
 
                     override fun onResponse(
@@ -85,7 +99,6 @@ class SignUpStep3Fragment : Fragment() {
 
                         when (response.code()) {
                             200, 201 -> {
-                                // ✅ 회원가입 성공
                                 if (body != null && body.code.startsWith("C20")) {
                                     autoLogin()
                                 } else {
@@ -97,17 +110,14 @@ class SignUpStep3Fragment : Fragment() {
                                 }
                             }
                             409 -> {
-                                // ❌ 이메일 중복 (활성 계정 또는 탈퇴 계정)
                                 Toast.makeText(
                                     requireContext(),
                                     "이미 가입된 이메일입니다",
                                     Toast.LENGTH_LONG
                                 ).show()
-                                // 이메일 입력 화면으로 돌아가기
                                 parentFragmentManager.popBackStack()
                             }
                             410 -> {
-                                // ⚠️ 탈퇴한 계정 (서버가 410을 반환하는 경우)
                                 Toast.makeText(
                                     requireContext(),
                                     "탈퇴한 계정입니다. 고객센터에 문의해주세요.",
@@ -116,7 +126,6 @@ class SignUpStep3Fragment : Fragment() {
                                 parentFragmentManager.popBackStack()
                             }
                             else -> {
-                                // 기타 오류
                                 Toast.makeText(
                                     requireContext(),
                                     body?.message ?: "회원가입 실패 (${response.code()})",
@@ -137,18 +146,16 @@ class SignUpStep3Fragment : Fragment() {
                         ).show()
                     }
                 })
-
         }
     }
 
-    // 자동 로그인
     private fun autoLogin() {
         val loginRequest = LoginRequest(
             email = emailStr,
             password = passwordStr
         )
 
-        RetrofitClient.authService.login(loginRequest)
+        RetrofitClient.authServiceNoAuth.login(loginRequest)
             .enqueue(object : Callback<BaseResponse<TokenResult>> {
 
                 override fun onResponse(
@@ -158,30 +165,21 @@ class SignUpStep3Fragment : Fragment() {
                     val tokenResult = response.body()?.data
 
                     if (response.isSuccessful && tokenResult != null) {
-
-                        // 토큰은 TokenManager에 저장
                         TokenManager.saveTokens(
                             requireContext(),
                             tokenResult.accessToken,
                             tokenResult.refreshToken
                         )
-
-                        // 사용자 정보만 UserPrefs
                         saveUserInfo(tokenResult.userId)
-
                         Toast.makeText(
                             requireContext(),
                             "회원가입 및 로그인 성공!",
                             Toast.LENGTH_SHORT
                         ).show()
-
                         val intent = Intent(requireContext(), MainActivity::class.java)
-                        intent.flags =
-                            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                         startActivity(intent)
-
                         requireActivity().finish()
-
                     } else {
                         Toast.makeText(
                             requireContext(),
@@ -201,16 +199,14 @@ class SignUpStep3Fragment : Fragment() {
             })
     }
 
-    /** 사용자 정보 저장 (토큰 x) */
     private fun saveUserInfo(userId: Int) {
-        val pref = requireContext()
+        requireContext()
             .getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-
-        pref.edit().apply {
-            putInt("userId", userId)
-            putString("loginType", "EMAIL")
-            apply()
-        }
+            .edit().apply {
+                putInt("userId", userId)
+                putString("loginType", "EMAIL")
+                apply()
+            }
     }
 
     private fun initTextWatcher() {

@@ -243,8 +243,8 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
                     // 텍스트 색상 설정
                     when {
                         isFutureDate -> {
-                            // 미래 날짜는 항상 회색으로 표시
-                            container.textView.setTextColor(Color.GRAY)
+                            // 미래 날짜는 연한 회색으로 표시하여 선택 불가임을 시각적으로 구분
+                            container.textView.setTextColor(Color.parseColor("#D1D1D1"))
                         }
                         data.position == DayPosition.MonthDate -> {
                             container.textView.setTextColor(Color.BLACK)
@@ -298,7 +298,22 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
     }
 
     private fun updateYearMonthText() {
-        binding.tvYearMonth.text = "${currentMonth.monthValue}월"
+        // "2026년 1월" 형식으로 년도와 월을 함께 표시
+        binding.tvYearMonth.text = "${currentMonth.year}년 ${currentMonth.monthValue}월"
+    }
+
+    /** 외부에서 특정 날짜로 스크롤 & 선택 상태를 지정할 때 사용 */
+    fun scrollToDate(date: LocalDate) {
+        val oldDate = selectedDate
+        selectedDate = date
+        currentMonth = YearMonth.from(date)
+        updateYearMonthText()
+        binding.mcCustom.scrollToMonth(currentMonth)
+        binding.mcCustom.post {
+            oldDate?.let { binding.mcCustom.notifyDateChanged(it) }
+            binding.mcCustom.notifyDateChanged(date)
+            onDateSelectedListener?.invoke(getSelectedDateFormatted())
+        }
     }
 }
 

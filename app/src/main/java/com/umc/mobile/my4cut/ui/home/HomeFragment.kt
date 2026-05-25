@@ -8,26 +8,26 @@ import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
 import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import coil.load
 import com.umc.mobile.my4cut.R
-import com.umc.mobile.my4cut.data.base.BaseResponse
-import com.umc.mobile.my4cut.data.day4cut.model.CalendarStatusResponse
 import com.umc.mobile.my4cut.data.day4cut.model.Day4CutDetailResponse
 import com.umc.mobile.my4cut.databinding.FragmentHomeBinding
 import com.umc.mobile.my4cut.databinding.ItemCalendarDayBinding
 import com.umc.mobile.my4cut.network.RetrofitClient
-import com.umc.mobile.my4cut.ui.calendar.CalendarFullActivity
-import com.umc.mobile.my4cut.ui.calendar.CalendarPickerActivity
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 import com.umc.mobile.my4cut.ui.pose.PoseRecommendActivity
+import com.umc.mobile.my4cut.ui.myalbum.CalendarPickerActivity
 import com.umc.mobile.my4cut.ui.record.EntryRegisterActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +37,6 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
 
@@ -217,38 +216,85 @@ class HomeFragment : Fragment() {
             binding.ivHomePhoto.setImageResource(R.drawable.img_ex_photo)
         }
 
-        // 일기 내용 표시 (줄바꿈으로 분리)
-        val content = day4cut.content ?: ""
-        val lines = content.split("\n")
+        val content = day4cut.content.trim()
+        val hasContent = content.isNotBlank()
+        val hasEmoji = day4cut.emojiType.isNotBlank()
 
-        when {
-            lines.isEmpty() || content.isBlank() -> {
-                binding.tvDiaryLine1.text = ""
-                binding.tvDiaryLine2.text = ""
+        if (hasContent || hasEmoji) {
+            binding.clDiaryEmojiSection.visibility = View.VISIBLE
+
+            // 일기 줄 동적 렌더링
+            if (hasContent) {
+                renderDiaryLines(content)
+            } else {
+                binding.llDiaryLines.removeAllViews()
             }
-            lines.size == 1 -> {
-                binding.tvDiaryLine1.text = lines[0]
-                binding.tvDiaryLine2.text = ""
+
+            // 이모지 아이콘
+            if (hasEmoji) {
+                val moodIcon = when (day4cut.emojiType) {
+                    "HAPPY" -> R.drawable.img_mood_happy
+                    "ANGRY" -> R.drawable.img_mood_angry
+                    "TIRED" -> R.drawable.img_mood_tired
+                    "SAD" -> R.drawable.img_mood_sad
+                    "CALM" -> R.drawable.img_mood_calm
+                    else -> null
+                }
+                if (moodIcon != null) {
+                    binding.ivMoodIcon.setImageResource(moodIcon)
+                    // 이모지가 있을 때 코랄 원형 배경을 이미지 뒤에 적용
+                    binding.ivMoodIcon.setBackgroundResource(R.drawable.bg_circle_coral)
+                } else {
+                    binding.ivMoodIcon.setImageDrawable(null)
+                    binding.ivMoodIcon.setBackgroundResource(R.drawable.bg_circle_gray)
+                }
+            } else {
+                binding.ivMoodIcon.setImageDrawable(null)
+                binding.ivMoodIcon.setBackgroundResource(R.drawable.bg_circle_gray)
             }
-            else -> {
-                binding.tvDiaryLine1.text = lines[0]
-                binding.tvDiaryLine2.text = lines.drop(1).joinToString("\n")
-            }
+        } else {
+            binding.clDiaryEmojiSection.visibility = View.GONE
         }
 
-        // 이모지 아이콘 표시
-        val moodIcon = when (day4cut.emojiType) {
-            "HAPPY" -> R.drawable.img_mood_happy
-            "ANGRY" -> R.drawable.img_mood_angry
-            "TIRED" -> R.drawable.img_mood_tired
-            "SAD" -> R.drawable.img_mood_sad
-            "CALM" -> R.drawable.img_mood_calm
-            else -> R.drawable.img_mood_happy // 기본값
-        }
-        binding.ivMoodIcon.setImageResource(moodIcon)
-
-        Log.d("HomeFragment", "✅ Filled state displayed - content: ${content.take(30)}, emoji: ${day4cut.emojiType}, images: ${day4cut.viewUrls?.size ?: 0}")
+        Log.d("HomeFragment", "✅ Filled state - content: '${content.take(30)}', emoji: '${day4cut.emojiType}'")
     }
+
+    private fun renderDiaryLines(content: String) {
+        val container = binding.llDiaryLines
+        container.removeAllViews()
+
+        val lines = content.split("\n")
+        val suitRegular = ResourcesCompat.getFont(requireContext(), R.font.suit_regular)
+        val textColorGray = Color.parseColor("#1A1A1A")
+        // [수정] 업로드 화면 LinedEditText와 동일한 색상으로 통일
+        val lineColor = Color.parseColor("#EBEBEB")
+
+        lines.forEachIndexed { index, line ->
+            val tv = TextView(requireContext()).apply {
+                text = line
+                setTextColor(textColorGray)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                typeface = suitRegular
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).also { it.topMargin = if (index == 0) 0 else dpToPx(8) }
+            }
+            container.addView(tv)
+
+            val divider = View(requireContext()).apply {
+                setBackgroundColor(lineColor)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    dpToPx(1)
+                ).also { it.topMargin = dpToPx(4) }
+            }
+            container.addView(divider)
+        }
+    }
+
+    private fun dpToPx(dp: Int): Int =
+        (dp * resources.displayMetrics.density).toInt()
 
     // ✅ 기록이 없는 경우 표시
     private fun showEmptyState() {
@@ -279,13 +325,18 @@ class HomeFragment : Fragment() {
 
             dayViewBinding.tvDayNumber.text = date.dayOfMonth.toString()
 
+            val isFuture = date.isAfter(LocalDate.now())
+
             if (date.isEqual(selectedDate)) {
                 dayViewBinding.tvDayNumber.setBackgroundResource(R.drawable.bg_calendar_selected)
                 dayViewBinding.tvDayNumber.backgroundTintList = null
                 dayViewBinding.tvDayNumber.setTextColor(Color.WHITE)
             } else {
                 dayViewBinding.tvDayNumber.background = null
-                dayViewBinding.tvDayNumber.setTextColor(Color.parseColor("#6A6A6A"))
+                // 미래 날짜는 연한 회색으로 표시하여 선택 불가임을 시각적으로 구분
+                dayViewBinding.tvDayNumber.setTextColor(
+                    if (isFuture) Color.parseColor("#D1D1D1") else Color.parseColor("#6A6A6A")
+                )
             }
 
             // ✅ API에서 받은 데이터로 점 표시
@@ -330,10 +381,18 @@ class HomeFragment : Fragment() {
             startActivity(Intent(requireContext(), NotificationActivity::class.java))
         }
 
-        // ✅ 빈 화면 클릭 → 기록 등록 화면으로 이동
+        binding.ivMypage.setOnClickListener {
+            (requireActivity() as? com.umc.mobile.my4cut.MainActivity)
+                ?.navigateToMyPage()
+        }
+
+        // 빈 날짜 카드 클릭 → 전체 캘린더로 이동, 현재 선택 날짜를 초기값으로 전달
         binding.clEmptyState.setOnClickListener {
-            val intent = Intent(requireContext(), EntryRegisterActivity::class.java)
-            intent.putExtra("SELECTED_DATE", selectedDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd")))
+            val intent = Intent(requireContext(), CalendarPickerActivity::class.java).apply {
+                putExtra("YEAR", selectedDate.year)
+                putExtra("MONTH", selectedDate.monthValue)
+                putExtra("DAY", selectedDate.dayOfMonth)
+            }
             entryRegisterLauncher.launch(intent)
         }
     }

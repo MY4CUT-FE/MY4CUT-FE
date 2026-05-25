@@ -74,4 +74,16 @@ interface AuthService {
     fun resetPassword(
         @Body request: PasswordResetRequest
     ): Call<BaseResponse<Any>>
+
+    /** 회원가입 이메일 인증코드 발송 - POST /auth/email/send */
+    @POST("auth/email/send")
+    fun sendEmailVerificationCode(
+        @Body request: Map<String, String>
+    ): Call<BaseResponse<String>>
+
+    /** 회원가입 이메일 인증코드 검증 - POST /auth/email/verify */
+    @POST("auth/email/verify")
+    fun verifyEmailCode(
+        @Body request: Map<String, String>
+    ): Call<BaseResponse<String>>
 }

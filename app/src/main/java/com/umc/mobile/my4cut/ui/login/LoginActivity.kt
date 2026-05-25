@@ -50,9 +50,6 @@ class LoginActivity : AppCompatActivity() {
     companion object {
         private const val PREFS_NAME = "my4cut_prefs"
         private const val KEY_FCM_TOKEN = "fcm_token"
-
-        // TODO: [MOCK] 로그인 API 구현 완료 후 false로 변경
-        private const val MOCK_LOGIN_ENABLED = true
     }
 
     private val fcmRegisterScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -66,11 +63,11 @@ class LoginActivity : AppCompatActivity() {
         initTextWatchers()
         initPasswordToggle()
         initUnderlineLinks()
-        checkInputValidity() // 목업 모드 시 버튼 초기 활성화
+        checkInputValidity()
     }
 
     private fun initClickListener() {
-        binding.btnBack.setOnClickListener { finish() }
+        // [수정] 뒤로가기 버튼 삭제로 클릭 리스너 제거
 
         binding.btnSignup.setOnClickListener {
             startActivity(Intent(this, SignUpActivity::class.java))
@@ -85,15 +82,6 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.btnLogin.setOnClickListener {
-            // =====================================================================
-            // TODO: [MOCK] 실제 로그인 API 구현 완료 후 아래 블록 제거
-            if (MOCK_LOGIN_ENABLED) {
-                navigateToMainWithMock()
-                return@setOnClickListener
-            }
-            // =====================================================================
-
-            // TODO: [실제 구현] 서버 이메일/비밀번호 로그인 API 호출
             val email = binding.etEmail.text.toString()
             val password = binding.etPassword.text.toString()
 
@@ -150,6 +138,8 @@ class LoginActivity : AppCompatActivity() {
         binding.tvEmailError.visibility = View.VISIBLE
         binding.tvEmailError.text = "아이디 또는 비밀번호가 일치하지 않습니다."
         binding.tvPwError.visibility = View.GONE
+        // [수정] 로그인 실패 시 토스트 메시지 표시
+        Toast.makeText(this, "로그인 실패", Toast.LENGTH_SHORT).show()
     }
 
     private fun checkIfAccountIsActive() {
@@ -189,15 +179,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun startKakaoLogin() {
-        // =====================================================================
-        // TODO: [MOCK] 실제 카카오 로그인 구현 완료 후 아래 블록 제거
-        if (MOCK_LOGIN_ENABLED) {
-            navigateToMainWithMock()
-            return
-        }
-        // =====================================================================
-
-        // TODO: [실제 구현] 카카오 SDK 로그인 → sendKakaoTokenToServer() 호출
         val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
             if (error != null) {
                 Log.e("KakaoLogin", "카카오 로그인 실패", error)
@@ -219,15 +200,6 @@ class LoginActivity : AppCompatActivity() {
         } else {
             UserApiClient.instance.loginWithKakaoAccount(this, callback = callback)
         }
-    }
-
-    // TODO: [MOCK] 로그인 API 구현 완료 후 해당 함수 전체 제거
-    private fun navigateToMainWithMock() {
-        Log.d("LoginActivity", "[MOCK] 목업 로그인 → MainActivity 이동")
-        Toast.makeText(this, "로그인 성공 (임시 목업)", Toast.LENGTH_SHORT).show()
-        val intent = Intent(this, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
     }
 
     private fun sendKakaoTokenToServer(kakaoAccessToken: String) {
@@ -317,12 +289,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun checkInputValidity() {
-        // TODO: [MOCK] 로그인 API 구현 완료 후 아래 조건 제거
-        if (MOCK_LOGIN_ENABLED) {
-            binding.btnLogin.isEnabled = true
-            return
-        }
-        // TODO: [실제 구현] 이메일/비밀번호 입력 여부로 버튼 활성화
         val email = binding.etEmail.text.toString()
         val password = binding.etPassword.text.toString()
         binding.btnLogin.isEnabled = email.isNotEmpty() && password.isNotEmpty()
