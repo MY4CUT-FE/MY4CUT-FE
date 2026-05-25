@@ -31,7 +31,9 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
+import android.view.GestureDetector
 import android.view.MotionEvent
+import androidx.core.view.GestureDetectorCompat
 
 class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
     context: Context,
@@ -133,9 +135,34 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
                 updateYearMonthText()
             }
 
+            val gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
+                override fun onDown(e: MotionEvent): Boolean = true
+
+                override fun onFling(
+                    e1: MotionEvent?,
+                    e2: MotionEvent,
+                    velocityX: Float,
+                    velocityY: Float
+                ): Boolean {
+                    val diffX = e2.x - (e1?.x ?: return false)
+                    if (kotlin.math.abs(diffX) > 50) {
+                        if (diffX > 0) {
+                            // 오른쪽 스와이프 → 이전 달
+                            currentMonth = currentMonth.minusMonths(1)
+                        } else {
+                            // 왼쪽 스와이프 → 다음 달
+                            currentMonth = currentMonth.plusMonths(1)
+                        }
+                        mcCustom.smoothScrollToMonth(currentMonth)
+                        updateYearMonthText()
+                        return true
+                    }
+                    return false
+                }
+            })
+
             binding.mcCustom.setOnTouchListener { _, event ->
-                // 사용자가 좌우로 미는 동작(MOVE)을 시스템이 무시하게 만듭니다.
-                // ACTION_MOVE일 때 true를 반환하면 달력이 스크롤되지 않습니다.
+                gestureDetector.onTouchEvent(event)
                 event.action == MotionEvent.ACTION_MOVE
             }
 
