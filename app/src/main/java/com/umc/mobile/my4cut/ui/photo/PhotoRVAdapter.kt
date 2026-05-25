@@ -120,11 +120,7 @@ class PhotoRVAdapter(
     fun updatePhotos(newPhotos: List<PhotoData>) {
         photoList.clear()
 
-        val finalPhotos = newPhotos.filter { it.isFinal }
-        val normalPhotos = newPhotos.filterNot { it.isFinal }
-
-        photoList.addAll(finalPhotos)
-        photoList.addAll(normalPhotos)
+        photoList.addAll(newPhotos)
         notifyDataSetChanged()
     }
     fun removePhoto(photoId: Long) {

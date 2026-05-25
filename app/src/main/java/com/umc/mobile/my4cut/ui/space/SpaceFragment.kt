@@ -138,6 +138,10 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
             showPhotoDialog(photo, isCommentExpanded = true)
         }
 
+        photoAdapter.onFinalToggleListener = { photo ->
+            selectFinalPhoto(photo)
+        }
+
         binding.btnExitMenu.setOnClickListener {
             showExitDialog()  //혼자일 때 -> tvMessage.text = 나가면 스페이스가 삭제되어 복구할 수 없어요.
         }
@@ -166,15 +170,13 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                 binding.tvTitle.text = data.name
 
                 existingMemberIds.clear()
-                data.ownerId?.let { ownerId ->
-                    existingMemberIds.add(ownerId.toLong())
-                }
+                existingMemberIds.addAll(data.alreadyInvitedFriendIds.orEmpty())
 
                 updateMemberUi(data.memberProfiles)
 
                 Log.d(
                     "SpaceFragment",
-                    "edit dialog memberIds=$existingMemberIds (현재 응답에서는 ownerId만 확보 가능)"
+                    "edit dialog excludedUserIds=$existingMemberIds"
                 )
 
                 // 현재 로그인 사용자 정보 조회 → 방장 여부 판단
@@ -373,6 +375,27 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     Log.e("SpaceFragment", "사진 목록 API 실패", t)
                 }
             })
+    }
+
+    private fun selectFinalPhoto(photo: PhotoData) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                workspacePhotoService.selectFinalPhoto(spaceId, photo.photoId)
+
+                val updatedPhotos = photoDatas.map { item ->
+                    item.copy(isFinal = item.photoId == photo.photoId)
+                }
+
+                photoDatas.clear()
+                photoDatas.addAll(updatedPhotos)
+                photoAdapter.updatePhotos(updatedPhotos)
+
+                Log.d("SpaceFragment", "최종 사진 선택 성공 photoId=${photo.photoId}")
+
+            } catch (e: Exception) {
+                Log.e("SpaceFragment", "최종 사진 선택 API 실패 photoId=${photo.photoId}", e)
+            }
+        }
     }
 
     private fun showExitDialog() {

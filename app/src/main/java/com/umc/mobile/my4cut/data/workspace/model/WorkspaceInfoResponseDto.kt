@@ -6,6 +6,10 @@ data class WorkspaceInfoResponseDto(
     val ownerId: Long,
     val expiresAt: String,
     val createdAt: String,
+    val isFinal: Boolean?,
     val memberCount: Int?,
-    val memberProfiles: List<String>?
+    val memberIds: List<Long>?,
+    val memberProfiles: List<String>?,
+    val pendingInvitationUserIds: List<Long>?,
+    val alreadyInvitedFriendIds: List<Long>?
 )

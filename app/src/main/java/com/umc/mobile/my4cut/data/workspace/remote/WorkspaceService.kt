@@ -1,6 +1,7 @@
 package com.umc.mobile.my4cut.data.workspace.remote
 
 import com.umc.mobile.my4cut.data.base.BaseResponse
+import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceCreateRequestDto
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceInfoResponseDto
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceUpdateRequestDto
@@ -35,5 +36,11 @@ interface WorkspaceService {
     @DELETE("workspaces/{workspaceId}")
     suspend fun deleteWorkspace(
         @Path("workspaceId") workspaceId: Long
+    ): BaseResponse<Unit>
+
+    /** 워크스페이스 멤버 초대 */
+    @POST("workspaces/invitations")
+    suspend fun inviteMembers(
+        @Body request: WorkspaceInviteRequestDto
     ): BaseResponse<Unit>
 }
