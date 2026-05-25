@@ -40,6 +40,11 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
             notificationLauncher.launch(intent)
         }
 
+        binding.ivMypage.setOnClickListener {
+            (requireActivity() as? com.umc.mobile.my4cut.MainActivity)
+                ?.navigateToMyPage()
+        }
+
         // 최초 로드
         loadChildFragments()
 

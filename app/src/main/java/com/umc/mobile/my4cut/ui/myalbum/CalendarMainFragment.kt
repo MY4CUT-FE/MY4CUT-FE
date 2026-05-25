@@ -3,7 +3,6 @@ package com.umc.mobile.my4cut.ui.myalbum
 import androidx.lifecycle.lifecycleScope
 import com.umc.mobile.my4cut.R
 import kotlinx.coroutines.launch
-
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -48,6 +47,11 @@ class CalendarMainFragment : Fragment() {
         binding.ivNotification.setOnClickListener {
             startActivity(Intent(requireContext(), NotificationActivity::class.java))
         }
+
+        binding.ivMypage.setOnClickListener {
+            (requireActivity() as? com.umc.mobile.my4cut.MainActivity)
+                ?.navigateToMyPage()
+        }
     }
 
     override fun onResume() {
@@ -75,6 +79,8 @@ class CalendarMainFragment : Fragment() {
         // 1. 어댑터 연결
         val pagerAdapter = MyAlbumVPAdapter(this)
         binding.viewPager.adapter = pagerAdapter
+
+        binding.viewPager.isUserInputEnabled = false
 
         // 2. TabLayoutMediator 연결 (탭 생성 + 뷰페이저 연동)
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
