@@ -20,7 +20,7 @@
         android:layout_width="29dp"
         android:layout_height="26dp"
         android:layout_marginBottom="3dp"
-        android:src="@drawable/ic_album_add"
+        android:src="@drawable/ic_album"
         app:layout_constraintBottom_toTopOf="@id/tv_create_album"
         app:layout_constraintStart_toStartOf="@id/tv_create_album"
         app:layout_constraintEnd_toEndOf="@id/tv_create_album" />

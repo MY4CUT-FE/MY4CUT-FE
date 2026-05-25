@@ -8,9 +8,10 @@
 
     <ImageView
         android:id="@+id/btnBack"
-        android:layout_width="9dp"
-        android:layout_height="17dp"
-        android:layout_marginStart="20dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginStart="10dp"
+        android:padding="5dp"
         android:src="@drawable/ic_back"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@id/tv_title"
@@ -33,9 +34,9 @@
         android:id="@+id/btn_edit"
         android:layout_width="17dp"
         android:layout_height="16dp"
-        android:layout_marginStart="10dp"
+        android:layout_marginEnd="15dp"
         android:src="@drawable/ic_edit"
-        app:layout_constraintStart_toEndOf="@id/tv_title"
+        app:layout_constraintEnd_toStartOf="@id/btn_delete"
         app:layout_constraintTop_toTopOf="@id/tv_title"
         app:layout_constraintBottom_toBottomOf="@id/tv_title"/>
 
