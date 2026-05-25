@@ -35,8 +35,14 @@ class CalendarPickerActivity : AppCompatActivity() {
 
         binding.myCalendar.setHeaderVisible(false)
 
-        // 초기값은 오늘 날짜로 세팅 ("2026.02.10")
-        currentSelectedDateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
+        // Intent로 전달된 초기 날짜 (홈 화면에서 선택한 날짜)
+        val year = intent.getIntExtra("YEAR", LocalDate.now().year)
+        val month = intent.getIntExtra("MONTH", LocalDate.now().monthValue)
+        val day = intent.getIntExtra("DAY", LocalDate.now().dayOfMonth)
+        val initialDate = runCatching { LocalDate.of(year, month, day) }.getOrElse { LocalDate.now() }
+
+        // 초기 선택 날짜를 홈에서 넘겨받은 날짜로 설정
+        currentSelectedDateStr = initialDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
 
         // 캘린더 날짜 클릭 리스너 추가
         binding.myCalendar.setOnDateSelectedListener { dateText ->
@@ -45,12 +51,13 @@ class CalendarPickerActivity : AppCompatActivity() {
             Log.d("CalendarPicker", "📅 Selected date updated: $currentSelectedDateStr")
         }
 
-        // ✅ Intent로 받은 년/월 정보
-        val year = intent.getIntExtra("YEAR", LocalDate.now().year)
-        val month = intent.getIntExtra("MONTH", LocalDate.now().monthValue)
-
         setupCalendar(year, month)
         setupClickListeners()
+
+        // 캘린더가 준비된 후 초기 날짜로 스크롤 & 선택 상태 반영
+        binding.myCalendar.post {
+            binding.myCalendar.scrollToDate(initialDate)
+        }
     }
 
     private fun setupCalendar(year: Int, month: Int) {
@@ -95,6 +102,21 @@ class CalendarPickerActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener { finish() }
+
+        // 미니 달력 아이콘 클릭 → 년/월 선택 바텀시트 표시
+        binding.ivMiniCal.setOnClickListener {
+            val currentMonth = java.time.YearMonth.now()
+            // 현재 표시 중인 년/월을 초기값으로 넘겨 바텀시트 열기
+            YearMonthPickerBottomSheet.newInstance(
+                year = currentMonth.year,
+                month = currentMonth.monthValue
+            ) { selectedYear, selectedMonth ->
+                // 선택한 년/월로 캘린더 이동 및 API 재조회
+                val newDate = java.time.LocalDate.of(selectedYear, selectedMonth, 1)
+                binding.myCalendar.scrollToDate(newDate)
+                setupCalendar(selectedYear, selectedMonth)
+            }.show(supportFragmentManager, "YearMonthPicker")
+        }
 
         // ✅ 다음 버튼 클릭 시 체크
         binding.btnNext.setOnClickListener {
