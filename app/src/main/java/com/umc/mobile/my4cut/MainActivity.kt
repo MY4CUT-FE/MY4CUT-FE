@@ -44,6 +44,11 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
 
+        if (intent.getBooleanExtra("NAVIGATE_TO_HOME", false)) {
+            binding.bnvMain.selectedItemId = R.id.menu_home
+            return
+        }
+
         checkMoveToDetail(intent)
 
         // 액티비티가 이미 켜져 있는 상태에서 새로운 인텐트를 받았을 때 처리
