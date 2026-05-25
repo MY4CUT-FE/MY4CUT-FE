@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/suit_medium"
         android:text="CALENDAR"
-        android:textSize="12sp"
+        android:textSize="10sp"
         android:textColor="#4D4D4D" />
 
     <TextView
@@ -22,6 +22,6 @@
         android:layout_marginTop="1dp"
         android:text="캘린더"
         android:fontFamily="@font/suit_bold"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:textColor="#4D4D4D" />
 </LinearLayout>
