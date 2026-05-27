@@ -194,13 +194,13 @@
             android:fontFamily="@font/suit_regular" />
     </LinearLayout>
 
-    <!-- [수정] or Sign in with 구분선: 화면 최하단으로 이동, 카카오 버튼 위에 배치 -->
+    <!-- or Sign in with 구분선: 화면 최하단으로 이동, 카카오 버튼 위에 배치 -->
     <TextView
         android:id="@+id/tv_divider"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
-        android:text="- or Sign in with -"
+        android:text="- or Sign up with -"
         android:textColor="@color/gray_500"
         android:textSize="12sp"
         android:fontFamily="@font/suit_regular"
@@ -208,7 +208,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toTopOf="@id/btn_kakao_login" />
 
-    <!-- [수정] 카카오 로그인 버튼: 화면 최하단으로 이동 -->
+    <!-- 카카오 로그인 버튼: 화면 최하단으로 이동 -->
     <ImageView
         android:id="@+id/btn_kakao_login"
         android:layout_width="52dp"
