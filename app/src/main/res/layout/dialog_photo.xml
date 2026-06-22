@@ -33,7 +33,9 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/scrollContent"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp">
 
             <ImageView
                 android:id="@+id/ivProfile"
@@ -41,7 +43,6 @@
                 android:layout_height="27dp"
                 android:src="@drawable/ic_profile_cat"
                 style="@style/CircleImage"
-                android:layout_marginStart="20dp"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
 
@@ -51,6 +52,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
                 android:fontFamily="@font/suit_regular"
+                android:textSize="12sp"
                 android:text="아몬드"
                 android:textColor="#1A1A1A"
                 app:layout_constraintStart_toEndOf="@id/ivProfile"
@@ -73,10 +75,21 @@
                 android:layout_width="10dp"
                 android:layout_height="9dp"
                 android:adjustViewBounds="true"
-                android:layout_marginEnd="10dp"
                 android:src="@drawable/ic_save"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintBottom_toBottomOf="@id/tvDate"/>
+
+            <View
+                android:id="@+id/ivSaveTouchArea"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@android:color/transparent"
+                android:clickable="true"
+                android:focusable="true"
+                app:layout_constraintStart_toStartOf="@id/ivSave"
+                app:layout_constraintEnd_toEndOf="@id/ivSave"
+                app:layout_constraintTop_toTopOf="@id/ivSave"
+                app:layout_constraintBottom_toBottomOf="@id/ivSave" />
 
             <ImageView
                 android:id="@+id/ivDelete"
@@ -88,6 +101,19 @@
                 app:layout_constraintEnd_toStartOf="@id/ivSave"
                 app:layout_constraintBottom_toBottomOf="@id/tvDate" />
 
+            <View
+                android:id="@+id/ivDeleteTouchArea"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@android:color/transparent"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="@id/ivDelete"
+                app:layout_constraintEnd_toEndOf="@id/ivDelete"
+                app:layout_constraintTop_toTopOf="@id/ivDelete"
+                app:layout_constraintBottom_toBottomOf="@id/ivDelete" />
+
             <ImageView
                 android:id="@+id/ivMainPhoto"
                 android:layout_width="0dp"
@@ -98,7 +124,7 @@
                 android:src="@drawable/image1"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="@id/ivProfile"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/ivProfile" />
 
             <View
@@ -139,9 +165,20 @@
                 android:layout_height="9dp"
                 android:src="@drawable/ic_down"
                 android:layout_marginTop="35dp"
-                android:layout_marginEnd="7dp"
                 app:layout_constraintTop_toBottomOf="@id/ivMainPhoto"
                 app:layout_constraintEnd_toEndOf="parent" />
+
+            <View
+                android:id="@+id/ivToggleCommentTouchArea"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@android:color/transparent"
+                android:clickable="true"
+                android:focusable="true"
+                app:layout_constraintStart_toStartOf="@id/ivToggleComment"
+                app:layout_constraintEnd_toEndOf="@id/ivToggleComment"
+                app:layout_constraintTop_toTopOf="@id/ivToggleComment"
+                app:layout_constraintBottom_toBottomOf="@id/ivToggleComment" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvChatList"
@@ -174,7 +211,6 @@
                 android:id="@+id/text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
                 android:layout_marginEnd="10dp"
                 android:hint="댓글 입력하기"
                 android:background="@drawable/shape_edittext_background"

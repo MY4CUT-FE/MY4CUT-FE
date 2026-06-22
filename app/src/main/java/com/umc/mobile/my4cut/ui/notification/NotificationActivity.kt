@@ -20,6 +20,10 @@ class NotificationActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityNotificationBinding
 
+    private var currentPage = 0
+    private var hasNextPage = true
+    private val notificationPageSize = 8
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityNotificationBinding.inflate(layoutInflater)
@@ -76,7 +80,9 @@ class NotificationActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.notificationService.getNotifications()
+                currentPage = 0
+                hasNextPage = true
+                val response = RetrofitClient.notificationService.getNotifications(page = currentPage)
                 Log.d("NotificationAPI", "responseData=" + response.data)
                 // Log each notification DTO in detail to inspect null fields
                 response.data?.forEach { dto ->
@@ -87,19 +93,6 @@ class NotificationActivity : AppCompatActivity() {
                 }
 
                 if (response.code.startsWith("C2") && response.data != null) {
-                    suspend fun markVisibleItemsAsRead(endExclusive: Int) {
-                        val safeEnd = minOf(endExclusive, response.data.size)
-                        response.data.take(safeEnd)
-                            .filter { dto -> dto.isRead != true }
-                            .forEach { dto ->
-                                try {
-                                    RetrofitClient.notificationService.readNotification(dto.notificationId)
-                                } catch (e: Exception) {
-                                    Log.e("NotificationRead", "알림 읽음 처리 실패: id=${dto.notificationId}", e)
-                                }
-                            }
-                    }
-
                     val uiList = response.data
                         .map { dto ->
                         Log.d(
@@ -137,7 +130,36 @@ class NotificationActivity : AppCompatActivity() {
                         )
                     }.toMutableList()
 
+
+                    suspend fun markVisibleItemsAsRead(endExclusive: Int) {
+                        val safeEnd = minOf(endExclusive, uiList.size)
+                        uiList.take(safeEnd)
+                            .forEach { item ->
+                                try {
+                                    RetrofitClient.notificationService.readNotification(item.id)
+                                } catch (e: Exception) {
+                                    Log.e("NotificationRead", "알림 읽음 처리 실패: id=${item.id}", e)
+                                }
+                            }
+                    }
+
                     markVisibleItemsAsRead(8)
+
+                    fun setMoreButtonMode() {
+                        binding.btnMore.visibility = View.VISIBLE
+                        binding.btnMore.setImageResource(R.drawable.ic_noti_more)
+                        binding.btnMore.contentDescription = "더보기"
+                    }
+
+                    fun setToTopButtonMode() {
+                        hasNextPage = false
+                        binding.btnMore.visibility = View.VISIBLE
+                        binding.btnMore.setImageResource(R.drawable.ic_noti_to_top)
+                        binding.btnMore.contentDescription = "맨 위로"
+                        binding.btnMore.setOnClickListener {
+                            binding.rvNotification.smoothScrollToPosition(0)
+                        }
+                    }
 
                     lateinit var adapter: NotificationAdapter
                     adapter = NotificationAdapter(
@@ -175,8 +197,7 @@ class NotificationActivity : AppCompatActivity() {
                                     if (index != -1) {
                                         uiList.removeAt(index)
                                         binding.rvNotification.adapter?.notifyItemRemoved(index)
-                                        binding.btnMore.visibility =
-                                            if (adapter.canLoadMore()) android.view.View.VISIBLE else android.view.View.GONE
+                                        binding.btnMore.visibility = View.VISIBLE
                                     }
                                 } catch (e: Exception) {
                                     Toast.makeText(this@NotificationActivity, "수락 실패: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -201,8 +222,7 @@ class NotificationActivity : AppCompatActivity() {
                                     if (index != -1) {
                                         uiList.removeAt(index)
                                         binding.rvNotification.adapter?.notifyItemRemoved(index)
-                                        binding.btnMore.visibility =
-                                            if (adapter.canLoadMore()) android.view.View.VISIBLE else android.view.View.GONE
+                                        binding.btnMore.visibility = View.VISIBLE
                                     }
                                 } catch (e: Exception) {
                                     Toast.makeText(this@NotificationActivity, "거절 실패: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -217,8 +237,7 @@ class NotificationActivity : AppCompatActivity() {
                                     if (index != -1) {
                                         uiList.removeAt(index)
                                         binding.rvNotification.adapter?.notifyItemRemoved(index)
-                                        binding.btnMore.visibility =
-                                            if (adapter.canLoadMore()) View.VISIBLE else View.GONE
+                                        binding.btnMore.visibility = View.VISIBLE
                                     }
                                 } catch (e: Exception) {
                                     Toast.makeText(this@NotificationActivity, "삭제 실패: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -228,38 +247,75 @@ class NotificationActivity : AppCompatActivity() {
                     )
                     binding.btnMore.setOnClickListener {
                         lifecycleScope.launch {
-                            if (adapter.canLoadMore()) {
-                                val currentCount = adapter.itemCount
-                                adapter.loadMore()
-                                markVisibleItemsAsRead(adapter.itemCount)
+                            if (!hasNextPage) {
+                                binding.rvNotification.smoothScrollToPosition(0)
+                                return@launch
+                            }
 
-                                if (adapter.canLoadMore()) {
-                                    binding.btnMore.visibility = View.VISIBLE
-                                } else {
-                                    binding.btnMore.visibility = View.VISIBLE
-                                    binding.btnMore.setImageResource(R.drawable.ic_noti_to_top)
-                                    binding.btnMore.setOnClickListener {
-                                        binding.rvNotification.smoothScrollToPosition(0)
+                            try {
+                                currentPage += 1
+                                val nextResponse = RetrofitClient.notificationService.getNotifications(page = currentPage)
+                                val nextList = nextResponse.data
+                                    ?.map { dto ->
+                                        Log.d(
+                                            "NotificationDebug",
+                                            "type=${dto.type}, referenceId=${dto.referenceId}, notificationId=${dto.notificationId}, senderNickname=${dto.senderNickname}, workspaceName=${dto.workspaceName}, message=${dto.message}"
+                                        )
+                                        NotificationData(
+                                            id = dto.notificationId,
+                                            referenceId = dto.referenceId ?: dto.notificationId,
+                                            type = dto.type,
+                                            iconResId = when (dto.type) {
+                                                "WORKSPACE_INVITE" -> R.drawable.ic_noti_invite
+                                                "FRIEND_REQUEST" -> R.drawable.ic_noti_friend_add
+                                                "FRIEND_ACCEPTED" -> R.drawable.ic_noti_people
+                                                "MEDIA_COMMENT" -> R.drawable.ic_noti_comment
+                                                else -> R.drawable.ic_noti_people
+                                            },
+                                            category = when (dto.type) {
+                                                "FRIEND_REQUEST", "FRIEND_ACCEPTED" -> "친구"
+                                                "WORKSPACE_INVITE" -> "초대"
+                                                "MEDIA_COMMENT" -> "댓글"
+                                                else -> dto.type
+                                            },
+                                            content = when (dto.type) {
+                                                "WORKSPACE_INVITE" -> {
+                                                    val sender = dto.senderNickname ?: "누군가"
+                                                    val workspace = dto.workspaceName ?: "워크스페이스"
+                                                    "${sender}님이 ${workspace}에 초대했습니다."
+                                                }
+                                                "FRIEND_REQUEST" -> dto.message ?: "친구 요청이 도착했습니다."
+                                                else -> dto.message ?: "알림이 도착했습니다."
+                                            },
+                                            time = dto.createdAt?.let { formatTimeAgo(it) } ?: "방금 전",
+                                            hasButtons = dto.type == "FRIEND_REQUEST" || dto.type == "WORKSPACE_INVITE"
+                                        )
                                     }
+                                    .orEmpty()
+
+                                if (nextResponse.code.startsWith("C2") && nextList.isNotEmpty()) {
+                                    adapter.appendItems(nextList)
+                                    markVisibleItemsAsRead(adapter.itemCount)
+
+                                    if (nextList.size < notificationPageSize) {
+                                        setToTopButtonMode()
+                                    }
+                                } else {
+                                    currentPage -= 1
+                                    setToTopButtonMode()
                                 }
-                            } else {
-                                binding.btnMore.setImageResource(R.drawable.ic_noti_to_top)
-                                binding.btnMore.setOnClickListener {
-                                    binding.rvNotification.smoothScrollToPosition(0)
-                                }
+                            } catch (e: Exception) {
+                                currentPage -= 1
+                                Toast.makeText(this@NotificationActivity, "알림을 더 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
                     binding.rvNotification.adapter = adapter
                     binding.rvNotification.layoutManager = LinearLayoutManager(this@NotificationActivity)
-                    if (adapter.canLoadMore()) {
-                        binding.btnMore.visibility = android.view.View.VISIBLE
+                    if (uiList.size < notificationPageSize) {
+                        setToTopButtonMode()
                     } else {
-                        binding.btnMore.visibility = android.view.View.VISIBLE
-                        binding.btnMore.setImageResource(R.drawable.ic_noti_to_top)
-                        binding.btnMore.setOnClickListener {
-                            binding.rvNotification.smoothScrollToPosition(0)
-                        }
+                        setMoreButtonMode()
                     }
                 }
 

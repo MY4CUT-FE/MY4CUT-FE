@@ -13,12 +13,6 @@ class NotificationAdapter(
     private val onDeleteClick: (NotificationData) -> Unit
 ) : RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
 
-    private var visibleCount = minOf(PAGE_SIZE, items.size)
-
-    companion object {
-        private const val PAGE_SIZE = 6
-    }
-
     inner class ViewHolder(private val binding: ItemNotificationBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
@@ -66,21 +60,14 @@ class NotificationAdapter(
         holder.bind(items[position])
     }
 
-    override fun getItemCount(): Int = minOf(visibleCount, items.size)
+    override fun getItemCount(): Int = items.size
 
-    fun loadMore() {
-        val previousCount = visibleCount
-        visibleCount = minOf(visibleCount + PAGE_SIZE, items.size)
+    fun appendItems(newItems: List<NotificationData>) {
+        if (newItems.isEmpty()) return
 
-        if (visibleCount > previousCount) {
-            notifyItemRangeInserted(previousCount, visibleCount - previousCount)
-        }
-    }
-
-    fun canLoadMore(): Boolean = visibleCount < items.size
-
-    fun syncVisibleCount() {
-        visibleCount = minOf(visibleCount, items.size)
+        val startPosition = items.size
+        items.addAll(newItems)
+        notifyItemRangeInserted(startPosition, newItems.size)
     }
 
     private fun formatTimeAgo(timeString: String): String {
