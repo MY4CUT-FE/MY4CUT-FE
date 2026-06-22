@@ -145,7 +145,7 @@ class EditSpaceDialogFragment : DialogFragment() {
                 submitDialogFriends()
             },
             hideFavoriteDivider = true,
-            enableSelectionGray = false
+            enableSelectionGray = true
         )
 
         popupBinding.rvFriends.apply {

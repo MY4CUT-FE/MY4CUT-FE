@@ -388,9 +388,9 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
 
                 photoDatas.clear()
                 photoDatas.addAll(updatedPhotos)
-                photoAdapter.updatePhotos(updatedPhotos)
+                photoAdapter.updatePhotos(photoDatas.toList())
 
-                Log.d("SpaceFragment", "최종 사진 선택 성공 photoId=${photo.photoId}")
+                Log.d("SpaceFragment", "최종 사진 선택 API 성공 photoId=${photo.photoId}")
 
             } catch (e: Exception) {
                 Log.e("SpaceFragment", "최종 사진 선택 API 실패 photoId=${photo.photoId}", e)

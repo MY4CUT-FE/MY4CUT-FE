@@ -60,6 +60,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     private fun showNotification(title: String, body: String) {
         Log.d(TAG, "showNotification: start")
+        Log.d(TAG, "Preparing notification intent")
 
         val channelId = "my4cut_push"
 
@@ -75,8 +76,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.d(TAG, "Notification channel created/updated: $channelId")
         }
 
-        val intent = Intent(this, NotificationActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val intent = Intent(this, NotificationActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+
+        Log.d(TAG, "PendingIntent created for NotificationActivity")
+        Log.d(TAG, "Intent flags=${intent.flags}")
 
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -84,7 +90,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        Log.d(TAG, "PendingIntent created for NotificationActivity")
 
         val notification = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.mipmap.ic_launcher)
