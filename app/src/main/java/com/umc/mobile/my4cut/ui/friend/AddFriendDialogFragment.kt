@@ -1,5 +1,8 @@
 package com.umc.mobile.my4cut.ui.friend
 
+import com.bumptech.glide.Glide
+import com.umc.mobile.my4cut.R
+
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
@@ -143,7 +146,8 @@ class AddFriendDialogFragment : DialogFragment() {
                     searchedUserId = response.data.userId
                     searchedFriendCode = inputCode
                     showSearchResult(
-                        nickname = response.data.nickname
+                        nickname = response.data.nickname,
+                        profileImageUrl = response.data.profileImageUrl
                     )
                 } else {
                     Toast.makeText(
@@ -163,10 +167,17 @@ class AddFriendDialogFragment : DialogFragment() {
     }
 
     /** 검색 결과 표시 */
-    private fun showSearchResult(nickname: String) {
+    private fun showSearchResult(nickname: String, profileImageUrl: String?) {
         binding.layoutResult.visibility = View.VISIBLE
         binding.tvResultName.text = nickname
         binding.btnAction.text = "추가"
+
+        Glide.with(this)
+            .load(profileImageUrl)
+            .placeholder(R.drawable.ic_profile_cat)
+            .error(R.drawable.ic_profile_cat)
+            .circleCrop()
+            .into(binding.ivProfile)
 
         // 검색 결과가 보일 때는 내 코드 영역 숨김
         binding.tvMyCodeLabel.visibility = View.GONE

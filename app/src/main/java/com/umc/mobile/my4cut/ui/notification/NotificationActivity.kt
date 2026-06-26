@@ -136,7 +136,6 @@ class NotificationActivity : AppCompatActivity() {
                         uiList.take(safeEnd)
                             .forEach { item ->
                                 try {
-                                    RetrofitClient.notificationService.readNotification(item.id)
                                 } catch (e: Exception) {
                                     Log.e("NotificationRead", "알림 읽음 처리 실패: id=${item.id}", e)
                                 }
@@ -191,7 +190,6 @@ class NotificationActivity : AppCompatActivity() {
                                             RetrofitClient.workspaceInvitationService.acceptInvitation(item.referenceId)
                                         }
                                     }
-                                    RetrofitClient.notificationService.readNotification(item.id)
                                     Toast.makeText(this@NotificationActivity, "수락 처리되었습니다.", Toast.LENGTH_SHORT).show()
                                     val index = uiList.indexOf(item)
                                     if (index != -1) {
@@ -216,7 +214,6 @@ class NotificationActivity : AppCompatActivity() {
                                             RetrofitClient.workspaceInvitationService.rejectInvitation(item.referenceId)
                                         }
                                     }
-                                    RetrofitClient.notificationService.readNotification(item.id)
                                     Toast.makeText(this@NotificationActivity, "거절 처리되었습니다.", Toast.LENGTH_SHORT).show()
                                     val index = uiList.indexOf(item)
                                     if (index != -1) {

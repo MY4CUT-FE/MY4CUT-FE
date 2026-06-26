@@ -2,6 +2,9 @@ package com.umc.mobile.my4cut.ui.home
 
 import android.app.Activity
 import android.content.Intent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.IntentFilter
 import android.graphics.Color
 import android.os.Bundle
 import android.text.Spannable
@@ -17,6 +20,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import coil.load
@@ -40,10 +44,29 @@ import java.util.Locale
 
 class HomeFragment : Fragment() {
 
+    // FCM 푸시 수신 시 HomeFragment에 알림 상태 변경을 전달하기 위한 브로드캐스트
+    companion object {
+        const val ACTION_NOTIFICATION_RECEIVED =
+            "com.umc.mobile.my4cut.ACTION_NOTIFICATION_RECEIVED"
+    }
+
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
     private var selectedDate: LocalDate = LocalDate.now()
+
+    // 푸시 알림이 도착하면 홈 알림 아이콘을 즉시 ON으로 변경
+    private val notificationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == ACTION_NOTIFICATION_RECEIVED) {
+                // 서버 응답을 기다리기 전에 사용자가 바로 알 수 있도록 먼저 ON 아이콘으로 변경
+                binding.ivNotification.setImageResource(R.drawable.ic_noti_on)
+
+                // 이후 서버의 읽지 않은 알림 상태와 다시 동기화
+                updateNotificationIcon()
+            }
+        }
+    }
 
     // ✅ 캘린더 데이터 (날짜별 기록 여부)
     private val recordedDates = mutableSetOf<Int>() // 기록이 있는 날짜 저장
@@ -91,6 +114,8 @@ class HomeFragment : Fragment() {
         loadCalendarData()
         loadDay4CutData(selectedDate)
         updateNotificationIcon()
+        // HomeFragment가 살아있는 동안 푸시 수신 이벤트를 감지
+        registerNotificationReceiver()
     }
 
     private fun setupDateBanner() {
@@ -421,6 +446,27 @@ class HomeFragment : Fragment() {
         binding.tvContentDate.text = date.format(formatter)
     }
 
+    // FCM 수신 브로드캐스트 Receiver 등록
+    private fun registerNotificationReceiver() {
+        val filter = IntentFilter(ACTION_NOTIFICATION_RECEIVED)
+
+        ContextCompat.registerReceiver(
+            requireContext(),
+            notificationReceiver,
+            filter,
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+    }
+
+    // Fragment View가 파괴될 때 Receiver 해제
+    private fun unregisterNotificationReceiver() {
+        try {
+            requireContext().unregisterReceiver(notificationReceiver)
+        } catch (_: IllegalArgumentException) {
+            // 이미 해제된 경우 앱이 죽지 않도록 무시
+        }
+    }
+
     private fun updateNotificationIcon() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -449,6 +495,8 @@ class HomeFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        // 메모리 누수 방지를 위해 등록한 Receiver 해제
+        unregisterNotificationReceiver()
         super.onDestroyView()
         _binding = null
     }

@@ -14,6 +14,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
+import com.umc.mobile.my4cut.ui.home.HomeFragment
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -54,6 +55,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         Log.d(TAG, "resolved title=$title")
         Log.d(TAG, "resolved body=$body")
+
+        // 푸시가 도착했음을 HomeFragment에 전달
+        // 알림창에 시스템 알림이 남아있는지와 상관없이,
+        // HomeFragment는 getUnreadStatus()로 서버의 읽음 상태를 다시 확인해서 on/off를 결정한다.
+        sendBroadcast(
+            Intent(HomeFragment.ACTION_NOTIFICATION_RECEIVED)
+                .setPackage(packageName)
+        )
 
         showNotification(title, body)
     }
