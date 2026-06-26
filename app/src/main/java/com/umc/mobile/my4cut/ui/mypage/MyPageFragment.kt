@@ -13,6 +13,9 @@ import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
 import android.util.Log
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -101,6 +104,14 @@ class MyPageFragment : Fragment() {
         binding.tvNickname.text = data.nickname
         binding.tvLoginMethod.text = if (data.loginType == "KAKAO") "카카오 로그인" else "이메일 로그인"
         binding.tvCodeValue.text = data.friendCode
+
+        val today = LocalDate.now()
+        val formatter = DateTimeFormatter.ofPattern("yyyy MMMM d", Locale.ENGLISH)
+        val suffix = when {
+            today.dayOfMonth in 11..13 -> "th"
+            else -> when (today.dayOfMonth % 10) { 1 -> "st" 2 -> "nd" 3 -> "rd" else -> "th" }
+        }
+        binding.tvTodayDate.text = "${today.format(formatter)}$suffix"
 
         Log.d("MyPageFragment", "🖼️ Loading profile image: ${data.profileImageViewUrl?.take(80)}")
         Glide.with(binding.ivProfile)

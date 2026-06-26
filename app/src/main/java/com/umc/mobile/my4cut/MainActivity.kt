@@ -49,6 +49,16 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        val navigateToTab = intent.getIntExtra("NAVIGATE_TO_TAB", -1)
+        if (navigateToTab != -1) {
+            if (intent.getBooleanExtra("NAVIGATE_TO_MYPAGE", false)) {
+                navigateToMyPage()
+            } else {
+                binding.bnvMain.selectedItemId = navigateToTab
+            }
+            return
+        }
+
         checkMoveToDetail(intent)
 
         // 액티비티가 이미 켜져 있는 상태에서 새로운 인텐트를 받았을 때 처리
