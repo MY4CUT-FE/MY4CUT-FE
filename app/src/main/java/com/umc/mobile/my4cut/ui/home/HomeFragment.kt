@@ -104,6 +104,7 @@ class HomeFragment : Fragment() {
         setupDateBanner()
         setupWelcomeText()
         setupClickListeners()
+        setupSwipeGesture()
 
         // ✅ 초기 UI 설정
         setupWeekCalendar() // 주간 캘린더 먼저 그리기
@@ -268,7 +269,7 @@ class HomeFragment : Fragment() {
                 if (moodIcon != null) {
                     binding.ivMoodIcon.setImageResource(moodIcon)
                     // 이모지가 있을 때 코랄 원형 배경을 이미지 뒤에 적용
-                    binding.ivMoodIcon.setBackgroundResource(R.drawable.bg_circle_coral)
+                    binding.ivMoodIcon.setBackgroundResource(R.drawable.bg_circle_emoji)
                 } else {
                     binding.ivMoodIcon.setImageDrawable(null)
                     binding.ivMoodIcon.setBackgroundResource(R.drawable.bg_circle_gray)
@@ -419,6 +420,17 @@ class HomeFragment : Fragment() {
                 putExtra("DAY", selectedDate.dayOfMonth)
             }
             entryRegisterLauncher.launch(intent)
+        }
+    }
+
+    private fun setupSwipeGesture() {
+        binding.llWeekCalendar.setOnSwipeListener { isRightSwipe ->
+            if (isRightSwipe) {
+                selectedDate = selectedDate.minusWeeks(1)
+            } else {
+                selectedDate = selectedDate.plusWeeks(1)
+            }
+            refreshCalendarData()
         }
     }
 
