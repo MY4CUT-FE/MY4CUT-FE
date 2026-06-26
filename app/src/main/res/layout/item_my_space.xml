@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardMySpaceItem"
+    android:layout_width="292dp"
+    android:layout_height="214dp"
+    android:layout_marginEnd="20dp"
+    app:cardBackgroundColor="#FCECE7"
+    app:cardCornerRadius="23dp"
+    app:cardUseCompatPadding="false"
+    app:cardPreventCornerOverlap="true"
+    app:cardElevation="2dp"
+    android:elevation="2dp"
+    android:translationZ="2dp"
+    app:strokeWidth="0dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="20dp"
+        android:paddingTop="21dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="17dp">
+
+        <TextView
+            android:id="@+id/tvExpireBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="30dp"
+            android:background="@drawable/bg_expire_badge"
+            android:fontFamily="@font/suit_bold"
+            android:gravity="center"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="3일 뒤 만료"
+            android:textColor="#FF6F61"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvSpaceName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/suit_extrabold"
+            android:maxLines="1"
+            android:text="1104 네컷"
+            android:textColor="#4A4A4A"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvExpireBadge" />
+
+        <View
+            android:id="@+id/viewDivider"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:layout_marginTop="14dp"
+            android:background="#FFF6F4"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvSpaceName" />
+
+        <LinearLayout
+            android:id="@+id/layoutRecentActivity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="13dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/viewDivider">
+
+            <ImageView
+                android:id="@+id/ivRecentActivityIcon"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_space_time" />
+
+            <TextView
+                android:id="@+id/tvRecentActivity"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/suit_regular"
+                android:maxLines="1"
+                android:text="유복치님이 2시간 전에 사진을 추가했어요."
+                android:textColor="#333333"
+                android:textSize="12sp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layoutMembers"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/ivArrow"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <FrameLayout
+                android:id="@+id/layoutMemberProfiles"
+                android:layout_width="wrap_content"
+                android:layout_height="37dp">
+
+                <ImageView
+                    android:id="@+id/ivMember1"
+                    android:layout_width="37dp"
+                    android:layout_height="37dp"
+                    android:background="@drawable/bg_member_profile_border"
+                    android:padding="1dp"
+                    android:layout_gravity="start|center_vertical"
+                    android:src="@drawable/ic_profile_cat" />
+
+                <ImageView
+                    android:id="@+id/ivMember2"
+                    android:layout_width="37dp"
+                    android:layout_height="37dp"
+                    android:background="@drawable/bg_member_profile_border"
+                    android:padding="1dp"
+                    android:layout_gravity="start|center_vertical"
+                    android:layout_marginStart="28dp"
+                    android:src="@drawable/ic_profile_cat" />
+
+                <ImageView
+                    android:id="@+id/ivMember3"
+                    android:layout_width="37dp"
+                    android:layout_height="37dp"
+                    android:background="@drawable/bg_member_profile_border"
+                    android:padding="1dp"
+                    android:layout_gravity="start|center_vertical"
+                    android:layout_marginStart="56dp"
+                    android:src="@drawable/ic_profile_cat" />
+
+                <TextView
+                    android:id="@+id/tvExtraMemberCount"
+                    android:layout_width="37dp"
+                    android:layout_height="37dp"
+                    android:layout_gravity="start|center_vertical"
+                    android:layout_marginStart="84dp"
+                    android:background="@drawable/bg_extra_member_count"
+                    android:fontFamily="@font/suit_medium"
+                    android:gravity="center"
+                    android:text="+1"
+                    android:textColor="#A9ADB3"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <ImageView
+                android:id="@+id/ivMemberCountIcon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/ic_space_members" />
+
+            <TextView
+                android:id="@+id/tvMemberCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:fontFamily="@font/suit_bold"
+                android:text="2/10"
+                android:textColor="#A9ADB3"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/ivArrow"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:src="@drawable/ic_space_next"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
