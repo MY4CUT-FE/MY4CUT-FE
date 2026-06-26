@@ -7,6 +7,10 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
+import androidx.core.content.ContextCompat
+import com.umc.mobile.my4cut.ui.home.HomeFragment
 import android.graphics.Color
 import android.os.Bundle
 import android.text.Spannable
@@ -38,6 +42,19 @@ class MyPageFragment : Fragment() {
     private var _binding: FragmentMyPageBinding? = null
     private val binding get() = _binding!!
 
+    // FCM 푸시가 도착하면 마이페이지 화면의 알림 아이콘도 즉시 갱신
+    private val notificationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == HomeFragment.ACTION_NOTIFICATION_RECEIVED) {
+                // 푸시 도착 직후 사용자가 바로 알 수 있도록 먼저 ON 아이콘으로 변경
+                binding.ivNotification.setImageResource(R.drawable.ic_noti_on)
+
+                // 알림창에 시스템 알림이 남아있어도, 서버 기준으로 전부 읽음이면 OFF 처리되도록 동기화
+                updateNotificationIcon()
+            }
+        }
+    }
+
     private val editProfileLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
@@ -58,7 +75,9 @@ class MyPageFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initClickListener()
-        // ✅ onViewCreated에서는 호출하지 않음 (onResume에서 호출됨)
+        // MyPageFragment가 살아있는 동안 푸시 수신 이벤트를 감지
+        registerNotificationReceiver()
+        // onViewCreated에서는 프로필 호출하지 않음 (onResume에서 호출됨)
     }
 
     override fun onResume() {
@@ -238,6 +257,8 @@ class MyPageFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        // 메모리 누수 방지를 위해 등록한 Receiver 해제
+        unregisterNotificationReceiver()
         super.onDestroyView()
         _binding = null
     }
@@ -308,6 +329,27 @@ class MyPageFragment : Fragment() {
             if (_binding != null) {
                 this@MyPageFragment.setupUsageText(count)
             }
+        }
+    }
+
+    // FCM 수신 브로드캐스트 Receiver 등록
+    private fun registerNotificationReceiver() {
+        val filter = IntentFilter(HomeFragment.ACTION_NOTIFICATION_RECEIVED)
+
+        ContextCompat.registerReceiver(
+            requireContext(),
+            notificationReceiver,
+            filter,
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+    }
+
+    // Fragment View가 파괴될 때 Receiver 해제
+    private fun unregisterNotificationReceiver() {
+        try {
+            requireContext().unregisterReceiver(notificationReceiver)
+        } catch (_: IllegalArgumentException) {
+            // 이미 해제된 경우 앱이 죽지 않도록 무시
         }
     }
 
