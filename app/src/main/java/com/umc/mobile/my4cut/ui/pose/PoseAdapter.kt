@@ -1,5 +1,7 @@
 package com.umc.mobile.my4cut.ui.pose
 
+import android.graphics.Color
+import android.graphics.PorterDuff
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -9,7 +11,8 @@ import com.umc.mobile.my4cut.databinding.ItemPoseBinding
 
 class PoseAdapter(
     private var items: List<PoseData>,
-    private val onBookmarkClick: (PoseData, Int) -> Unit // ✅ 즐겨찾기 클릭 콜백
+    private val onBookmarkClick: (PoseData, Int) -> Unit,
+    private val onItemClick: (PoseData, Int) -> Unit = { _, _ -> }
 ) : RecyclerView.Adapter<PoseAdapter.ViewHolder>() {
 
     inner class ViewHolder(private val binding: ItemPoseBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -30,13 +33,20 @@ class PoseAdapter(
             binding.ivStar.setOnClickListener {
                 onBookmarkClick(item, position)
             }
+
+            // ✅ 이미지 클릭 시 상세 모달 표시
+            binding.ivPoseImage.setOnClickListener {
+                onItemClick(item, position)
+            }
         }
 
-        private fun updateBookmarkIcon(isFavorite: Boolean) {
+        fun updateBookmarkIcon(isFavorite: Boolean) {
             if (isFavorite) {
                 binding.ivStar.setImageResource(R.drawable.ic_star_on)
+                binding.ivStar.setColorFilter(Color.parseColor("#FFD83C"), PorterDuff.Mode.SRC_IN)
             } else {
                 binding.ivStar.setImageResource(R.drawable.ic_star_off)
+                binding.ivStar.clearColorFilter()
             }
         }
     }
