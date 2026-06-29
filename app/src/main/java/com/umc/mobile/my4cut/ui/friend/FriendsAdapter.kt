@@ -123,6 +123,7 @@ class FriendsAdapter(
                         .load(imageUrl)
                         .placeholder(R.drawable.ic_profile_cat)
                         .error(R.drawable.ic_profile_cat)
+                        .circleCrop()
                         .into(binding.ivProfile)
                 } else {
                     val finalUrl = if (imageUrl.startsWith("http")) imageUrl
@@ -132,7 +133,7 @@ class FriendsAdapter(
                         .placeholder(R.drawable.ic_profile_cat)
                         .error(R.drawable.ic_profile_cat)
                         .override(120, 120)
-                        .centerCrop()
+                        .circleCrop()
                         .thumbnail(0.25f)
                         .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
                         .into(binding.ivProfile)

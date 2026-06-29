@@ -38,8 +38,8 @@
         <!-- 프로필 -->
         <ImageView
             android:id="@+id/ivProfile"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="37dp"
+            android:layout_height="37dp"
             android:layout_marginStart="10dp"
             android:src="@drawable/ic_profile_cat"
             style="@style/CircleImage"
