@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="#FFFCFC"
     android:padding="8dp">
 
     <androidx.cardview.widget.CardView
@@ -19,6 +20,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="#FFFCFC"
             android:padding="12dp">
 
             <!-- ✅ 네컷 전체 이미지 (4개 프레임 합쳐진 하나의 이미지) -->
