@@ -314,34 +314,19 @@ class HomeFragment : Fragment() {
         val container = binding.llDiaryLines
         container.removeAllViews()
 
-        val lines = content.split("\n")
-        val suitRegular = ResourcesCompat.getFont(requireContext(), R.font.suit_regular)
-        val textColorGray = Color.parseColor("#1A1A1A")
-        // [수정] 업로드 화면 LinedEditText와 동일한 색상으로 통일
-        val lineColor = Color.parseColor("#EBEBEB")
-
-        lines.forEachIndexed { index, line ->
-            val tv = TextView(requireContext()).apply {
-                text = line
-                setTextColor(textColorGray)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-                typeface = suitRegular
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).also { it.topMargin = if (index == 0) 0 else dpToPx(8) }
-            }
-            container.addView(tv)
-
-            val divider = View(requireContext()).apply {
-                setBackgroundColor(lineColor)
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    dpToPx(1)
-                ).also { it.topMargin = dpToPx(4) }
-            }
-            container.addView(divider)
+        val tv = LinedTextView(requireContext()).apply {
+            text = content
+            setTextColor(Color.parseColor("#1A1A1A"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            typeface = ResourcesCompat.getFont(requireContext(), R.font.suit_regular)
+            setPadding(0, 0, 0, dpToPx(8))
+            setLineSpacing(dpToPx(8).toFloat(), 1f) // LinedEditText의 lineSpacingExtra와 맞추기
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
         }
+        container.addView(tv)
     }
 
     private fun dpToPx(dp: Int): Int =
