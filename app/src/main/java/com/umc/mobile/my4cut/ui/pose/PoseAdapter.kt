@@ -5,7 +5,12 @@ import android.graphics.PorterDuff
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import android.view.View
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.ItemPoseBinding
 
@@ -17,13 +22,41 @@ class PoseAdapter(
 
     inner class ViewHolder(private val binding: ItemPoseBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: PoseData, position: Int) {
-            binding.tvPoseName.text = item.title
+            // 텍스트 skeleton 초기화
+            binding.tvPoseName.visibility = View.GONE
+            binding.viewPoseNameSkeleton.visibility = View.VISIBLE
 
             // ✅ Glide로 서버 이미지 로드
             Glide.with(binding.ivPoseImage.context)
                 .load(item.imageUrl)
-                .placeholder(R.drawable.img_profile_default)
-                .error(R.drawable.img_profile_default)
+                .placeholder(R.drawable.img_pose_loading)
+                .error(R.drawable.img_pose_loading)
+                .listener(object : RequestListener<android.graphics.drawable.Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<android.graphics.drawable.Drawable>,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        binding.tvPoseName.text = item.title
+                        binding.tvPoseName.visibility = View.VISIBLE
+                        binding.viewPoseNameSkeleton.visibility = View.GONE
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: android.graphics.drawable.Drawable,
+                        model: Any,
+                        target: Target<android.graphics.drawable.Drawable>?,
+                        dataSource: DataSource,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        binding.tvPoseName.text = item.title
+                        binding.tvPoseName.visibility = View.VISIBLE
+                        binding.viewPoseNameSkeleton.visibility = View.GONE
+                        return false
+                    }
+                })
                 .into(binding.ivPoseImage)
 
             // 즐겨찾기 상태
