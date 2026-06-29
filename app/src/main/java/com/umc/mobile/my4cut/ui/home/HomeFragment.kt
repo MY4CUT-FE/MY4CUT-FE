@@ -181,9 +181,33 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun showLoadingState() {
+        binding.clEmptyState.visibility = View.GONE
+        binding.llFilledState.visibility = View.VISIBLE
+        binding.clDiaryEmojiSection.visibility = View.VISIBLE
+
+        binding.ivHomePhoto.setImageResource(R.drawable.img_pose_loading)
+
+        binding.ivMoodIcon.setImageDrawable(null)
+        binding.ivMoodIcon.setBackgroundResource(R.drawable.bg_circle_gray)
+
+        val container = binding.llDiaryLines
+        container.removeAllViews()
+        listOf(LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(150)).forEachIndexed { index, width ->
+            val skeleton = View(requireContext()).apply {
+                setBackgroundResource(R.drawable.bg_skeleton_text)
+                layoutParams = LinearLayout.LayoutParams(width, dpToPx(14)).also {
+                    it.topMargin = if (index == 0) 0 else dpToPx(12)
+                }
+            }
+            container.addView(skeleton)
+        }
+    }
+
     // ✅ 특정 날짜의 하루네컷 데이터 로드 (API) - suspend 함수로 변경
     private fun loadDay4CutData(date: LocalDate) {
         val dateString = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        showLoadingState()
 
         Log.d("HomeFragment", "📤 Loading day4cut for date: $dateString")
 
@@ -235,6 +259,7 @@ class HomeFragment : Fragment() {
             Log.d("HomeFragment", "Loading thumbnail with Coil: ${imageUrl.take(80)}")
             binding.ivHomePhoto.load(imageUrl) {
                 crossfade(true)
+                placeholder(R.drawable.img_pose_loading)
                 error(R.drawable.img_ex_photo)
             }
         } else {

@@ -23,7 +23,7 @@ class PoseAdapter(
     inner class ViewHolder(private val binding: ItemPoseBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: PoseData, position: Int) {
             // 텍스트 skeleton 초기화
-            binding.tvPoseName.visibility = View.GONE
+            binding.tvPoseName.visibility = View.INVISIBLE
             binding.viewPoseNameSkeleton.visibility = View.VISIBLE
 
             // ✅ Glide로 서버 이미지 로드
