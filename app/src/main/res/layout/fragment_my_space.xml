@@ -56,7 +56,7 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvMySpaces"
                 android:layout_width="0dp"
-                android:layout_height="226dp"
+                android:layout_height="205dp"
                 android:layout_marginTop="17dp"
                 android:layout_marginStart="0dp"
                 android:clipToPadding="false"
@@ -75,7 +75,7 @@
                 android:id="@+id/layoutSpaceIndicator"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="7dp"
                 android:gravity="center"
                 android:orientation="horizontal"
                 app:layout_constraintTop_toBottomOf="@id/rvMySpaces"
