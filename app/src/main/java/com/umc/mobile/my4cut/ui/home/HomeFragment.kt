@@ -2,32 +2,37 @@ package com.umc.mobile.my4cut.ui.home
 
 import android.app.Activity
 import android.content.Intent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.IntentFilter
 import android.graphics.Color
 import android.os.Bundle
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
 import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import coil.load
 import com.umc.mobile.my4cut.R
-import com.umc.mobile.my4cut.data.base.BaseResponse
-import com.umc.mobile.my4cut.data.day4cut.model.CalendarStatusResponse
 import com.umc.mobile.my4cut.data.day4cut.model.Day4CutDetailResponse
 import com.umc.mobile.my4cut.databinding.FragmentHomeBinding
 import com.umc.mobile.my4cut.databinding.ItemCalendarDayBinding
 import com.umc.mobile.my4cut.network.RetrofitClient
-import com.umc.mobile.my4cut.ui.calendar.CalendarFullActivity
-import com.umc.mobile.my4cut.ui.calendar.CalendarPickerActivity
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 import com.umc.mobile.my4cut.ui.pose.PoseRecommendActivity
+import com.umc.mobile.my4cut.ui.myalbum.CalendarPickerActivity
+import com.umc.mobile.my4cut.ui.myalbum.EntryDetailFragment
 import com.umc.mobile.my4cut.ui.record.EntryRegisterActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,16 +40,35 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
+
+    // FCM 푸시 수신 시 HomeFragment에 알림 상태 변경을 전달하기 위한 브로드캐스트
+    companion object {
+        const val ACTION_NOTIFICATION_RECEIVED =
+            "com.umc.mobile.my4cut.ACTION_NOTIFICATION_RECEIVED"
+    }
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
     private var selectedDate: LocalDate = LocalDate.now()
+
+    // 푸시 알림이 도착하면 홈 알림 아이콘을 즉시 ON으로 변경
+    private val notificationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == ACTION_NOTIFICATION_RECEIVED) {
+                // 서버 응답을 기다리기 전에 사용자가 바로 알 수 있도록 먼저 ON 아이콘으로 변경
+                binding.ivNotification.setImageResource(R.drawable.ic_noti_on)
+
+                // 이후 서버의 읽지 않은 알림 상태와 다시 동기화
+                updateNotificationIcon()
+            }
+        }
+    }
 
     // ✅ 캘린더 데이터 (날짜별 기록 여부)
     private val recordedDates = mutableSetOf<Int>() // 기록이 있는 날짜 저장
@@ -82,6 +106,7 @@ class HomeFragment : Fragment() {
         setupDateBanner()
         setupWelcomeText()
         setupClickListeners()
+        setupSwipeGesture()
 
         // ✅ 초기 UI 설정
         setupWeekCalendar() // 주간 캘린더 먼저 그리기
@@ -91,17 +116,14 @@ class HomeFragment : Fragment() {
         loadCalendarData()
         loadDay4CutData(selectedDate)
         updateNotificationIcon()
+        // HomeFragment가 살아있는 동안 푸시 수신 이벤트를 감지
+        registerNotificationReceiver()
     }
 
     private fun setupDateBanner() {
         val today = LocalDate.now()
-        val formatter = DateTimeFormatter.ofPattern("yyyy MMMM d", Locale.ENGLISH)
-        binding.tvDateBanner.text = "${today.format(formatter)}${getDayNumberSuffix(today.dayOfMonth)}"
-    }
-
-    private fun getDayNumberSuffix(day: Int): String {
-        if (day in 11..13) return "th"
-        return when (day % 10) { 1 -> "st" 2 -> "nd" 3 -> "rd" else -> "th" }
+        val formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
+        binding.tvDateBanner.text = today.format(formatter)
     }
 
     private fun setupWelcomeText() {
@@ -156,9 +178,33 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun showLoadingState() {
+        binding.clEmptyState.visibility = View.GONE
+        binding.llFilledState.visibility = View.VISIBLE
+        binding.clDiaryEmojiSection.visibility = View.VISIBLE
+
+        binding.ivHomePhoto.setImageResource(R.drawable.img_pose_loading)
+
+        binding.ivMoodIcon.setImageDrawable(null)
+        binding.ivMoodIcon.setBackgroundResource(R.drawable.bg_circle_gray)
+
+        val container = binding.llDiaryLines
+        container.removeAllViews()
+        listOf(LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(150)).forEachIndexed { index, width ->
+            val skeleton = View(requireContext()).apply {
+                setBackgroundResource(R.drawable.bg_skeleton_text)
+                layoutParams = LinearLayout.LayoutParams(width, dpToPx(14)).also {
+                    it.topMargin = if (index == 0) 0 else dpToPx(12)
+                }
+            }
+            container.addView(skeleton)
+        }
+    }
+
     // ✅ 특정 날짜의 하루네컷 데이터 로드 (API) - suspend 함수로 변경
     private fun loadDay4CutData(date: LocalDate) {
         val dateString = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        showLoadingState()
 
         Log.d("HomeFragment", "📤 Loading day4cut for date: $dateString")
 
@@ -194,8 +240,10 @@ class HomeFragment : Fragment() {
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     Log.e("HomeFragment", "❌ Network error", e)
-                    Toast.makeText(requireContext(), "네트워크 오류", Toast.LENGTH_SHORT).show()
-                    showEmptyState()
+                    if (isAdded) {
+                        Toast.makeText(requireContext(), "네트워크 오류", Toast.LENGTH_SHORT).show()
+                        showEmptyState()
+                    }
                 }
             }
         }
@@ -210,6 +258,7 @@ class HomeFragment : Fragment() {
             Log.d("HomeFragment", "Loading thumbnail with Coil: ${imageUrl.take(80)}")
             binding.ivHomePhoto.load(imageUrl) {
                 crossfade(true)
+                placeholder(R.drawable.img_pose_loading)
                 error(R.drawable.img_ex_photo)
             }
         } else {
@@ -217,38 +266,84 @@ class HomeFragment : Fragment() {
             binding.ivHomePhoto.setImageResource(R.drawable.img_ex_photo)
         }
 
-        // 일기 내용 표시 (줄바꿈으로 분리)
-        val content = day4cut.content ?: ""
-        val lines = content.split("\n")
-
-        when {
-            lines.isEmpty() || content.isBlank() -> {
-                binding.tvDiaryLine1.text = ""
-                binding.tvDiaryLine2.text = ""
+        // 기록된 날짜의 사진 클릭 → 네컷 상세보기로 이동
+        binding.ivHomePhoto.setOnClickListener {
+            val entryDetailFragment = EntryDetailFragment().apply {
+                arguments = Bundle().apply {
+                    putString("API_DATE", selectedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                    putString("SELECTED_DATE", selectedDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd")))
+                }
             }
-            lines.size == 1 -> {
-                binding.tvDiaryLine1.text = lines[0]
-                binding.tvDiaryLine2.text = ""
-            }
-            else -> {
-                binding.tvDiaryLine1.text = lines[0]
-                binding.tvDiaryLine2.text = lines.drop(1).joinToString("\n")
-            }
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.fcv_main, entryDetailFragment)
+                .addToBackStack(null)
+                .commit()
         }
 
-        // 이모지 아이콘 표시
-        val moodIcon = when (day4cut.emojiType) {
-            "HAPPY" -> R.drawable.img_mood_happy
-            "ANGRY" -> R.drawable.img_mood_angry
-            "TIRED" -> R.drawable.img_mood_tired
-            "SAD" -> R.drawable.img_mood_sad
-            "CALM" -> R.drawable.img_mood_calm
-            else -> R.drawable.img_mood_happy // 기본값
-        }
-        binding.ivMoodIcon.setImageResource(moodIcon)
+        val content = day4cut.content?.trim() ?: ""
+        val hasContent = content.isNotBlank()
+        val hasEmoji = !day4cut.emojiType.isNullOrBlank()
 
-        Log.d("HomeFragment", "✅ Filled state displayed - content: ${content.take(30)}, emoji: ${day4cut.emojiType}, images: ${day4cut.viewUrls?.size ?: 0}")
+        if (hasContent || hasEmoji) {
+            binding.clDiaryEmojiSection.visibility = View.VISIBLE
+
+            // 일기 줄 동적 렌더링
+            if (hasContent) {
+                renderDiaryLines(content)
+            } else {
+                binding.llDiaryLines.removeAllViews()
+            }
+
+            // 이모지 아이콘
+            if (hasEmoji) {
+                val moodIcon = when (day4cut.emojiType) {
+                    "HAPPY" -> R.drawable.img_mood_happy
+                    "ANGRY" -> R.drawable.img_mood_angry
+                    "TIRED" -> R.drawable.img_mood_tired
+                    "SAD" -> R.drawable.img_mood_sad
+                    "CALM" -> R.drawable.img_mood_calm
+                    else -> null
+                }
+                if (moodIcon != null) {
+                    binding.ivMoodIcon.setImageResource(moodIcon)
+                    // 이모지가 있을 때 코랄 원형 배경을 이미지 뒤에 적용
+                    binding.ivMoodIcon.setBackgroundResource(R.drawable.bg_circle_emoji)
+                } else {
+                    binding.ivMoodIcon.setImageDrawable(null)
+                    binding.ivMoodIcon.setBackgroundResource(R.drawable.bg_circle_gray)
+                }
+            } else {
+                binding.ivMoodIcon.setImageDrawable(null)
+                binding.ivMoodIcon.setBackgroundResource(R.drawable.bg_circle_emoji)
+            }
+        } else {
+            binding.clDiaryEmojiSection.visibility = View.GONE
+        }
+
+        Log.d("HomeFragment", "✅ Filled state - content: '${content.take(30)}', emoji: '${day4cut.emojiType}'")
     }
+
+    private fun renderDiaryLines(content: String) {
+        val container = binding.llDiaryLines
+        container.removeAllViews()
+
+        val tv = LinedTextView(requireContext()).apply {
+            text = content
+            setTextColor(Color.parseColor("#1A1A1A"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            typeface = ResourcesCompat.getFont(requireContext(), R.font.suit_regular)
+            setPadding(0, 0, 0, dpToPx(8))
+            setLineSpacing(dpToPx(8).toFloat(), 1f) // LinedEditText의 lineSpacingExtra와 맞추기
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        container.addView(tv)
+    }
+
+    private fun dpToPx(dp: Int): Int =
+        (dp * resources.displayMetrics.density).toInt()
 
     // ✅ 기록이 없는 경우 표시
     private fun showEmptyState() {
@@ -279,13 +374,18 @@ class HomeFragment : Fragment() {
 
             dayViewBinding.tvDayNumber.text = date.dayOfMonth.toString()
 
+            val isFuture = date.isAfter(LocalDate.now())
+
             if (date.isEqual(selectedDate)) {
                 dayViewBinding.tvDayNumber.setBackgroundResource(R.drawable.bg_calendar_selected)
                 dayViewBinding.tvDayNumber.backgroundTintList = null
                 dayViewBinding.tvDayNumber.setTextColor(Color.WHITE)
             } else {
                 dayViewBinding.tvDayNumber.background = null
-                dayViewBinding.tvDayNumber.setTextColor(Color.parseColor("#6A6A6A"))
+                // 미래 날짜는 연한 회색으로 표시하여 선택 불가임을 시각적으로 구분
+                dayViewBinding.tvDayNumber.setTextColor(
+                    if (isFuture) Color.parseColor("#D1D1D1") else Color.parseColor("#6A6A6A")
+                )
             }
 
             // ✅ API에서 받은 데이터로 점 표시
@@ -318,8 +418,11 @@ class HomeFragment : Fragment() {
         }
 
         binding.ivCalendarNext.setOnClickListener {
-            selectedDate = selectedDate.plusWeeks(1)
-            refreshCalendarData()
+            val nextDate = selectedDate.plusWeeks(1)
+            if (!YearMonth.from(nextDate).isAfter(YearMonth.from(LocalDate.now()))) {
+                selectedDate = nextDate
+                refreshCalendarData()
+            }
         }
 
         binding.clPoseRecommend.setOnClickListener {
@@ -330,11 +433,34 @@ class HomeFragment : Fragment() {
             startActivity(Intent(requireContext(), NotificationActivity::class.java))
         }
 
-        // ✅ 빈 화면 클릭 → 기록 등록 화면으로 이동
+        binding.ivMypage.setOnClickListener {
+            (requireActivity() as? com.umc.mobile.my4cut.MainActivity)
+                ?.navigateToMyPage()
+        }
+
+        // 빈 날짜 카드 클릭 → 전체 캘린더로 이동, 현재 선택 날짜를 초기값으로 전달
         binding.clEmptyState.setOnClickListener {
-            val intent = Intent(requireContext(), EntryRegisterActivity::class.java)
-            intent.putExtra("SELECTED_DATE", selectedDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd")))
+            val intent = Intent(requireContext(), CalendarPickerActivity::class.java).apply {
+                putExtra("YEAR", selectedDate.year)
+                putExtra("MONTH", selectedDate.monthValue)
+                putExtra("DAY", selectedDate.dayOfMonth)
+            }
             entryRegisterLauncher.launch(intent)
+        }
+    }
+
+    private fun setupSwipeGesture() {
+        binding.llWeekCalendar.setOnSwipeListener { isRightSwipe ->
+            if (isRightSwipe) {
+                selectedDate = selectedDate.minusWeeks(1)
+                refreshCalendarData()
+            } else {
+                val nextDate = selectedDate.plusWeeks(1)
+                if (!YearMonth.from(nextDate).isAfter(YearMonth.from(LocalDate.now()))) {
+                    selectedDate = nextDate
+                    refreshCalendarData()
+                }
+            }
         }
     }
 
@@ -348,6 +474,27 @@ class HomeFragment : Fragment() {
     private fun updateContentState(date: LocalDate) {
         val formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
         binding.tvContentDate.text = date.format(formatter)
+    }
+
+    // FCM 수신 브로드캐스트 Receiver 등록
+    private fun registerNotificationReceiver() {
+        val filter = IntentFilter(ACTION_NOTIFICATION_RECEIVED)
+
+        ContextCompat.registerReceiver(
+            requireContext(),
+            notificationReceiver,
+            filter,
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+    }
+
+    // Fragment View가 파괴될 때 Receiver 해제
+    private fun unregisterNotificationReceiver() {
+        try {
+            requireContext().unregisterReceiver(notificationReceiver)
+        } catch (_: IllegalArgumentException) {
+            // 이미 해제된 경우 앱이 죽지 않도록 무시
+        }
     }
 
     private fun updateNotificationIcon() {
@@ -378,6 +525,8 @@ class HomeFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        // 메모리 누수 방지를 위해 등록한 Receiver 해제
+        unregisterNotificationReceiver()
         super.onDestroyView()
         _binding = null
     }

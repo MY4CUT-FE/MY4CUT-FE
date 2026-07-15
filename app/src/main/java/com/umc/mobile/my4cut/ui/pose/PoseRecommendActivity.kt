@@ -1,20 +1,31 @@
 package com.umc.mobile.my4cut.ui.pose
 
+import android.app.Dialog
+import android.content.Intent
 import android.graphics.Color
+import android.graphics.PorterDuff
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.PopupMenu
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
+import com.bumptech.glide.Glide
 import com.google.android.material.tabs.TabLayout
+import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.ActivityPoseRecommendBinding
+import com.umc.mobile.my4cut.databinding.DialogPoseDetailBinding
 import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -41,8 +52,20 @@ class PoseRecommendActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
-        // 1. 뒤로가기
-        binding.btnBack.setOnClickListener { finish() }
+        // 1. 상단 아이콘 클릭
+        binding.ivMypage.setOnClickListener {
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("NAVIGATE_TO_TAB", R.id.menu_home)
+                putExtra("NAVIGATE_TO_MYPAGE", true)
+            }
+            startActivity(intent)
+            finish()
+        }
+
+        binding.ivNotification.setOnClickListener {
+            startActivity(Intent(this, NotificationActivity::class.java))
+        }
 
         // 2. 탭 설정
         val tabTitles = listOf("전체", "1인", "2인", "3인", "4인")
@@ -62,16 +85,103 @@ class PoseRecommendActivity : AppCompatActivity() {
         })
 
         // 3. 리사이클러뷰 설정
-        poseAdapter = PoseAdapter(emptyList()) { pose, position ->
-            // ✅ 즐겨찾기 클릭 시
-            toggleBookmark(pose, position)
-        }
+        poseAdapter = PoseAdapter(
+            emptyList(),
+            onBookmarkClick = { pose, position ->
+                toggleBookmark(pose, position)
+            },
+            onItemClick = { pose, position ->
+                showPoseDetailDialog(pose, position)
+            }
+        )
         binding.rvPose.adapter = poseAdapter
         binding.rvPose.layoutManager = GridLayoutManager(this, 2)
 
         // 4. 필터 버튼
         binding.btnFilter.setOnClickListener { view ->
             showFilterPopup(view)
+        }
+
+        // 5. 바텀 네비게이션
+        setupBottomNavigation()
+    }
+
+    private fun setupBottomNavigation() {
+        binding.bnvPose.itemIconTintList = null
+        binding.bnvPose.selectedItemId = R.id.menu_pose
+
+        binding.bnvPose.post { fixBottomNavText() }
+
+        binding.bnvPose.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.menu_pose -> true
+                else -> {
+                    val intent = Intent(this, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        putExtra("NAVIGATE_TO_TAB", item.itemId)
+                    }
+                    startActivity(intent)
+                    finish()
+                    false
+                }
+            }
+        }
+    }
+
+    private fun fixBottomNavText() {
+        val menuView = binding.bnvPose.getChildAt(0) as? ViewGroup ?: return
+        for (i in 0 until menuView.childCount) {
+            val item = menuView.getChildAt(i) as? ViewGroup ?: continue
+            val smallLabel = item.findViewById<TextView>(com.google.android.material.R.id.navigation_bar_item_small_label_view)
+            val largeLabel = item.findViewById<TextView>(com.google.android.material.R.id.navigation_bar_item_large_label_view)
+            smallLabel?.apply { setSingleLine(false); maxLines = 2; gravity = Gravity.CENTER }
+            largeLabel?.apply { setSingleLine(false); maxLines = 2; gravity = Gravity.CENTER }
+        }
+    }
+
+    // ✅ 포즈 상세 모달
+    private fun showPoseDetailDialog(pose: PoseData, position: Int) {
+        val dialog = Dialog(this)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        val dialogBinding = DialogPoseDetailBinding.inflate(layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.85).toInt(),
+            WindowManager.LayoutParams.WRAP_CONTENT
+        )
+        dialog.window?.setDimAmount(0.5f)
+        dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+
+        Glide.with(this)
+            .load(pose.imageUrl)
+            .placeholder(R.drawable.img_profile_default)
+            .error(R.drawable.img_profile_default)
+            .into(dialogBinding.ivDialogPose)
+
+        dialogBinding.tvDialogPoseName.text = pose.title
+        updateDialogStar(dialogBinding, pose.isFavorite)
+
+        dialogBinding.ivDialogStar.setOnClickListener {
+            toggleBookmark(pose, position)
+            updateDialogStar(dialogBinding, pose.isFavorite)
+        }
+
+        dialogBinding.ivDialogClose.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun updateDialogStar(dialogBinding: DialogPoseDetailBinding, isFavorite: Boolean) {
+        if (isFavorite) {
+            dialogBinding.ivDialogStar.setImageResource(R.drawable.ic_star_on)
+            dialogBinding.ivDialogStar.setColorFilter(Color.parseColor("#FFD83C"), PorterDuff.Mode.SRC_IN)
+        } else {
+            dialogBinding.ivDialogStar.setImageResource(R.drawable.ic_star_off)
+            dialogBinding.ivDialogStar.clearColorFilter()
         }
     }
 
@@ -102,9 +212,9 @@ class PoseRecommendActivity : AppCompatActivity() {
                                 pose.isFavorite = BookmarkManager.isBookmarked(this@PoseRecommendActivity, pose.poseId)
                             }
 
-                            // ✅ 즐겨찾기순 필터링 (클라이언트에서 처리)
+                            // ✅ 즐겨찾기순 정렬 (클라이언트에서 처리) - 즐겨찾기한 포즈를 우선순위로, 나머지도 함께 표시
                             val filteredList = if (sort == "bookmark") {
-                                allPoseList.filter { it.isFavorite }  // 즐겨찾기된 것만 표시
+                                allPoseList.sortedByDescending { it.isFavorite }
                             } else {
                                 allPoseList
                             }
@@ -132,10 +242,8 @@ class PoseRecommendActivity : AppCompatActivity() {
     // ✅ 즐겨찾기 토글
     private fun toggleBookmark(pose: PoseData, position: Int) {
         if (pose.isFavorite) {
-            // 즐겨찾기 해제
             removeBookmark(pose.poseId, position)
         } else {
-            // 즐겨찾기 등록
             addBookmark(pose.poseId, position)
         }
     }
@@ -144,13 +252,11 @@ class PoseRecommendActivity : AppCompatActivity() {
     private fun addBookmark(poseId: Int, position: Int) {
         Log.d("PoseRecommend", "📤 Adding bookmark for poseId: $poseId")
 
-        // ✅ 로컬에 먼저 저장 (UI 즉시 업데이트)
         allPoseList[position].isFavorite = true
         poseAdapter.updateItem(position, true)
         BookmarkManager.addBookmark(this, poseId)
         Toast.makeText(this, "즐겨찾기에 추가되었습니다.", Toast.LENGTH_SHORT).show()
 
-        // 서버 동기화 (실패해도 로컬 상태 유지)
         RetrofitClient.poseService.addBookmark(poseId)
             .enqueue(object : Callback<BaseResponse<Any>> {
                 override fun onResponse(
@@ -174,13 +280,11 @@ class PoseRecommendActivity : AppCompatActivity() {
     private fun removeBookmark(poseId: Int, position: Int) {
         Log.d("PoseRecommend", "📤 Removing bookmark for poseId: $poseId")
 
-        // ✅ 로컬에 먼저 저장 (UI 즉시 업데이트)
         allPoseList[position].isFavorite = false
         poseAdapter.updateItem(position, false)
         BookmarkManager.removeBookmark(this, poseId)
         Toast.makeText(this, "즐겨찾기가 해제되었습니다.", Toast.LENGTH_SHORT).show()
 
-        // 서버 동기화 (실패해도 로컬 상태 유지)
         RetrofitClient.poseService.removeBookmark(poseId)
             .enqueue(object : Callback<BaseResponse<Any>> {
                 override fun onResponse(
@@ -220,7 +324,7 @@ class PoseRecommendActivity : AppCompatActivity() {
                     binding.tvFilterText.text = "즐겨찾기순"
                 }
             }
-            loadPosesFromServer() // ✅ 필터 변경 시 다시 로드
+            loadPosesFromServer()
             true
         }
         popup.show()

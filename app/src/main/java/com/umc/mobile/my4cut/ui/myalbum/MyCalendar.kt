@@ -31,7 +31,9 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
+import android.view.GestureDetector
 import android.view.MotionEvent
+import androidx.core.view.GestureDetectorCompat
 
 class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
     context: Context,
@@ -126,16 +128,48 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
                 updateYearMonthText()
             }
 
-            // 다음 달 버튼(>) 클릭 리스너
+            // 다음 달 버튼(>) 클릭 리스너 (오늘이 속한 달 이후로는 이동 불가)
             binding.btnNextMonth.setOnClickListener {
-                currentMonth = currentMonth.plusMonths(1)
-                mcCustom.smoothScrollToMonth(currentMonth)
-                updateYearMonthText()
+                val nextMonth = currentMonth.plusMonths(1)
+                if (!nextMonth.isAfter(YearMonth.now())) {
+                    currentMonth = nextMonth
+                    mcCustom.smoothScrollToMonth(currentMonth)
+                    updateYearMonthText()
+                }
             }
 
+            val gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
+                override fun onDown(e: MotionEvent): Boolean = true
+
+                override fun onFling(
+                    e1: MotionEvent?,
+                    e2: MotionEvent,
+                    velocityX: Float,
+                    velocityY: Float
+                ): Boolean {
+                    val diffX = e2.x - (e1?.x ?: return false)
+                    if (kotlin.math.abs(diffX) > 50) {
+                        if (diffX > 0) {
+                            // 오른쪽 스와이프 → 이전 달
+                            currentMonth = currentMonth.minusMonths(1)
+                        } else {
+                            // 왼쪽 스와이프 → 다음 달 (오늘이 속한 달 이후로는 이동 불가)
+                            val nextMonth = currentMonth.plusMonths(1)
+                            if (nextMonth.isAfter(YearMonth.now())) {
+                                return true
+                            }
+                            currentMonth = nextMonth
+                        }
+                        mcCustom.smoothScrollToMonth(currentMonth)
+                        updateYearMonthText()
+                        return true
+                    }
+                    return false
+                }
+            })
+
             binding.mcCustom.setOnTouchListener { _, event ->
-                // 사용자가 좌우로 미는 동작(MOVE)을 시스템이 무시하게 만듭니다.
-                // ACTION_MOVE일 때 true를 반환하면 달력이 스크롤되지 않습니다.
+                gestureDetector.onTouchEvent(event)
                 event.action == MotionEvent.ACTION_MOVE
             }
 
@@ -147,9 +181,9 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
                 onDateSelectedListener?.invoke(getSelectedDateFormatted())
             }
 
-            // 오늘 날짜 이전, 이후 연월은 100개월 전까지 표시
+            // 오늘 날짜 이전은 100개월 전까지 표시, 이후는 오늘이 속한 달까지만 표시
             val startMonth = currentMonth.minusMonths(100)
-            val endMonth = currentMonth.plusMonths(100)
+            val endMonth = YearMonth.now()
 
             // 지정된 첫 번째 요일이 시작 위치에 오는 주간 요일 값
             // 실행 시 일요일이 먼저 표시됨
@@ -243,8 +277,8 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
                     // 텍스트 색상 설정
                     when {
                         isFutureDate -> {
-                            // 미래 날짜는 항상 회색으로 표시
-                            container.textView.setTextColor(Color.GRAY)
+                            // 미래 날짜는 연한 회색으로 표시하여 선택 불가임을 시각적으로 구분
+                            container.textView.setTextColor(Color.parseColor("#D1D1D1"))
                         }
                         data.position == DayPosition.MonthDate -> {
                             container.textView.setTextColor(Color.BLACK)
@@ -298,7 +332,22 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
     }
 
     private fun updateYearMonthText() {
-        binding.tvYearMonth.text = "${currentMonth.monthValue}월"
+        // "2026년 1월" 형식으로 년도와 월을 함께 표시
+        binding.tvYearMonth.text = "${currentMonth.year}년 ${currentMonth.monthValue}월"
+    }
+
+    /** 외부에서 특정 날짜로 스크롤 & 선택 상태를 지정할 때 사용 */
+    fun scrollToDate(date: LocalDate) {
+        val oldDate = selectedDate
+        selectedDate = date
+        currentMonth = YearMonth.from(date)
+        updateYearMonthText()
+        binding.mcCustom.scrollToMonth(currentMonth)
+        binding.mcCustom.post {
+            oldDate?.let { binding.mcCustom.notifyDateChanged(it) }
+            binding.mcCustom.notifyDateChanged(date)
+            onDateSelectedListener?.invoke(getSelectedDateFormatted())
+        }
     }
 }
 

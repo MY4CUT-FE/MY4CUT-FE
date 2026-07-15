@@ -1,7 +1,6 @@
 package com.umc.mobile.my4cut.ui.friend
 
 import androidx.lifecycle.lifecycleScope
-import com.umc.mobile.my4cut.data.friend.remote.FriendServiceApi
 import kotlinx.coroutines.launch
 
 import android.net.Uri

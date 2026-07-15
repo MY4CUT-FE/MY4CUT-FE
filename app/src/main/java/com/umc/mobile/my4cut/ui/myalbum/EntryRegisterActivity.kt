@@ -1,10 +1,8 @@
 package com.umc.mobile.my4cut.ui.myalbum
 
-import android.animation.ArgbEvaluator
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
@@ -12,28 +10,23 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.RecyclerView
-import androidx.viewpager2.widget.CompositePageTransformer
-import androidx.viewpager2.widget.MarginPageTransformer
-import com.google.android.material.card.MaterialCardView
 import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.day4cut.remote.CreateDay4CutRequest
 import com.umc.mobile.my4cut.data.day4cut.remote.Day4CutImage
 import com.umc.mobile.my4cut.databinding.ActivityEntryRegister2Binding
-import com.umc.mobile.my4cut.databinding.ItemPhotoAddBinding
-import com.umc.mobile.my4cut.databinding.ItemPhotoSlider2Binding
 import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.ui.record.PhotoUploadPager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,26 +37,22 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDate
-import kotlin.math.abs
 
 class EntryRegisterActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityEntryRegister2Binding
 
-    private var selectedImageUris = mutableListOf<Uri>()
+    private val selectedImageUris = mutableStateListOf<Uri>()
 
     private var isDiaryExpanded = false
-    private var selectedMoodIndex = 0
-
-    // ✅ 썸네일 인덱스 추가
-    private var typicalImageIndex = 0
+    private var selectedMoodIndex = 1  // 기본값: CALM (첫 번째 이모지)
 
     private val pickMultipleMedia = registerForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(50)
     ) { uris ->
         if (uris.isNotEmpty()) {
             selectedImageUris.addAll(uris)
-            updatePhotoState()
+            updateButtonState()
         }
     }
 
@@ -72,10 +61,20 @@ class EntryRegisterActivity : AppCompatActivity() {
         binding = ActivityEntryRegister2Binding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        binding.cvPhotoPager.apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                PhotoUploadPager(
+                    photos = selectedImageUris,
+                    onAddPhotoClick = ::launchPhotoPicker
+                )
+            }
+        }
+
         setupDateData()
         setupCalendarData()
         setupClickListeners()
-        setupPhotoPicker()
+        updateButtonState()
         setupDiaryLogic()
         setupMoodSelection()
     }
@@ -99,22 +98,28 @@ class EntryRegisterActivity : AppCompatActivity() {
             val uris = it.imageUris.map { uriString -> Uri.parse(uriString) }
             selectedImageUris.addAll(uris)
 
-            updatePhotoState()
+            updateButtonState()
         }
     }
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener { finish() }
 
-        // ✅ 완료 버튼: API 호출 추가
         binding.btnComplete.setOnClickListener {
             saveDay4Cut()
         }
     }
 
-    /**
-     * ✅ 하루네컷 저장 (API 호출)
-     */
+    private fun launchPhotoPicker() {
+        pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
+
+    private fun updateButtonState() {
+        val hasPhotos = selectedImageUris.isNotEmpty()
+        binding.btnComplete.isEnabled = hasPhotos
+        binding.btnComplete.alpha = if (hasPhotos) 1.0f else 0.5f
+    }
+
     private fun saveDay4Cut() {
         lifecycleScope.launch {
             try {
@@ -122,7 +127,6 @@ class EntryRegisterActivity : AppCompatActivity() {
                 Log.d("EntryRegister", "🔄 SAVE PROCESS STARTED")
                 Log.d("EntryRegister", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
-                // Step 1: 이미지 압축
                 val fileParts = mutableListOf<MultipartBody.Part>()
 
                 for ((index, uri) in selectedImageUris.withIndex()) {
@@ -140,7 +144,6 @@ class EntryRegisterActivity : AppCompatActivity() {
                     fileParts.add(part)
                 }
 
-                // Step 2: Bulk 업로드
                 Log.d("EntryRegister", "📤 Uploading ${fileParts.size} images via /media/upload/bulk")
 
                 val uploadResponse = withContext(Dispatchers.IO) {
@@ -155,28 +158,35 @@ class EntryRegisterActivity : AppCompatActivity() {
 
                 val uploadedFiles = uploadResponse.data ?: throw Exception("업로드 응답 데이터 없음")
 
-                // Step 3: Day4Cut 생성 요청 구성
                 val images = uploadedFiles.mapIndexed { index, file ->
                     Day4CutImage(
                         mediaId = file.mediaId,
-                        isThumbnail = (index == typicalImageIndex)  // ✅ 선택된 썸네일
+                        isThumbnail = (index == 0)
                     )
                 }
 
                 Log.d("EntryRegister", "📊 Uploaded fileIds: ${uploadedFiles.map { it.mediaId }}")
 
-                // 날짜 변환 ("2026.2.9" -> "2026-02-09")
                 val dateString = intent.getStringExtra("SELECTED_DATE") ?: ""
                 val apiDate = convertToApiDate(dateString)
 
+                val content = binding.etDiary.text.toString().trim().takeIf { it.isNotBlank() }
+                val emojiType = when (selectedMoodIndex) {
+                    1 -> "CALM"
+                    2 -> "HAPPY"
+                    3 -> "TIRED"
+                    4 -> "ANGRY"
+                    5 -> "SAD"
+                    else -> null
+                }
+
                 val request = CreateDay4CutRequest(
                     date = apiDate,
-                    content = binding.etDiary.text.toString().ifBlank { null },
-                    emojiType = getEmojiType(),
+                    content = content,
+                    emojiType = emojiType,
                     images = images
                 )
 
-                // Step 4: POST /day4cut
                 Log.d("EntryRegister", "📝 Creating Day4Cut...")
                 Log.d("EntryRegister", "Request: $request")
 
@@ -186,33 +196,44 @@ class EntryRegisterActivity : AppCompatActivity() {
 
                 Log.d("EntryRegister", "📨 Create response: code=${createResponse.code}")
 
-                if (createResponse.code == "C2001" || createResponse.code == "C2011") {
-                    Log.d("EntryRegister", "")
-                    Log.d("EntryRegister", "🎉 DAY4CUT CREATED SUCCESSFULLY")
-                    Log.d("EntryRegister", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                when {
+                    createResponse.code == "C2001" || createResponse.code == "C2011" -> {
+                        Log.d("EntryRegister", "")
+                        Log.d("EntryRegister", "🎉 DAY4CUT CREATED SUCCESSFULLY")
+                        Log.d("EntryRegister", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
-                    withContext(Dispatchers.Main) {
-                        // 임시 파일 정리
-                        cacheDir.listFiles()?.filter {
-                            it.name.startsWith("compressed_")
-                        }?.forEach { it.delete() }
+                        withContext(Dispatchers.Main) {
+                            cacheDir.listFiles()?.filter {
+                                it.name.startsWith("compressed_")
+                            }?.forEach { it.delete() }
 
-                        Toast.makeText(this@EntryRegisterActivity, "저장되었습니다!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@EntryRegisterActivity, "저장되었습니다!", Toast.LENGTH_SHORT).show()
 
-                        // FLAG_ACTIVITY_CLEAR_TOP을 쓰면 스택에 쌓인 이전 Activity들을 정리하며 MainActivity로 돌아갑니다.
-                        val intent = Intent(this@EntryRegisterActivity, MainActivity::class.java).apply {
-                            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                            putExtra("MOVE_TO_DETAIL", true)
-                            putExtra("API_DATE", apiDate)
-                            putExtra("SELECTED_DATE", dateString)
+                            val intent = Intent(this@EntryRegisterActivity, MainActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                putExtra("MOVE_TO_DETAIL", true)
+                                putExtra("API_DATE", apiDate)
+                                putExtra("SELECTED_DATE", dateString)
+                            }
+
+                            startActivity(intent)
+                            finish()
                         }
-
-                        startActivity(intent)
-
-                        finish()
                     }
-                } else {
-                    throw Exception("저장 실패: ${createResponse.message}")
+                    createResponse.code == "D4003" -> {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(this@EntryRegisterActivity, "일기 내용을 입력해주세요.", Toast.LENGTH_SHORT).show()
+                            if (!isDiaryExpanded) {
+                                isDiaryExpanded = true
+                                binding.clDiaryContent.visibility = View.VISIBLE
+                                binding.ivDiaryArrow.setImageResource(R.drawable.ic_arrow_up_gray)
+                            }
+                            binding.etDiary.requestFocus()
+                        }
+                    }
+                    else -> {
+                        throw Exception("저장 실패: ${createResponse.message}")
+                    }
                 }
 
             } catch (e: Exception) {
@@ -220,7 +241,6 @@ class EntryRegisterActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(this@EntryRegisterActivity, "${e.message}", Toast.LENGTH_LONG).show()
 
-                    // 임시 파일 정리
                     cacheDir.listFiles()?.filter {
                         it.name.startsWith("compressed_")
                     }?.forEach { it.delete() }
@@ -229,9 +249,6 @@ class EntryRegisterActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * 이미지 압축
-     */
     private fun compressImage(uri: Uri): File? {
         return try {
             val inputStream = contentResolver.openInputStream(uri) ?: return null
@@ -318,9 +335,6 @@ class EntryRegisterActivity : AppCompatActivity() {
         return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
     }
 
-    /**
-     * "2026.2.9" -> "2026-02-09"
-     */
     private fun convertToApiDate(dateString: String): String {
         return try {
             val parts = dateString.split(".")
@@ -337,9 +351,6 @@ class EntryRegisterActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * 선택된 이모지 타입 반환
-     */
     private fun getEmojiType(): String {
         return when (selectedMoodIndex) {
             1 -> "HAPPY"
@@ -348,72 +359,6 @@ class EntryRegisterActivity : AppCompatActivity() {
             4 -> "ANGRY"
             5 -> "SAD"
             else -> "HAPPY"
-        }
-    }
-
-    private fun setupPhotoPicker() {
-        binding.clPhotoEmpty.setOnClickListener {
-            launchPhotoPicker()
-        }
-    }
-
-    private fun launchPhotoPicker() {
-        pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-    }
-
-    private fun updatePhotoState() {
-        if (selectedImageUris.isNotEmpty()) {
-            binding.clPhotoEmpty.visibility = View.GONE
-            binding.vpPhotoSlider.visibility = View.VISIBLE
-            binding.vpPhotoSlider.adapter = PhotoPagerAdapter(selectedImageUris)
-
-            binding.vpPhotoSlider.apply {
-                offscreenPageLimit = 1
-                getChildAt(0).overScrollMode = RecyclerView.OVER_SCROLL_NEVER
-
-                val transform = CompositePageTransformer()
-                transform.addTransformer(MarginPageTransformer(0))
-
-                val argbEvaluator = ArgbEvaluator()
-                val activeColor = Color.parseColor("#FFD5CD")
-                val inactiveColor = Color.parseColor("#D9D9D9")
-
-                transform.addTransformer { page, position ->
-                    val r = 1 - abs(position)
-                    page.scaleY = 0.85f + r * 0.15f
-
-                    val photoCard = page.findViewById<MaterialCardView>(R.id.cv_photo_card)
-                    val addCard = page.findViewById<MaterialCardView>(R.id.cv_add_card)
-                    val targetCard = photoCard ?: addCard
-
-                    if (targetCard != null) {
-                        val colorFraction = abs(position).coerceIn(0f, 1f)
-                        val color = argbEvaluator.evaluate(colorFraction, activeColor, inactiveColor) as Int
-                        targetCard.strokeColor = color
-                    }
-
-                    val addIcon = page.findViewById<ImageView>(R.id.iv_add_icon)
-
-                    if (addIcon != null && addCard != null) {
-                        if (position > 0) {
-                            val cardWidth = if (addCard.width > 0) addCard.width.toFloat() else 1000f
-                            val moveDistance = (cardWidth / 2f) - (addIcon.width / 2f) - 20f
-                            addIcon.translationX = -position * moveDistance
-                        } else {
-                            addIcon.translationX = 0f
-                        }
-                    }
-                }
-                setPageTransformer(transform)
-            }
-
-            binding.btnComplete.isEnabled = true
-            binding.btnComplete.alpha = 1.0f
-        } else {
-            binding.clPhotoEmpty.visibility = View.VISIBLE
-            binding.vpPhotoSlider.visibility = View.GONE
-            binding.btnComplete.isEnabled = false
-            binding.btnComplete.alpha = 0.5f
         }
     }
 
@@ -433,9 +378,13 @@ class EntryRegisterActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val length = s?.length ?: 0
-                binding.tvTextCount.text = "$length/100"
+                binding.tvTextCount.text = "${minOf(length, 100)}/100"
             }
-            override fun afterTextChanged(s: Editable?) {}
+            override fun afterTextChanged(s: Editable?) {
+                if ((s?.length ?: 0) > 100) {
+                    s?.delete(100, s.length)
+                }
+            }
         })
     }
 
@@ -445,10 +394,19 @@ class EntryRegisterActivity : AppCompatActivity() {
         )
         moodViews.forEachIndexed { index, imageView ->
             imageView.setOnClickListener {
-                selectedMoodIndex = index + 1
-                updateMoodUI(moodViews, index)
+                val clickedIndex = index + 1
+                if (selectedMoodIndex == clickedIndex) {
+                    // 선택된 이모지 재클릭 → 해제 (Toggle)
+                    selectedMoodIndex = 0
+                    updateMoodUI(moodViews, -1)
+                } else {
+                    selectedMoodIndex = clickedIndex
+                    updateMoodUI(moodViews, index)
+                }
             }
         }
+        // 기본 선택: Calm (첫 번째 이모지, index=0)
+        updateMoodUI(moodViews, 0)
     }
 
     private fun updateMoodUI(views: List<ImageView>, selectedIndex: Int) {
@@ -460,64 +418,6 @@ class EntryRegisterActivity : AppCompatActivity() {
                 imageView.background = null
                 imageView.alpha = 0.4f
             }
-        }
-    }
-
-    inner class PhotoPagerAdapter(private val imageUris: List<Uri>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-
-        private val TYPE_PHOTO = 0
-        private val TYPE_ADD = 1
-
-        inner class PhotoViewHolder(val binding: ItemPhotoSlider2Binding) : RecyclerView.ViewHolder(binding.root)
-        inner class AddViewHolder(val binding: ItemPhotoAddBinding) : RecyclerView.ViewHolder(binding.root)
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-            return if (viewType == TYPE_PHOTO) {
-                val binding = ItemPhotoSlider2Binding.inflate(LayoutInflater.from(parent.context), parent, false)
-                PhotoViewHolder(binding)
-            } else {
-                val binding = ItemPhotoAddBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-                AddViewHolder(binding)
-            }
-        }
-
-        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            if (getItemViewType(position) == TYPE_PHOTO) {
-                val photoHolder = holder as PhotoViewHolder
-                photoHolder.binding.ivPhoto.setImageURI(imageUris[position])
-
-                // ✅ 썸네일 표시
-                val isTypical = position == typicalImageIndex
-                photoHolder.binding.ivTypical.visibility = View.VISIBLE
-                photoHolder.binding.ivTypical.setImageResource(
-                    if (isTypical) R.drawable.ic_typical_on else R.drawable.ic_typical_off
-                )
-
-                // ✅ 썸네일 클릭 이벤트
-                photoHolder.binding.ivTypical.setOnClickListener {
-                    val oldIndex = typicalImageIndex
-                    val newIndex = holder.bindingAdapterPosition
-
-                    if (oldIndex != newIndex) {
-                        typicalImageIndex = newIndex
-                        notifyItemChanged(oldIndex)
-                        notifyItemChanged(newIndex)
-                    }
-                }
-            } else {
-                val addHolder = holder as AddViewHolder
-                addHolder.itemView.setOnClickListener {
-                    launchPhotoPicker()
-                }
-            }
-        }
-
-        override fun getItemCount(): Int {
-            return imageUris.size + 1
-        }
-
-        override fun getItemViewType(position: Int): Int {
-            return if (position == imageUris.size) TYPE_ADD else TYPE_PHOTO
         }
     }
 }

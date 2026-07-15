@@ -7,15 +7,22 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
+import androidx.core.content.ContextCompat
+import com.umc.mobile.my4cut.ui.home.HomeFragment
 import android.graphics.Color
 import android.os.Bundle
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
 import android.util.Log
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
@@ -26,7 +33,7 @@ import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 import com.umc.mobile.my4cut.databinding.FragmentMyPageBinding
 import com.umc.mobile.my4cut.network.RetrofitClient
-import com.umc.mobile.my4cut.ui.intro.IntroActivity
+import com.umc.mobile.my4cut.ui.onboarding.OnboardingActivity
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 import kotlinx.coroutines.runBlocking
 import retrofit2.Call
@@ -37,6 +44,19 @@ class MyPageFragment : Fragment() {
 
     private var _binding: FragmentMyPageBinding? = null
     private val binding get() = _binding!!
+
+    // FCM 푸시가 도착하면 마이페이지 화면의 알림 아이콘도 즉시 갱신
+    private val notificationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == HomeFragment.ACTION_NOTIFICATION_RECEIVED) {
+                // 푸시 도착 직후 사용자가 바로 알 수 있도록 먼저 ON 아이콘으로 변경
+                binding.ivNotification.setImageResource(R.drawable.ic_noti_on)
+
+                // 알림창에 시스템 알림이 남아있어도, 서버 기준으로 전부 읽음이면 OFF 처리되도록 동기화
+                updateNotificationIcon()
+            }
+        }
+    }
 
     private val editProfileLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -58,7 +78,9 @@ class MyPageFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initClickListener()
-        // ✅ onViewCreated에서는 호출하지 않음 (onResume에서 호출됨)
+        // MyPageFragment가 살아있는 동안 푸시 수신 이벤트를 감지
+        registerNotificationReceiver()
+        // onViewCreated에서는 프로필 호출하지 않음 (onResume에서 호출됨)
     }
 
     override fun onResume() {
@@ -69,8 +91,41 @@ class MyPageFragment : Fragment() {
         updateNotificationIcon()
     }
 
+    private fun dpToPx(dp: Int): Int =
+        (dp * resources.displayMetrics.density).toInt()
+
+    private fun applySkeleton(view: TextView, widthDp: Int, bgRes: Int, heightDp: Int = 14) {
+        view.text = ""
+        view.minWidth = dpToPx(widthDp)
+        view.minHeight = dpToPx(heightDp)
+        view.setBackgroundResource(bgRes)
+    }
+
+    private fun clearSkeleton(view: TextView) {
+        view.minWidth = 0
+        view.minHeight = 0
+        view.background = null
+    }
+
+    private fun showMyPageLoadingState() {
+        binding.ivProfile.setImageResource(R.drawable.loading_profile)
+
+        // 닉네임/로그인방식 영역: F0F0F0
+        applySkeleton(binding.tvNickname, 100, R.drawable.bg_skeleton_bar_light)
+        applySkeleton(binding.tvLoginMethod, 70, R.drawable.bg_skeleton_bar_light)
+        binding.llMyCode.visibility = View.INVISIBLE
+
+        // 통계 카드: 배경 F0F0F0, 내부 텍스트/원형 이미지는 D2D3D3
+        binding.clStatsCard.setBackgroundResource(R.drawable.bg_stats_card_loading)
+        applySkeleton(binding.tvTodayDate, 90, R.drawable.bg_skeleton_bar_dark)
+        applySkeleton(binding.tvCountInfo, 140, R.drawable.bg_skeleton_bar_dark)
+        binding.ivStatsIllustration.setImageDrawable(null)
+        binding.ivStatsIllustration.setBackgroundResource(R.drawable.bg_skeleton_circle_dark)
+    }
+
     private fun loadMyPage() {
         Log.d("MyPageFragment", "🔄 Loading profile data...")
+        showMyPageLoadingState()
         RetrofitClient.userService.getMyPage()
             .enqueue(object : Callback<BaseResponse<UserMeResponse>> {
                 override fun onResponse(
@@ -101,16 +156,19 @@ class MyPageFragment : Fragment() {
         binding.tvNickname.text = data.nickname
         binding.tvLoginMethod.text = if (data.loginType == "KAKAO") "카카오 로그인" else "이메일 로그인"
         binding.tvCodeValue.text = data.friendCode
+        clearSkeleton(binding.tvNickname)
+        clearSkeleton(binding.tvLoginMethod)
+        binding.llMyCode.visibility = View.VISIBLE
 
         Log.d("MyPageFragment", "🖼️ Loading profile image: ${data.profileImageViewUrl?.take(80)}")
         Glide.with(binding.ivProfile)
             .load(data.profileImageViewUrl)
-            .placeholder(R.drawable.img_profile_default)
+            .placeholder(R.drawable.loading_profile)
             .error(R.drawable.img_profile_default)
             .circleCrop()
             .into(binding.ivProfile)
 
-        // ✅ setupUsageText는 loadMonthlyPhotoCount에서 호출
+        // ✅ 통계 카드(날짜/이번 달 개수/삽화)는 loadMonthlyPhotoCount 완료 후 setupUsageText에서 한 번에 표시
     }
 
     private fun saveUserPrefs(data: UserMeResponse) {
@@ -122,12 +180,23 @@ class MyPageFragment : Fragment() {
     }
 
     private fun setupUsageText(count: Int) {
+        binding.clStatsCard.setBackgroundResource(R.drawable.bg_dashed_card)
+
+        val today = LocalDate.now()
+        val formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
+        clearSkeleton(binding.tvTodayDate)
+        binding.tvTodayDate.text = today.format(formatter)
+
         val fullText = "이번 달 ${count}장의 네컷을\n찍었어요!"
         val spannable = SpannableStringBuilder(fullText)
         val start = fullText.indexOf(count.toString())
         val end = start + count.toString().length
         spannable.setSpan(ForegroundColorSpan(Color.parseColor("#FF7E67")), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        clearSkeleton(binding.tvCountInfo)
         binding.tvCountInfo.text = spannable
+
+        binding.ivStatsIllustration.background = null
+        binding.ivStatsIllustration.setImageResource(R.drawable.img_mypage_squirrel)
     }
 
     private fun initClickListener() {
@@ -216,19 +285,30 @@ class MyPageFragment : Fragment() {
     }
 
     private fun goToIntro() {
-        val intent = Intent(requireContext(), IntroActivity::class.java).apply {
+        // 로그아웃·탈퇴 후 온보딩 화면으로 이동, 백스택 전체 제거
+        val intent = Intent(requireContext(), OnboardingActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         startActivity(intent)
     }
 
     private fun clearUserPrefs() {
+        // 토큰 삭제
         TokenManager.clear(requireContext())
+        // 사용자 정보 캐시 삭제
         requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+            .edit().clear().apply()
+        // FCM 토큰 캐시 삭제
+        requireContext().getSharedPreferences("my4cut_prefs", Context.MODE_PRIVATE)
+            .edit().clear().apply()
+        // 포즈 북마크 삭제
+        requireContext().getSharedPreferences("pose_bookmarks", Context.MODE_PRIVATE)
             .edit().clear().apply()
     }
 
     override fun onDestroyView() {
+        // 메모리 누수 방지를 위해 등록한 Receiver 해제
+        unregisterNotificationReceiver()
         super.onDestroyView()
         _binding = null
     }
@@ -299,6 +379,27 @@ class MyPageFragment : Fragment() {
             if (_binding != null) {
                 this@MyPageFragment.setupUsageText(count)
             }
+        }
+    }
+
+    // FCM 수신 브로드캐스트 Receiver 등록
+    private fun registerNotificationReceiver() {
+        val filter = IntentFilter(HomeFragment.ACTION_NOTIFICATION_RECEIVED)
+
+        ContextCompat.registerReceiver(
+            requireContext(),
+            notificationReceiver,
+            filter,
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+    }
+
+    // Fragment View가 파괴될 때 Receiver 해제
+    private fun unregisterNotificationReceiver() {
+        try {
+            requireContext().unregisterReceiver(notificationReceiver)
+        } catch (_: IllegalArgumentException) {
+            // 이미 해제된 경우 앱이 죽지 않도록 무시
         }
     }
 

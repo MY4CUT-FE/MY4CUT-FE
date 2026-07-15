@@ -8,7 +8,6 @@
 
     <!-- My Space Card -->
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardMySpace"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="@android:color/transparent"
@@ -24,6 +23,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:padding="5dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:background="#FFFFFF">
 
             <!-- My Space 제목 -->
@@ -52,48 +53,34 @@
                 app:layout_constraintBottom_toBottomOf="@id/tvMySpaceTitle"
                 app:layout_constraintEnd_toEndOf="parent" />
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/layoutSpaceCircles"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="2dp"
-                android:clipChildren="false"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvMySpaces"
+                android:layout_width="0dp"
+                android:layout_height="205dp"
+                android:layout_marginTop="17dp"
+                android:layout_marginStart="0dp"
                 android:clipToPadding="false"
-                android:layout_marginTop="12dp"
+                android:clipChildren="false"
+                android:overScrollMode="never"
+                android:paddingStart="13dp"
+                android:paddingEnd="13dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="8dp"
+                android:scrollbars="none"
                 app:layout_constraintTop_toBottomOf="@id/tvMySpaceTitle"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent">
+                app:layout_constraintEnd_toEndOf="parent" />
 
-                <!-- Orange background circle (perfect circle, not clipped) -->
-                <ImageView
-                    android:id="@+id/viewOrangeCircle"
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:src="@drawable/ic_rs_eclipse"
-                    android:layout_marginTop="15dp"
-                    android:scaleType="centerInside"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintDimensionRatio="1:1" />
-
-                <!-- Layer for space item circles -->
-                <FrameLayout
-                    android:id="@+id/layoutSpaceItems"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginTop="35dp"
-                    android:clipChildren="false"
-                    android:clipToPadding="false"
-                    app:layout_constraintTop_toTopOf="@id/viewOrangeCircle"
-                    app:layout_constraintBottom_toBottomOf="@id/viewOrangeCircle"
-                    app:layout_constraintStart_toStartOf="@id/viewOrangeCircle"
-                    app:layout_constraintEnd_toEndOf="@id/viewOrangeCircle" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
+            <LinearLayout
+                android:id="@+id/layoutSpaceIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="7dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                app:layout_constraintTop_toBottomOf="@id/rvMySpaces"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>
 

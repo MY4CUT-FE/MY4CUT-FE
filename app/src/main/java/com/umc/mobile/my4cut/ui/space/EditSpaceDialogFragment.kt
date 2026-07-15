@@ -20,6 +20,7 @@ import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import android.widget.Toast
+import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceUpdateRequestDto
 import com.umc.mobile.my4cut.databinding.DialogChangeSpaceBinding
@@ -40,7 +41,6 @@ class EditSpaceDialogFragment : DialogFragment() {
     private var spaceId: Long = -1L
     private var originalSpaceName: String = ""
     private val originalMemberIds = mutableSetOf<Long>()
-    private val alreadyInvitedFriendIds = mutableSetOf<Long>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -126,11 +126,8 @@ class EditSpaceDialogFragment : DialogFragment() {
 
         friendsAdapter = FriendsAdapter(
             getMode = { FriendsMode.NORMAL },
-            isSelected = { id: Long -> selectedFriendIds.contains(id) || alreadyInvitedFriendIds.contains(id) },
+            isSelected = { id: Long -> selectedFriendIds.contains(id) },
             onFriendClick = { friend ->
-                if (alreadyInvitedFriendIds.contains(friend.friendId)) {
-                    return@FriendsAdapter
-                }
                 val id = friend.friendId
                 if (selectedFriendIds.contains(id)) {
                     selectedFriendIds.remove(id)
@@ -200,8 +197,12 @@ class EditSpaceDialogFragment : DialogFragment() {
     private fun submitDialogFriends() {
         if (!::friendsAdapter.isInitialized) return
 
-        val favorites = friendList.filter { it.isFavorite }
-        val normals = friendList.filter { !it.isFavorite }
+        val inviteAvailableFriends = friendList.filterNot { friend ->
+            originalMemberIds.contains(friend.friendId)
+        }
+
+        val favorites = inviteAvailableFriends.filter { it.isFavorite }
+        val normals = inviteAvailableFriends.filter { !it.isFavorite }
 
         val uiItems = buildList<FriendUiItem> {
             favorites.forEach { add(FriendUiItem.Item(it)) }
@@ -214,15 +215,26 @@ class EditSpaceDialogFragment : DialogFragment() {
     /** 수정 로직 */
     private fun updateSpace() {
         val newName = binding.etSpaceName.text.toString().trim()
+        val inviteUserIds = selectedFriendIds.toList()
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val response = RetrofitClient.workspaceService.updateWorkspace(
+                RetrofitClient.workspaceService.updateWorkspace(
                     workspaceId = spaceId,
                     request = WorkspaceUpdateRequestDto(
                         name = newName
                     )
                 )
+
+                if (inviteUserIds.isNotEmpty()) {
+                    RetrofitClient.workspaceService.inviteMembers(
+                        WorkspaceInviteRequestDto(
+                            workspaceId = spaceId,
+                            userIds = inviteUserIds
+                        )
+                    )
+                }
+
                 Toast.makeText(requireContext(), "스페이스가 수정되었습니다", Toast.LENGTH_SHORT).show()
 
                 // 수정 완료 후 화면 갱신 콜백 호출
@@ -259,7 +271,6 @@ class EditSpaceDialogFragment : DialogFragment() {
                 friendList.clear()
                 selectedFriends.clear()
                 selectedFriendIds.clear()
-                alreadyInvitedFriendIds.clear()
 
                 friendList.addAll(
                     data.map {
@@ -273,20 +284,10 @@ class EditSpaceDialogFragment : DialogFragment() {
                     }
                 )
 
-                // friends API의 userId는 친구 본인 id가 아니라 내 userId로 내려오므로,
-                // 기존 멤버 판별에는 friendId만 사용한다.
-                friendList.forEach { friend ->
-                    val isAlreadyMember = originalMemberIds.contains(friend.friendId)
-
-                    Log.d(
-                        "EditSpace",
-                        "friend=${friend.nickname}, userId=${friend.userId}, friendId=${friend.friendId}, isAlreadyMember=$isAlreadyMember"
-                    )
-
-                    if (isAlreadyMember) {
-                        alreadyInvitedFriendIds.add(friend.friendId)
-                    }
-                }
+                Log.d(
+                    "EditSpace",
+                    "loadedFriends=${friendList.size}, excludedFriendIds=$originalMemberIds"
+                )
 
                 updateFriendSummary()
                 if (::friendsAdapter.isInitialized) {

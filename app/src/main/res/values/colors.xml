@@ -34,7 +34,8 @@
     <color name="copy_btn_border">#FF7E67</color>
     <color name="modal_red">#F24646</color>
     <color name="card_bg">#FFFFFF</color>
-    <color name="card_border">#E6E6E6</color>
+    <color name="card_border">#FFAD9D</color>
+    <color name="card_bg2">#FFEDEA</color>
 
     <!-- 텍스트 -->
     <color name="login_info_text">#626262</color>

@@ -64,7 +64,7 @@ class EntryDetailFragment : Fragment() {
 
     private var originalImageItems = mutableListOf<ImageItem>()
     private var originalContent: String = ""
-    private var originalEmojiType: String = "HAPPY"
+    private var originalEmojiType: String? = null
     private var typicalImageIndex: Int = 0
 
     private val pickMultipleMedia = registerForActivityResult(
@@ -125,7 +125,7 @@ class EntryDetailFragment : Fragment() {
                         binding.etDiary.setText(data.content ?: "")
                         originalContent = data.content ?: ""
 
-                        originalEmojiType = data.emojiType ?: "HAPPY"
+                        originalEmojiType = data.emojiType
                         setEmojiByType(originalEmojiType)
 
                         imageItems.clear()
@@ -283,19 +283,23 @@ class EntryDetailFragment : Fragment() {
         })
     }
 
-    private fun setEmojiByType(type: String) {
+    private fun setEmojiByType(type: String?) {
         val emojiRes = when (type) {
             "HAPPY" -> R.drawable.img_mood_happy
             "ANGRY" -> R.drawable.img_mood_angry
             "TIRED" -> R.drawable.img_mood_tired
             "SAD" -> R.drawable.img_mood_sad
             "CALM" -> R.drawable.img_mood_calm
-            else -> R.drawable.img_mood_happy
+            else -> null
         }
-        binding.ivMood1.setImageResource(emojiRes)
+        if (emojiRes != null) {
+            binding.ivMood1.setImageResource(emojiRes)
+        } else {
+            binding.ivMood1.setImageDrawable(null)
+        }
     }
 
-    private fun getCurrentEmojiType(): String {
+    private fun getCurrentEmojiType(): String? {
         return originalEmojiType
     }
 

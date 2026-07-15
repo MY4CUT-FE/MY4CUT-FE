@@ -42,6 +42,8 @@ class PhotoDialogFragment : DialogFragment() {
     private lateinit var ivClose: ImageView
     private lateinit var ivDelete: ImageView
     private lateinit var ivSave: ImageView
+    private lateinit var ivSaveTouchArea: View
+    private lateinit var ivDeleteTouchArea: View
     private lateinit var ivSend: ImageView
     private lateinit var ivProfile: ImageView
     private lateinit var ivMainPhoto: ImageView
@@ -50,6 +52,7 @@ class PhotoDialogFragment : DialogFragment() {
     private lateinit var tvChat: TextView
     private lateinit var rvChatList: RecyclerView
     private lateinit var ivToggleComment: ImageView
+    private lateinit var ivToggleCommentTouchArea: View
     private lateinit var tvConfirm: TextView
 
     private lateinit var etComment: EditText
@@ -59,6 +62,7 @@ class PhotoDialogFragment : DialogFragment() {
     private var photoId: Long = -1L
     private var uploaderId: Long? = null
     private var myUserId: Long? = null
+    private var myNickname: String? = null
 
     /** 내 정보 조회해서 userId 가져오기 */
     private fun loadMyInfo() {
@@ -69,7 +73,8 @@ class PhotoDialogFragment : DialogFragment() {
                 }
 
                 myUserId = res?.data?.userId?.toLong()
-                Log.d("PhotoDialog", "내 정보 조회 성공 myUserId=$myUserId")
+                myNickname = res?.data?.nickname
+                Log.d("PhotoDialog", "내 정보 조회 성공 myUserId=$myUserId myNickname=$myNickname")
 
                 // 내 정보 로드 후 삭제 버튼 상태 다시 반영
                 updateDeleteButtonVisibility()
@@ -188,6 +193,8 @@ class PhotoDialogFragment : DialogFragment() {
         ivClose = view.findViewById(R.id.ivClose)
         ivDelete = view.findViewById(R.id.ivDelete)
         ivSave = view.findViewById(R.id.ivSave)
+        ivSaveTouchArea = view.findViewById(R.id.ivSaveTouchArea)
+        ivDeleteTouchArea = view.findViewById(R.id.ivDeleteTouchArea)
         ivSend = view.findViewById(R.id.ivSend)
         ivProfile = view.findViewById(R.id.ivProfile)
         ivMainPhoto = view.findViewById(R.id.ivMainPhoto)
@@ -199,6 +206,7 @@ class PhotoDialogFragment : DialogFragment() {
 
         rvChatList = view.findViewById(R.id.rvChatList)
         ivToggleComment = view.findViewById(R.id.ivToggleComment)
+        ivToggleCommentTouchArea = view.findViewById(R.id.ivToggleCommentTouchArea)
         etComment = view.findViewById(R.id.text)
         etComment.setHintTextColor("#8F8F8F".toColorInt())
         etComment.setTextColor("#1A1A1A".toColorInt())
@@ -317,11 +325,11 @@ class PhotoDialogFragment : DialogFragment() {
         // 삭제 버튼 표시 여부 (내가 올린 사진만 삭제 가능)
         updateDeleteButtonVisibility()
 
-        ivDelete.setOnClickListener {
+        ivDeleteTouchArea.setOnClickListener {
             showDeletePhotoDialog()
         }
 
-        ivSave.setOnClickListener {
+        ivSaveTouchArea.setOnClickListener {
             downloadPhoto()
         }
 
@@ -331,7 +339,7 @@ class PhotoDialogFragment : DialogFragment() {
         }
 
         // 댓글 영역 펼치기/접기
-        ivToggleComment.setOnClickListener {
+        val toggleCommentAction = {
             isCommentExpanded = !isCommentExpanded
 
             if (isCommentExpanded) {
@@ -346,6 +354,14 @@ class PhotoDialogFragment : DialogFragment() {
                 ivToggleComment.setImageResource(R.drawable.ic_up)
             }
         }
+
+        ivToggleComment.setOnClickListener {
+            toggleCommentAction()
+        }
+
+        ivToggleCommentTouchArea.setOnClickListener {
+            toggleCommentAction()
+        }
     }
 
 
@@ -354,14 +370,20 @@ class PhotoDialogFragment : DialogFragment() {
         // View가 아직 초기화되지 않은 경우 방어
         if (!::ivDelete.isInitialized) return
 
-        val isMine = uploaderId != null && myUserId != null && uploaderId == myUserId
+        val isMineById = uploaderId != null && uploaderId != -1L && myUserId != null && uploaderId == myUserId
+        val isMineByNickname = !uploaderNickname.isNullOrBlank() && !myNickname.isNullOrBlank() && uploaderNickname == myNickname
+        val isMine = isMineById || isMineByNickname
 
         Log.d(
             "PhotoDialog",
-            "삭제버튼 체크 -> uploaderId=$uploaderId myUserId=$myUserId isMine=$isMine"
+            "삭제버튼 체크 -> uploaderId=$uploaderId myUserId=$myUserId uploaderNickname=$uploaderNickname myNickname=$myNickname isMineById=$isMineById isMineByNickname=$isMineByNickname isMine=$isMine"
         )
 
         ivDelete.visibility = if (isMine) View.VISIBLE else View.GONE
+
+        if (::ivDeleteTouchArea.isInitialized) {
+            ivDeleteTouchArea.visibility = if (isMine) View.VISIBLE else View.GONE
+        }
     }
 
     /** 사진 삭제 확인 모달 */

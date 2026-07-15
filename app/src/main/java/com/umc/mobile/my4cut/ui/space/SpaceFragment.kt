@@ -64,6 +64,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     private lateinit var binding: FragmentSpaceBinding
     private lateinit var photoAdapter: PhotoRVAdapter
     private var photoDatas = ArrayList<PhotoData>()
+    private var selectedFinalPhotoId: Long? = null
 
     private lateinit var memberAdapter: MemberAdapter
     private val memberItems = ArrayList<MemberItem>()
@@ -130,12 +131,15 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         binding.rvPhotoList.adapter = photoAdapter
         binding.rvPhotoList.layoutManager = GridLayoutManager(requireContext(), 2)
 
-        // initDummyPhotos() // 더미 데이터 제거, 실제 API로 대체
         loadSpaceFromApi()
         loadPhotosFromApi()
 
         photoAdapter.onItemClickListener = { photo ->
             showPhotoDialog(photo, isCommentExpanded = true)
+        }
+
+        photoAdapter.onFinalToggleListener = { photo ->
+            selectFinalPhoto(photo)
         }
 
         binding.btnExitMenu.setOnClickListener {
@@ -166,15 +170,13 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                 binding.tvTitle.text = data.name
 
                 existingMemberIds.clear()
-                data.ownerId?.let { ownerId ->
-                    existingMemberIds.add(ownerId.toLong())
-                }
+                existingMemberIds.addAll(data.alreadyInvitedFriendIds.orEmpty())
 
                 updateMemberUi(data.memberProfiles)
 
                 Log.d(
                     "SpaceFragment",
-                    "edit dialog memberIds=$existingMemberIds (현재 응답에서는 ownerId만 확보 가능)"
+                    "edit dialog excludedUserIds=$existingMemberIds"
                 )
 
                 // 현재 로그인 사용자 정보 조회 → 방장 여부 판단
@@ -205,7 +207,6 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     }
                 })
 
-                // TODO: 사진 / 댓글 API 결과로 교체
             } catch (e: Exception) {
                 Log.e("SpaceFragment", "스페이스 정보 API 실패", e)
             }
@@ -345,6 +346,10 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                         )
                     }
 
+                    selectedFinalPhotoId = newPhotos
+                        .firstOrNull { it.isFinal }
+                        ?.photoId
+
                     photoDatas.clear()
                     photoDatas.addAll(newPhotos)
                     photoAdapter.updatePhotos(newPhotos)
@@ -373,6 +378,57 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     Log.e("SpaceFragment", "사진 목록 API 실패", t)
                 }
             })
+    }
+
+    private fun selectFinalPhoto(photo: PhotoData) {
+        val clickedPhotoId = photo.photoId
+        val isCurrentlyFinal = selectedFinalPhotoId == clickedPhotoId
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                if (isCurrentlyFinal) {
+                    workspacePhotoService.deselectFinalPhoto(
+                        spaceId,
+                        clickedPhotoId
+                    )
+
+                    selectedFinalPhotoId = null
+                } else {
+                    workspacePhotoService.selectFinalPhoto(
+                        spaceId,
+                        clickedPhotoId
+                    )
+
+                    selectedFinalPhotoId = clickedPhotoId
+                }
+
+                val updatedPhotos = photoDatas.map { item ->
+                    item.copy(
+                        isFinal = item.photoId == selectedFinalPhotoId
+                    )
+                }
+
+                photoDatas.clear()
+                photoDatas.addAll(updatedPhotos)
+                photoAdapter.updatePhotos(photoDatas.toList())
+
+                Log.d(
+                    "SpaceFragment",
+                    if (isCurrentlyFinal) {
+                        "최종 사진 선택 해제 성공 photoId=$clickedPhotoId"
+                    } else {
+                        "최종 사진 선택 성공 photoId=$clickedPhotoId"
+                    }
+                )
+
+            } catch (e: Exception) {
+                Log.e(
+                    "SpaceFragment",
+                    "최종 사진 선택/해제 API 실패 photoId=$clickedPhotoId",
+                    e
+                )
+            }
+        }
     }
 
     private fun showExitDialog() {

@@ -14,33 +14,37 @@ class LinedEditText @JvmOverloads constructor(
 
     private val linePaint = Paint().apply {
         style = Paint.Style.STROKE
-        color = Color.parseColor("#EBEBEB") // 줄 색상
-        strokeWidth = 2f // 줄 두께
+        color = Color.parseColor("#EBEBEB") // 줄 색상 (홈 화면 renderDiaryLines와 동일)
+        strokeWidth = 1.5f
+        isAntiAlias = true
     }
 
     override fun onDraw(canvas: Canvas) {
-        // 1. 현재 텍스트의 총 줄 수와 뷰의 전체 높이 확인
-        val count = lineCount
         val r = Rect()
-        val paint = linePaint
+        val descent = paint.descent().toInt()
+        val lineGap = (4 * resources.displayMetrics.density).toInt()
+        val offset = descent + lineGap
 
-        // 2. 각 텍스트 줄 아래에 선 긋기
+        val count = lineCount
         for (i in 0 until count) {
             val baseline = getLineBounds(i, r)
-            // 텍스트 바로 아래(baseline + 8dp 정도)에 줄을 긋습니다.
             canvas.drawLine(
-                r.left.toFloat(), (baseline + 12).toFloat(),
-                r.right.toFloat(), (baseline + 12).toFloat(), paint
+                r.left.toFloat(), (baseline + offset).toFloat(),
+                r.right.toFloat(), (baseline + offset).toFloat(), linePaint
             )
         }
 
-        // 3. (선택사항) 만약 텍스트가 없어도 바닥까지 줄을 채우고 싶다면?
-        var lastBaseline = getLineBounds(count - 1, r)
-        while (lastBaseline < height) {
-            lastBaseline += lineHeight
+        // 마지막 텍스트 줄 이후 ~ View 높이까지 줄 채우기
+        var lastBaseline = if (count > 0) getLineBounds(count - 1, r) else paddingTop
+        val step = lineHeight  // lineHeight는 줄 간격 포함한 높이
+
+        while (true) {
+            lastBaseline += step
+            if (lastBaseline + offset > height - paddingBottom) break
             canvas.drawLine(
-                r.left.toFloat(), (lastBaseline + 10).toFloat(),
-                r.right.toFloat(), (lastBaseline + 10).toFloat(), paint
+                (paddingLeft).toFloat(), (lastBaseline + offset).toFloat(),
+                (width - paddingRight).toFloat(), (lastBaseline + offset).toFloat(),
+                linePaint
             )
         }
 

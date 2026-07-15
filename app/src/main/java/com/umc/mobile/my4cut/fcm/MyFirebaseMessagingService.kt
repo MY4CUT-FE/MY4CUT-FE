@@ -14,6 +14,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
+import com.umc.mobile.my4cut.ui.home.HomeFragment
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -55,11 +56,20 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d(TAG, "resolved title=$title")
         Log.d(TAG, "resolved body=$body")
 
+        // 푸시가 도착했음을 HomeFragment에 전달
+        // 알림창에 시스템 알림이 남아있는지와 상관없이,
+        // HomeFragment는 getUnreadStatus()로 서버의 읽음 상태를 다시 확인해서 on/off를 결정한다.
+        sendBroadcast(
+            Intent(HomeFragment.ACTION_NOTIFICATION_RECEIVED)
+                .setPackage(packageName)
+        )
+
         showNotification(title, body)
     }
 
     private fun showNotification(title: String, body: String) {
         Log.d(TAG, "showNotification: start")
+        Log.d(TAG, "Preparing notification intent")
 
         val channelId = "my4cut_push"
 
@@ -75,8 +85,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.d(TAG, "Notification channel created/updated: $channelId")
         }
 
-        val intent = Intent(this, NotificationActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val intent = Intent(this, NotificationActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+
+        Log.d(TAG, "PendingIntent created for NotificationActivity")
+        Log.d(TAG, "Intent flags=${intent.flags}")
 
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -84,7 +99,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        Log.d(TAG, "PendingIntent created for NotificationActivity")
 
         val notification = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.mipmap.ic_launcher)

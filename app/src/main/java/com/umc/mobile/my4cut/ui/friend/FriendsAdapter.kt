@@ -1,5 +1,8 @@
 import android.graphics.Color
+import android.graphics.Rect
+import android.util.TypedValue
 import android.view.LayoutInflater
+import android.view.TouchDelegate
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -123,6 +126,7 @@ class FriendsAdapter(
                         .load(imageUrl)
                         .placeholder(R.drawable.ic_profile_cat)
                         .error(R.drawable.ic_profile_cat)
+                        .circleCrop()
                         .into(binding.ivProfile)
                 } else {
                     val finalUrl = if (imageUrl.startsWith("http")) imageUrl
@@ -132,7 +136,7 @@ class FriendsAdapter(
                         .placeholder(R.drawable.ic_profile_cat)
                         .error(R.drawable.ic_profile_cat)
                         .override(120, 120)
-                        .centerCrop()
+                        .circleCrop()
                         .thumbnail(0.25f)
                         .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
                         .into(binding.ivProfile)
@@ -144,13 +148,32 @@ class FriendsAdapter(
             // 즐겨찾기 별
             binding.ivStar.setImageResource(
                 if (friend.isFavorite)
-                    R.drawable.ic_star_friend_on
+                    R.drawable.ic_friend_star_on
                 else
-                    R.drawable.ic_star_friend_off
+                    R.drawable.ic_friend_star_off
             )
 
             binding.ivStar.setOnClickListener {
                 onFavoriteClick(friend)
+            }
+
+            binding.ivStar.post {
+                val parent = binding.ivStar.parent as View
+
+                val rect = Rect()
+                binding.ivStar.getHitRect(rect)
+
+                val extra = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP,
+                    20f,
+                    binding.ivStar.resources.displayMetrics
+                ).toInt()
+                rect.left -= extra
+                rect.top -= extra
+                rect.right += extra
+                rect.bottom += extra
+
+                parent.touchDelegate = TouchDelegate(rect, binding.ivStar)
             }
 
             // 선택 상태 배경 처리 (테두리 보존)

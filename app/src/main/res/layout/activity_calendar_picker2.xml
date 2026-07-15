@@ -29,6 +29,17 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="@id/line"/>
 
+    <!-- 년/월 선택 바텀시트를 여는 미니 달력 아이콘 -->
+    <ImageView
+        android:id="@+id/ivMiniCal"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="20dp"
+        android:src="@drawable/ic_cal_minical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tvDateTime"
+        app:layout_constraintBottom_toBottomOf="@id/tvDateTime"/>
+
     <View
         android:id="@+id/line"
         android:layout_width="match_parent"

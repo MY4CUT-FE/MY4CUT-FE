@@ -250,9 +250,11 @@ class AlbumDetailFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        detailAdapter = AlbumDetailAdapter(photoList) {
+        detailAdapter = AlbumDetailAdapter(photoList, onAddClick = {
             pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-        }
+        }, onPhotoClick = { viewUrl ->
+            showSimplePhotoModal(viewUrl)
+        })
 
         binding.rvAlbums.adapter = detailAdapter
     }
@@ -332,9 +334,32 @@ class AlbumDetailFragment : Fragment() {
         dialog.show()
     }
 
+    private fun showSimplePhotoModal(imageUrl: String) {
+        val dialog = android.app.Dialog(requireContext())
+
+        val dialogBinding = com.umc.mobile.my4cut.databinding.DialogPhotoDetailBinding.inflate(layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+
+        dialogBinding.ivFullPhoto.load(imageUrl) { crossfade(true) }
+        dialogBinding.btnClose.setOnClickListener { dialog.dismiss() }
+        dialogBinding.root.setOnClickListener { dialog.dismiss() }
+        dialogBinding.root.setBackgroundColor(android.graphics.Color.WHITE)
+
+        dialog.window?.let { window ->
+            val metrics = resources.displayMetrics
+            val width = (metrics.widthPixels * 0.8).toInt()
+            val height = (metrics.heightPixels * 0.6).toInt()
+
+            window.setLayout(width, height)
+        }
+
+        dialog.show()
+    }
+
     inner class AlbumDetailAdapter(  // 앨범 상세 프래그먼트 어댑터
         private val photos: List<PhotoResponse>,
-        private val onAddClick: () -> Unit
+        private val onAddClick: () -> Unit,
+        private val onPhotoClick: (String) -> Unit
     ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         private val TYPE_PHOTO = 0
@@ -369,6 +394,10 @@ class AlbumDetailFragment : Fragment() {
                     crossfade(true) // 부드러운 전환 효과
                     placeholder(R.color.gray_300) // 로딩 중 이미지
                     scale(Scale.FILL)
+                }
+
+                holder.itemView.setOnClickListener {
+                    onPhotoClick(photo.viewUrl)
                 }
             } else if (holder is AddViewHolder) {
                 holder.itemView.setOnClickListener { onAddClick() }
