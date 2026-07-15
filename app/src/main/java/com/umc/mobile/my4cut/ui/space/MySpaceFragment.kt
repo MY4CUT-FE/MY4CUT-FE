@@ -148,7 +148,10 @@ class MySpaceFragment : Fragment() {
                             maxMember = 10,
                             createdAt = parseIsoToMillis(it.createdAt),
                             expiredAt = parseIsoToMillis(it.expiresAt),
-                            memberProfileImageUrls = it.memberProfiles.orEmpty()
+                            memberProfileImageUrls = it.memberProfiles.orEmpty(),
+                            recentActivityType = it.recentActivityType,
+                            recentActivityUserNickname = it.recentActivityUserNickname,
+                            recentActivityAt = it.recentActivityAt
                         )
                     }
                 )

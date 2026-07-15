@@ -130,7 +130,6 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         binding.rvPhotoList.adapter = photoAdapter
         binding.rvPhotoList.layoutManager = GridLayoutManager(requireContext(), 2)
 
-        // initDummyPhotos() // 더미 데이터 제거, 실제 API로 대체
         loadSpaceFromApi()
         loadPhotosFromApi()
 
@@ -207,7 +206,6 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     }
                 })
 
-                // TODO: 사진 / 댓글 API 결과로 교체
             } catch (e: Exception) {
                 Log.e("SpaceFragment", "스페이스 정보 API 실패", e)
             }
