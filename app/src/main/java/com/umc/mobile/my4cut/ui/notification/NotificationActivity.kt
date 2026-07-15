@@ -14,6 +14,7 @@ import android.view.View
 import android.app.Dialog
 import android.view.Window
 import android.view.WindowManager
+import com.umc.mobile.my4cut.data.notification.model.NotificationMarkReadByIdsDto
 import com.umc.mobile.my4cut.databinding.DialogDeleteNotiAllBinding
 
 class NotificationActivity : AppCompatActivity() {
@@ -136,6 +137,11 @@ class NotificationActivity : AppCompatActivity() {
                         uiList.take(safeEnd)
                             .forEach { item ->
                                 try {
+                                    RetrofitClient.notificationService.markPageAsRead(
+                                        NotificationMarkReadByIdsDto(
+                                            notificationIds = listOf(item.id)
+                                        )
+                                    )
                                 } catch (e: Exception) {
                                     Log.e("NotificationRead", "알림 읽음 처리 실패: id=${item.id}", e)
                                 }

@@ -11,5 +11,8 @@ data class WorkspaceInfoResponseDto(
     val memberIds: List<Long>?,
     val memberProfiles: List<String>?,
     val pendingInvitationUserIds: List<Long>?,
-    val alreadyInvitedFriendIds: List<Long>?
+    val alreadyInvitedFriendIds: List<Long>,
+    val recentActivityType: String?,
+    val recentActivityUserNickname: String?,
+    val recentActivityAt: String?
 )

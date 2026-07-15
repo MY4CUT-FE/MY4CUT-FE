@@ -7,5 +7,8 @@ data class Space(
     val maxMember: Int = 10,
     val createdAt: Long,
     val expiredAt: Long,
-    val memberProfileImageUrls: List<String> = emptyList()
+    val memberProfileImageUrls: List<String> = emptyList(),
+    val recentActivityType: String?,
+    val recentActivityUserNickname: String?,
+    val recentActivityAt: String?
 )

@@ -13,6 +13,11 @@ import com.umc.mobile.my4cut.ui.space.model.Space
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 class MySpaceAdapter(
     private val onClick: (Space) -> Unit
@@ -39,11 +44,7 @@ class MySpaceAdapter(
             binding.tvMemberCount.text = "${space.currentMember}/${space.maxMember}"
             binding.tvExpireBadge.text = formatExpire(space.expiredAt)
 
-            // 현재 Space 모델에는 최근 활동 타입x -> 사진 추가/시간 아이콘으로 표시
-            // 댓글 활동 타입이 서버 응답에 추가되면 이 부분에서 ic_space_comment로 분기
-            binding.ivRecentActivityIcon.setImageResource(R.drawable.ic_space_time)
-            binding.tvRecentActivity.text =
-                "유복치님이 ${formatRelative(space.createdAt)} 사진을 추가했어요."
+            bindRecentActivity(space)
 
             bindMemberProfiles(
                 currentMember = space.currentMember,
@@ -54,6 +55,71 @@ class MySpaceAdapter(
             binding.root.setOnClickListener {
                 onClick(space)
             }
+        }
+
+        private fun bindRecentActivity(space: Space) {
+            val nickname = space.recentActivityUserNickname
+            val activityTime = parseRecentActivityAt(space.recentActivityAt)
+
+            if (nickname.isNullOrBlank() || activityTime == null) {
+                binding.ivRecentActivityIcon.setImageResource(R.drawable.ic_space_time)
+                binding.tvRecentActivity.text = "최근 활동이 없어요."
+                return
+            }
+
+            val relativeTime = formatRelative(activityTime)
+            val activityType = space.recentActivityType
+                .orEmpty()
+                .uppercase(Locale.ROOT)
+
+            when {
+                activityType.contains("COMMENT") -> {
+                    binding.ivRecentActivityIcon
+                        .setImageResource(R.drawable.ic_space_comment)
+
+                    binding.tvRecentActivity.text =
+                        "${nickname}님이 $relativeTime 댓글을 남겼어요."
+                }
+
+                activityType.contains("PHOTO") ||
+                        activityType.contains("MEDIA") ||
+                        activityType.contains("UPLOAD") -> {
+
+                    binding.ivRecentActivityIcon
+                        .setImageResource(R.drawable.ic_space_time)
+
+                    binding.tvRecentActivity.text =
+                        "${nickname}님이 $relativeTime 사진을 추가했어요."
+                }
+
+                else -> {
+                    binding.ivRecentActivityIcon
+                        .setImageResource(R.drawable.ic_space_time)
+
+                    binding.tvRecentActivity.text =
+                        "${nickname}님이 $relativeTime 활동했어요."
+                }
+            }
+        }
+
+        private fun parseRecentActivityAt(value: String?): Long? {
+            if (value.isNullOrBlank()) return null
+
+            return runCatching {
+                // 서버 응답에 Z 또는 +09:00처럼 시간대 정보가 포함된 경우
+                OffsetDateTime.parse(value)
+                    .toInstant()
+                    .toEpochMilli()
+            }.recoverCatching {
+                // 서버 응답에 시간대가 없는 경우 UTC로 간주
+                LocalDateTime.parse(
+                    value,
+                    DateTimeFormatter.ISO_LOCAL_DATE_TIME
+                )
+                    .atZone(ZoneOffset.UTC)
+                    .toInstant()
+                    .toEpochMilli()
+            }.getOrNull()
         }
 
         private fun bindProfileImage(
