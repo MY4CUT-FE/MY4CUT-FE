@@ -128,11 +128,14 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
                 updateYearMonthText()
             }
 
-            // 다음 달 버튼(>) 클릭 리스너
+            // 다음 달 버튼(>) 클릭 리스너 (오늘이 속한 달 이후로는 이동 불가)
             binding.btnNextMonth.setOnClickListener {
-                currentMonth = currentMonth.plusMonths(1)
-                mcCustom.smoothScrollToMonth(currentMonth)
-                updateYearMonthText()
+                val nextMonth = currentMonth.plusMonths(1)
+                if (!nextMonth.isAfter(YearMonth.now())) {
+                    currentMonth = nextMonth
+                    mcCustom.smoothScrollToMonth(currentMonth)
+                    updateYearMonthText()
+                }
             }
 
             val gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
@@ -150,8 +153,12 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
                             // 오른쪽 스와이프 → 이전 달
                             currentMonth = currentMonth.minusMonths(1)
                         } else {
-                            // 왼쪽 스와이프 → 다음 달
-                            currentMonth = currentMonth.plusMonths(1)
+                            // 왼쪽 스와이프 → 다음 달 (오늘이 속한 달 이후로는 이동 불가)
+                            val nextMonth = currentMonth.plusMonths(1)
+                            if (nextMonth.isAfter(YearMonth.now())) {
+                                return true
+                            }
+                            currentMonth = nextMonth
                         }
                         mcCustom.smoothScrollToMonth(currentMonth)
                         updateYearMonthText()
@@ -174,9 +181,9 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
                 onDateSelectedListener?.invoke(getSelectedDateFormatted())
             }
 
-            // 오늘 날짜 이전, 이후 연월은 100개월 전까지 표시
+            // 오늘 날짜 이전은 100개월 전까지 표시, 이후는 오늘이 속한 달까지만 표시
             val startMonth = currentMonth.minusMonths(100)
-            val endMonth = currentMonth.plusMonths(100)
+            val endMonth = YearMonth.now()
 
             // 지정된 첫 번째 요일이 시작 위치에 오는 주간 요일 값
             // 실행 시 일요일이 먼저 표시됨

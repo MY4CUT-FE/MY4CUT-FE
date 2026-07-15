@@ -104,6 +104,7 @@ private fun YearMonthPickerContent(
     onDismiss: () -> Unit
 ) {
     val currentYear = LocalDate.now().year
+    val currentMonth = LocalDate.now().monthValue
     val years = (2000..currentYear).toList()
     val initialYearIndex = years.indexOf(initialYear).coerceAtLeast(0)
     val initialMonthIndex = (initialMonth - 1).coerceIn(0, 11)
@@ -133,7 +134,17 @@ private fun YearMonthPickerContent(
     }
 
     val selectedYear = years.getOrElse(selectedYearIndex) { currentYear }
-    val selectedMonth = selectedMonthIndex + 1
+    // 올해가 선택된 경우, 현재 월까지만 선택 가능하도록 목록 제한
+    val maxMonth = if (selectedYear == currentYear) currentMonth else 12
+    val months = (1..maxMonth).toList()
+    val selectedMonth = months.getOrElse(selectedMonthIndex) { maxMonth }
+
+    // 올해로 바뀌었는데 이미 선택된 월이 현재 월보다 크면 현재 월로 보정
+    LaunchedEffect(selectedYear) {
+        if (selectedYear == currentYear && selectedMonthIndex > maxMonth - 1) {
+            monthListState.scrollToItem(maxMonth - 1)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -209,7 +220,7 @@ private fun YearMonthPickerContent(
                         .background(Color(0xFFFFF0EE), RoundedCornerShape(12.dp))
                 )
                 WheelColumn(
-                    items = (1..12).map { it.toString() },
+                    items = months.map { it.toString() },
                     listState = monthListState,
                     selectedIndex = selectedMonthIndex,
                     itemHeight = itemHeight,

@@ -206,6 +206,7 @@
                     android:layout_height="wrap_content"
                     android:background="@null"
                     android:hint="오늘의 네컷을 기록해보세요."
+                    android:textColor="#1A1A1A"
                     android:lineSpacingExtra="10dp"
                     android:minLines="3"
                     android:padding="8dp"
@@ -228,11 +229,11 @@
 
                 <ImageView
                     android:id="@+id/iv_mood_1"
-                    android:layout_width="38dp"
-                    android:layout_height="36dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_marginStart="5dp"
                     android:layout_marginTop="20dp"
-                    android:padding="5dp"
+                    android:padding="8dp"
                     android:background="@drawable/bg_img_circle"
                     android:src="@drawable/img_mood_happy"
                     app:layout_constraintEnd_toEndOf="parent"
