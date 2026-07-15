@@ -21,6 +21,7 @@ import com.umc.mobile.my4cut.ui.space.model.Space
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import androidx.recyclerview.widget.PagerSnapHelper
 
 class MySpaceFragment : Fragment() {
 
@@ -87,16 +88,24 @@ class MySpaceFragment : Fragment() {
             )
             overScrollMode = View.OVER_SCROLL_NEVER
 
+            PagerSnapHelper().attachToRecyclerView(this)
+
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    super.onScrolled(recyclerView, dx, dy)
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
 
-                    val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
-                    val firstVisiblePosition = layoutManager.findFirstVisibleItemPosition()
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        val layoutManager =
+                            recyclerView.layoutManager as? LinearLayoutManager ?: return
 
-                    if (firstVisiblePosition != RecyclerView.NO_POSITION && currentPage != firstVisiblePosition) {
-                        currentPage = firstVisiblePosition
-                        updateIndicator()
+                        val position = layoutManager.findFirstCompletelyVisibleItemPosition()
+                            .takeIf { it != RecyclerView.NO_POSITION }
+                            ?: layoutManager.findFirstVisibleItemPosition()
+
+                        if (currentPage != position) {
+                            currentPage = position
+                            updateIndicator()
+                        }
                     }
                 }
             })
