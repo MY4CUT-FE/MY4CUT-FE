@@ -139,7 +139,6 @@ fun PhotoUploadPager(
             // 인디케이터: 사진이 있을 때만 카드뷰 내부 하단 정중앙 오버레이
             if (photos.isNotEmpty()) {
                 PhotoPageIndicator(
-                    photoCount = photos.size,
                     currentPage = pagerState.currentPage,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -301,17 +300,16 @@ private fun AddPhotoCard(
 // ─── 페이지 인디케이터 ─────────────────────────────────────────────────────────
 
 /**
- * 2개 점 인디케이터 (중앙 카드뷰 기준)
- * - 왼쪽 점: 사진 페이지(0 ~ photoCount-1)에 있을 때 활성화
- * - 오른쪽 점: + 추가 슬롯(photoCount)에 있을 때 활성화
+ * 최대 등록 장수(3장)에 맞춘 3개 점 인디케이터
+ * - currentPage에 맞춰 해당 인덱스의 점이 활성화되어 스와이프 시 함께 움직임
  */
 @Composable
 private fun PhotoPageIndicator(
-    photoCount: Int,
     currentPage: Int,
     modifier: Modifier = Modifier
 ) {
-    val isOnAddSlot = currentPage >= photoCount
+    val maxPhotoCount = 3
+    val activeIndex = currentPage.coerceIn(0, maxPhotoCount - 1)
 
     Box(
         modifier = modifier
@@ -322,24 +320,16 @@ private fun PhotoPageIndicator(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 왼쪽 점: 사진 페이지에 있을 때 채움
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .background(
-                        color = if (!isOnAddSlot) Color(0xFF1A1A1A) else Color(0xFFB3B3B3),
-                        shape = CircleShape
-                    )
-            )
-            // 오른쪽 점: + 추가 슬롯에 있을 때 채움
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .background(
-                        color = if (isOnAddSlot) Color(0xFF1A1A1A) else Color(0xFFB3B3B3),
-                        shape = CircleShape
-                    )
-            )
+            repeat(maxPhotoCount) { index ->
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(
+                            color = if (index == activeIndex) Color(0xFF1A1A1A) else Color(0xFFB3B3B3),
+                            shape = CircleShape
+                        )
+                )
+            }
         }
     }
 }

@@ -43,8 +43,8 @@ class EntryRegisterActivity : AppCompatActivity() {
     private val selectedImageUris = mutableStateListOf<Uri>()
     private var isDiaryExpanded = false
 
-    // 💡 Happy 이모지의 값(2)을 기본값으로 선언합니다.
-    private var selectedMoodIndex = 2
+    // 💡 Calm 이모지의 값(1)을 기본값으로 선언합니다.
+    private var selectedMoodIndex = 1
 
     private val uploadedMediaIds = mutableListOf<Int>()
 
@@ -449,8 +449,8 @@ class EntryRegisterActivity : AppCompatActivity() {
             }
         }
 
-        selectedMoodIndex = 2
-        updateMoodUI(moodViews, 1)
+        selectedMoodIndex = 1
+        updateMoodUI(moodViews, 0)
     }
 
     private fun updateMoodUI(views: List<ImageView>, selectedIndex: Int) {

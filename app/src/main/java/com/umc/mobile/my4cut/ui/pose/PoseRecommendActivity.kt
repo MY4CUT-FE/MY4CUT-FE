@@ -212,9 +212,9 @@ class PoseRecommendActivity : AppCompatActivity() {
                                 pose.isFavorite = BookmarkManager.isBookmarked(this@PoseRecommendActivity, pose.poseId)
                             }
 
-                            // ✅ 즐겨찾기순 필터링 (클라이언트에서 처리)
+                            // ✅ 즐겨찾기순 정렬 (클라이언트에서 처리) - 즐겨찾기한 포즈를 우선순위로, 나머지도 함께 표시
                             val filteredList = if (sort == "bookmark") {
-                                allPoseList.filter { it.isFavorite }
+                                allPoseList.sortedByDescending { it.isFavorite }
                             } else {
                                 allPoseList
                             }

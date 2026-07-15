@@ -32,6 +32,7 @@ import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 import com.umc.mobile.my4cut.ui.pose.PoseRecommendActivity
 import com.umc.mobile.my4cut.ui.myalbum.CalendarPickerActivity
+import com.umc.mobile.my4cut.ui.myalbum.EntryDetailFragment
 import com.umc.mobile.my4cut.ui.record.EntryRegisterActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +40,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -120,13 +122,8 @@ class HomeFragment : Fragment() {
 
     private fun setupDateBanner() {
         val today = LocalDate.now()
-        val formatter = DateTimeFormatter.ofPattern("yyyy MMMM d", Locale.ENGLISH)
-        binding.tvDateBanner.text = "${today.format(formatter)}${getDayNumberSuffix(today.dayOfMonth)}"
-    }
-
-    private fun getDayNumberSuffix(day: Int): String {
-        if (day in 11..13) return "th"
-        return when (day % 10) { 1 -> "st" 2 -> "nd" 3 -> "rd" else -> "th" }
+        val formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
+        binding.tvDateBanner.text = today.format(formatter)
     }
 
     private fun setupWelcomeText() {
@@ -243,8 +240,10 @@ class HomeFragment : Fragment() {
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     Log.e("HomeFragment", "❌ Network error", e)
-                    Toast.makeText(requireContext(), "네트워크 오류", Toast.LENGTH_SHORT).show()
-                    showEmptyState()
+                    if (isAdded) {
+                        Toast.makeText(requireContext(), "네트워크 오류", Toast.LENGTH_SHORT).show()
+                        showEmptyState()
+                    }
                 }
             }
         }
@@ -267,9 +266,23 @@ class HomeFragment : Fragment() {
             binding.ivHomePhoto.setImageResource(R.drawable.img_ex_photo)
         }
 
-        val content = day4cut.content.trim()
+        // 기록된 날짜의 사진 클릭 → 네컷 상세보기로 이동
+        binding.ivHomePhoto.setOnClickListener {
+            val entryDetailFragment = EntryDetailFragment().apply {
+                arguments = Bundle().apply {
+                    putString("API_DATE", selectedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                    putString("SELECTED_DATE", selectedDate.format(DateTimeFormatter.ofPattern("yyyy.MM.dd")))
+                }
+            }
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.fcv_main, entryDetailFragment)
+                .addToBackStack(null)
+                .commit()
+        }
+
+        val content = day4cut.content?.trim() ?: ""
         val hasContent = content.isNotBlank()
-        val hasEmoji = day4cut.emojiType.isNotBlank()
+        val hasEmoji = !day4cut.emojiType.isNullOrBlank()
 
         if (hasContent || hasEmoji) {
             binding.clDiaryEmojiSection.visibility = View.VISIBLE
@@ -301,7 +314,7 @@ class HomeFragment : Fragment() {
                 }
             } else {
                 binding.ivMoodIcon.setImageDrawable(null)
-                binding.ivMoodIcon.setBackgroundResource(R.drawable.bg_circle_gray)
+                binding.ivMoodIcon.setBackgroundResource(R.drawable.bg_circle_emoji)
             }
         } else {
             binding.clDiaryEmojiSection.visibility = View.GONE
@@ -405,8 +418,11 @@ class HomeFragment : Fragment() {
         }
 
         binding.ivCalendarNext.setOnClickListener {
-            selectedDate = selectedDate.plusWeeks(1)
-            refreshCalendarData()
+            val nextDate = selectedDate.plusWeeks(1)
+            if (!YearMonth.from(nextDate).isAfter(YearMonth.from(LocalDate.now()))) {
+                selectedDate = nextDate
+                refreshCalendarData()
+            }
         }
 
         binding.clPoseRecommend.setOnClickListener {
@@ -437,10 +453,14 @@ class HomeFragment : Fragment() {
         binding.llWeekCalendar.setOnSwipeListener { isRightSwipe ->
             if (isRightSwipe) {
                 selectedDate = selectedDate.minusWeeks(1)
+                refreshCalendarData()
             } else {
-                selectedDate = selectedDate.plusWeeks(1)
+                val nextDate = selectedDate.plusWeeks(1)
+                if (!YearMonth.from(nextDate).isAfter(YearMonth.from(LocalDate.now()))) {
+                    selectedDate = nextDate
+                    refreshCalendarData()
+                }
             }
-            refreshCalendarData()
         }
     }
 
