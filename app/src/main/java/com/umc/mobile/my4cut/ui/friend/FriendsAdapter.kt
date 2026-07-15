@@ -1,5 +1,8 @@
 import android.graphics.Color
+import android.graphics.Rect
+import android.util.TypedValue
 import android.view.LayoutInflater
+import android.view.TouchDelegate
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -152,6 +155,25 @@ class FriendsAdapter(
 
             binding.ivStar.setOnClickListener {
                 onFavoriteClick(friend)
+            }
+
+            binding.ivStar.post {
+                val parent = binding.ivStar.parent as View
+
+                val rect = Rect()
+                binding.ivStar.getHitRect(rect)
+
+                val extra = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP,
+                    20f,
+                    binding.ivStar.resources.displayMetrics
+                ).toInt()
+                rect.left -= extra
+                rect.top -= extra
+                rect.right += extra
+                rect.bottom += extra
+
+                parent.touchDelegate = TouchDelegate(rect, binding.ivStar)
             }
 
             // 선택 상태 배경 처리 (테두리 보존)
