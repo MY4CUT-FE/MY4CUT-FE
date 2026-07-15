@@ -52,7 +52,7 @@ class MySpaceAdapter(
                 profileImageUrls = space.memberProfileImageUrls
             )
 
-            binding.root.setOnClickListener {
+            binding.ivArrow.setOnClickListener {
                 onClick(space)
             }
         }
