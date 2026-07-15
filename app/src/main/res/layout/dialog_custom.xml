@@ -32,15 +32,15 @@
         android:id="@+id/tv_subtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:text="다시 이용하려면 로그인이 필요해요."
+        android:layout_marginTop="12dp"
         android:fontFamily="@font/suit_medium"
+        android:gravity="center"
+        android:text="다시 이용하려면 로그인이 필요해요."
         android:textColor="#9E9E9E"
         android:textSize="12sp"
-        android:gravity="center"
-        app:layout_constraintTop_toBottomOf="@id/tv_title"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintTop_toBottomOf="@id/tv_title" />
 
     <LinearLayout
         android:layout_width="0dp"

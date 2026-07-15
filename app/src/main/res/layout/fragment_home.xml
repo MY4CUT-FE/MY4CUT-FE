@@ -11,12 +11,12 @@
         android:id="@+id/tv_logo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="MY4CUT"
-        android:fontFamily="@font/hakgyoansim_ttwimteul"
-        android:textSize="20sp"
-        android:textColor="#FF7E67"
         android:layout_marginStart="20dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="24dp"
+        android:fontFamily="@font/hakgyoansim_ttwimteul"
+        android:text="MY4CUT"
+        android:textColor="#FF7E67"
+        android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
