@@ -1,7 +1,7 @@
 package com.umc.mobile.my4cut.ui.space
 
-import FriendUiItem
-import FriendsAdapter
+import com.umc.mobile.my4cut.ui.friend.FriendUiItem
+import com.umc.mobile.my4cut.ui.friend.FriendsAdapter
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceCreateRequestDto
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
-import com.umc.mobile.my4cut.data.auth.local.TokenManager
+import com.umc.mobile.my4cut.ui.friend.FriendsMode
 import com.umc.mobile.my4cut.ui.space.model.CreateSpaceResult
 
 class CreateSpaceDialogFragment : DialogFragment() {

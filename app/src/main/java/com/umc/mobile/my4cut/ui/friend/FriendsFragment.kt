@@ -13,9 +13,6 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.FileOutputStream
 
-import FriendUiItem
-import FriendsAdapter
-import FriendsMode
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
@@ -62,10 +59,9 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
         setupAddFriendResultListener()
     }
 
-    // 최초 친구 데이터 초기화(API 연동)
     private fun initFriends() {
-        // 더미 데이터 사용 중단
-        allFriends.clear()
+        // 스켈레톤 적용
+        friendsAdapter.showSkeleton()
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -107,6 +103,10 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
             add(FriendUiItem.Header("친구 목록"))
             normalFriends.forEach { add(FriendUiItem.Item(it)) }
         }
+
+        // 스켈레톤 취소
+        friendsAdapter.hideSkeleton()
+
         friendsAdapter.submitList(uiItems)
     }
 

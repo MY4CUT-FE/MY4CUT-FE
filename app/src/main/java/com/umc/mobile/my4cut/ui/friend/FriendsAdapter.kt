@@ -1,3 +1,5 @@
+package com.umc.mobile.my4cut.ui.friend
+
 import android.graphics.Color
 import android.graphics.Rect
 import android.util.TypedValue
@@ -5,12 +7,14 @@ import android.view.LayoutInflater
 import android.view.TouchDelegate
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
-import com.umc.mobile.my4cut.ui.friend.Friend
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.ItemFriendBinding
 import com.umc.mobile.my4cut.databinding.ItemFriendHeaderBinding
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 
 class FriendsAdapter(
     private val getMode: () -> FriendsMode,
@@ -27,9 +31,25 @@ class FriendsAdapter(
 
     private val items = mutableListOf<FriendUiItem>()
 
+    private var isLoading = false
+
+    fun showSkeleton() {
+        isLoading = true
+        notifyDataSetChanged()
+    }
+
+    fun hideSkeleton() {
+        isLoading = false
+        notifyDataSetChanged()
+    }
+
     companion object {
         private const val TYPE_HEADER = 0
         private const val TYPE_FRIEND = 1
+        private const val TYPE_SKELETON = 2
+
+        private const val HEADER_COUNT = 1
+        private const val SKELETON_ITEM_COUNT = 6
     }
 
     fun submitList(list: List<FriendUiItem>) {
@@ -39,13 +59,21 @@ class FriendsAdapter(
     }
 
     override fun getItemViewType(position: Int): Int {
+
+        if (isLoading) {
+            return if (position == 0) TYPE_HEADER else TYPE_SKELETON
+        }
+
         return when (items[position]) {
             is FriendUiItem.Header -> TYPE_HEADER
             is FriendUiItem.Item -> TYPE_FRIEND
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int
+    ): RecyclerView.ViewHolder {
         return when (viewType) {
             TYPE_HEADER -> {
                 val binding = ItemFriendHeaderBinding.inflate(
@@ -55,7 +83,8 @@ class FriendsAdapter(
                 )
                 HeaderViewHolder(binding, hideFavoriteDivider)
             }
-            else -> {
+
+            TYPE_FRIEND -> {
                 val binding = ItemFriendBinding.inflate(
                     LayoutInflater.from(parent.context),
                     parent,
@@ -63,12 +92,33 @@ class FriendsAdapter(
                 )
                 FriendViewHolder(binding)
             }
+
+            TYPE_SKELETON -> {
+                val binding = ItemFriendBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                )
+                SkeletonViewHolder(binding)
+            }
+
+            else -> {
+                throw IllegalArgumentException(
+                    "Unknown viewType: $viewType"
+                )
+            }
         }
     }
 
-    override fun getItemCount(): Int = items.size
+    override fun getItemCount(): Int =
+        if (isLoading) HEADER_COUNT + SKELETON_ITEM_COUNT
+        else items.size
 
     override fun getItemId(position: Int): Long {
+        if (isLoading) {
+            return Long.MIN_VALUE + position
+        }
+
         return when (val item = items[position]) {
             is FriendUiItem.Item -> item.friend.friendId
             is FriendUiItem.Header -> item.title.hashCode().toLong()
@@ -76,6 +126,17 @@ class FriendsAdapter(
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (isLoading) {
+
+            if (holder is HeaderViewHolder) {
+                holder.bind(FriendUiItem.Header("친구 목록"))
+            } else {
+                (holder as SkeletonViewHolder).bind(position - 1)
+            }
+
+            return
+        }
+
         when (val item = items[position]) {
             is FriendUiItem.Header -> {
                 (holder as HeaderViewHolder).bind(item)
@@ -138,7 +199,7 @@ class FriendsAdapter(
                         .override(120, 120)
                         .circleCrop()
                         .thumbnail(0.25f)
-                        .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
                         .into(binding.ivProfile)
                 }
             } else {
@@ -212,6 +273,8 @@ class FriendsAdapter(
         }
     }
 
+
+
     fun findFirstPositionByInitial(char: String): Int {
         // 즐겨찾기 섹션 처리
         if (char == "★") {
@@ -232,6 +295,28 @@ class FriendsAdapter(
                 }
                 else -> false
             }
+        }
+    }
+
+    class SkeletonViewHolder(
+        private val binding: ItemFriendBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(position: Int) {
+            binding.ivCheck.visibility = View.GONE
+
+            // 기존 레이아웃 그대로 유지
+            binding.ivStar.visibility = View.VISIBLE
+            binding.ivProfile.visibility = View.VISIBLE
+
+            // 닉네임 부분만 스켈레톤 처리
+            binding.tvNickname.text = ""
+            binding.tvNickname.background = ContextCompat.getDrawable(
+                binding.root.context,
+                R.drawable.ic_friend_skeleton_name
+            )
+
+            binding.layoutContent.setOnClickListener(null)
         }
     }
 

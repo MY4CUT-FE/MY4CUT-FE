@@ -1,7 +1,7 @@
 package com.umc.mobile.my4cut.ui.space
 
-import FriendUiItem
-import FriendsAdapter
+import com.umc.mobile.my4cut.ui.friend.FriendUiItem
+import com.umc.mobile.my4cut.ui.friend.FriendsAdapter
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
@@ -24,6 +24,7 @@ import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceUpdateRequestDto
 import com.umc.mobile.my4cut.databinding.DialogChangeSpaceBinding
+import com.umc.mobile.my4cut.ui.friend.FriendsMode
 
 class EditSpaceDialogFragment : DialogFragment() {
 
