@@ -60,7 +60,10 @@ class MySpaceFragment : Fragment() {
 
     override fun onStart() {
         super.onStart()
+
+        mySpaceAdapter.showSkeleton()
         loadSpacesFromApi()
+
         refreshHandler.postDelayed(refreshRunnable, 30_000)
     }
 
@@ -138,18 +141,27 @@ class MySpaceFragment : Fragment() {
     }
 
     private fun loadSpacesFromApi() {
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val response = RetrofitClient.workspaceService.getMyWorkspaces()
+                val response =
+                    RetrofitClient.workspaceService.getMyWorkspaces()
 
-                if (response.data == null) {
-                    android.util.Log.e("SPACE_API", "response.data is null")
+                val data = response.data
+
+                if (data == null) {
+                    mySpaceAdapter.hideSkeleton()
+
+                    android.util.Log.e(
+                        "SPACE_API",
+                        "response.data is null"
+                    )
                     return@launch
                 }
 
                 spaces.clear()
+
                 spaces.addAll(
-                    response.data.map {
+                    data.map {
                         Space(
                             id = it.id,
                             name = it.name,
@@ -157,19 +169,35 @@ class MySpaceFragment : Fragment() {
                             maxMember = 10,
                             createdAt = parseIsoToMillis(it.createdAt),
                             expiredAt = parseIsoToMillis(it.expiresAt),
-                            memberProfileImageUrls = it.memberProfiles.orEmpty(),
-                            recentActivityType = it.recentActivityType,
-                            recentActivityUserNickname = it.recentActivityUserNickname,
-                            recentActivityAt = it.recentActivityAt
+                            memberProfileImageUrls =
+                                it.memberProfiles.orEmpty(),
+                            recentActivityType =
+                                it.recentActivityType,
+                            recentActivityUserNickname =
+                                it.recentActivityUserNickname,
+                            recentActivityAt =
+                                it.recentActivityAt
                         )
                     }
                 )
 
                 currentPage = 0
-                mySpaceAdapter.submitList(spaces.take(MAX_SPACE_COUNT))
+
+                mySpaceAdapter.submitList(
+                    spaces.take(MAX_SPACE_COUNT)
+                )
+
+                binding.rvMySpaces.scrollToPosition(0)
                 updateIndicator()
+
             } catch (e: Exception) {
-                android.util.Log.e("SPACE_API", "API 호출 실패", e)
+                mySpaceAdapter.hideSkeleton()
+
+                android.util.Log.e(
+                    "SPACE_API",
+                    "API 호출 실패",
+                    e
+                )
             }
         }
     }
