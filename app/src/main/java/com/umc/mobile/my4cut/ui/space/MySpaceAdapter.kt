@@ -5,6 +5,7 @@ import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.umc.mobile.my4cut.R
@@ -15,7 +16,6 @@ import java.util.Date
 import java.util.Locale
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
@@ -25,7 +25,24 @@ class MySpaceAdapter(
 
     private val items = mutableListOf<Space>()
 
+    private var isLoading = false
+
+    companion object {
+        private const val SKELETON_COUNT = 3
+    }
+
+    fun showSkeleton() {
+        isLoading = true
+        notifyDataSetChanged()
+    }
+
+    fun hideSkeleton() {
+        isLoading = false
+        notifyDataSetChanged()
+    }
+
     fun submitList(list: List<Space>) {
+        isLoading = false
         items.clear()
         items.addAll(list)
         notifyDataSetChanged()
@@ -35,7 +52,43 @@ class MySpaceAdapter(
         private val binding: ItemMySpaceBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
+        fun bindSkeleton() {
+            binding.cardMySpaceItem.foreground = ContextCompat.getDrawable(
+                binding.root.context,
+                R.drawable.bg_space_skeleton
+            )
+
+            binding.tvSpaceName.visibility = View.INVISIBLE
+            binding.ivMemberCountIcon.visibility = View.INVISIBLE
+            binding.tvMemberCount.visibility = View.INVISIBLE
+            binding.tvExpireBadge.visibility = View.INVISIBLE
+            binding.ivRecentActivityIcon.visibility = View.INVISIBLE
+            binding.tvRecentActivity.visibility = View.INVISIBLE
+            binding.layoutMemberProfiles.visibility = View.INVISIBLE
+            binding.ivArrow.visibility = View.INVISIBLE
+
+            binding.ivArrow.setOnClickListener(null)
+            binding.root.isClickable = false
+        }
+
+        private fun restoreSkeletonView() {
+            binding.cardMySpaceItem.foreground = null
+
+            binding.tvSpaceName.visibility = View.VISIBLE
+            binding.ivMemberCountIcon.visibility = View.VISIBLE
+            binding.tvMemberCount.visibility = View.VISIBLE
+            binding.tvExpireBadge.visibility = View.VISIBLE
+            binding.ivRecentActivityIcon.visibility = View.VISIBLE
+            binding.tvRecentActivity.visibility = View.VISIBLE
+            binding.layoutMemberProfiles.visibility = View.VISIBLE
+            binding.ivArrow.visibility = View.VISIBLE
+
+            binding.root.isClickable = true
+        }
+
         fun bind(space: Space) {
+            restoreSkeletonView()
+
             val position = bindingAdapterPosition.takeIf { it != RecyclerView.NO_POSITION } ?: 0
             val cardColor = cardColorByPosition(position)
 
@@ -209,10 +262,15 @@ class MySpaceAdapter(
         holder: ViewHolder,
         position: Int
     ) {
-        holder.bind(items[position])
+        if (isLoading) {
+            holder.bindSkeleton()
+        } else {
+            holder.bind(items[position])
+        }
     }
 
-    override fun getItemCount(): Int = items.size
+    override fun getItemCount(): Int =
+        if (isLoading) SKELETON_COUNT else items.size
 
     private fun cardColorByPosition(position: Int): Int {
         return when (position % 2) {
