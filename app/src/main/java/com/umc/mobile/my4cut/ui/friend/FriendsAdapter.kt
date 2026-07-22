@@ -176,6 +176,14 @@ class FriendsAdapter(
             val selected = isSelected(friend.friendId)
 
             // 닉네임
+            binding.tvNickname.layoutParams =
+                binding.tvNickname.layoutParams.apply {
+                    width = ViewGroup.LayoutParams.WRAP_CONTENT
+                    height = ViewGroup.LayoutParams.WRAP_CONTENT
+                }
+
+            binding.tvNickname.background = null
+            binding.tvNickname.visibility = View.VISIBLE
             binding.tvNickname.text = friend.nickname
 
             // 프로필 이미지 (토큰 포함 로드)
@@ -311,10 +319,28 @@ class FriendsAdapter(
 
             // 닉네임 부분만 스켈레톤 처리
             binding.tvNickname.text = ""
+
+            binding.tvNickname.layoutParams =
+                binding.tvNickname.layoutParams.apply {
+                    width = TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP,
+                        80f,
+                        binding.root.resources.displayMetrics
+                    ).toInt()
+
+                    height = TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP,
+                        14f,
+                        binding.root.resources.displayMetrics
+                    ).toInt()
+                }
+
             binding.tvNickname.background = ContextCompat.getDrawable(
                 binding.root.context,
-                R.drawable.ic_friend_skeleton_name
-            )
+                R.drawable.bg_skeleton_text
+            )?.mutate()?.apply {
+                setTint(Color.parseColor("#D2D3D3"))
+            }
 
             binding.layoutContent.setOnClickListener(null)
         }
