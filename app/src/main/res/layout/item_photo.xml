@@ -15,13 +15,14 @@
         <ImageView
             android:id="@+id/ivPhoto"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:adjustViewBounds="true"
-            android:scaleType="fitCenter"
-            android:src="@drawable/image1"
-            app:layout_constraintTop_toTopOf="parent"
+            android:layout_height="253dp"
+            android:background="@drawable/bg_skeleton_img"
+            android:contentDescription="@null"
+            android:scaleType="center"
+            android:src="@drawable/ic_skeleton_img"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent" />
 
         <LinearLayout
             android:id="@+id/layoutFinal"
@@ -86,6 +87,7 @@
             app:layout_constraintTop_toBottomOf="@id/tvDateTime">
 
             <ImageView
+                android:id="@+id/ivComment"
                 android:layout_width="9dp"
                 android:layout_height="7dp"
                 android:src="@drawable/ic_comment"

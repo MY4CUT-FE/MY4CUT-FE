@@ -132,6 +132,8 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         binding.rvPhotoList.layoutManager = GridLayoutManager(requireContext(), 2)
 
         loadSpaceFromApi()
+
+        photoAdapter.showSkeleton()
         loadPhotosFromApi()
 
         photoAdapter.onItemClickListener = { photo ->
@@ -187,14 +189,29 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                         call: Call<BaseResponse<UserMeResponse>>,
                         response: Response<BaseResponse<UserMeResponse>>
                     ) {
-                        val body = response.body()
-                        myUserId = body?.data?.userId?.toLong() ?: -1L
-                        myNickname = body?.data?.nickname ?: ""
-                        myProfileImageUrl = body?.data?.profileImageViewUrl
-                        isOwner = (data.ownerId?.toLong() == myUserId)
+                        if (!response.isSuccessful) {
+                            Log.e(
+                                "SpaceFragment",
+                                "내 정보 조회 응답 실패 code=${response.code()}"
+                            )
+                            return
+                        }
 
-                        Log.d("SpaceFragment", "isOwner=$isOwner ownerId=${data.ownerId} myUserId=$myUserId")
-                        binding.btnChange.visibility = if (isOwner) View.VISIBLE else View.GONE
+                        val userData = response.body()?.data
+
+                        myUserId = userData?.userId?.toLong() ?: -1L
+                        myNickname = userData?.nickname.orEmpty()
+                        myProfileImageUrl = userData?.profileImageViewUrl
+                        isOwner = data.ownerId?.toLong() == myUserId
+
+                        Log.d(
+                            "SpaceFragment",
+                            "isOwner=$isOwner ownerId=${data.ownerId} myUserId=$myUserId"
+                        )
+
+                        binding.btnChange.visibility =
+                            if (isOwner) View.VISIBLE else View.GONE
+
                         updateMemberUi(data.memberProfiles)
                         updatePhotoUploaderProfiles()
                     }
@@ -375,7 +392,13 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     call: Call<BaseResponse<List<com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoResponseDto>>>,
                     t: Throwable
                 ) {
-                    Log.e("SpaceFragment", "사진 목록 API 실패", t)
+                    photoAdapter.hideSkeleton()
+
+                    Log.e(
+                        "SpaceFragment",
+                        "사진 목록 API 실패",
+                        t
+                    )
                 }
             })
     }

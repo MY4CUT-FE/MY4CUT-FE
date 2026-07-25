@@ -239,8 +239,8 @@ class PhotoDialogFragment : DialogFragment() {
         if (!photoUrl.isNullOrEmpty()) {
             Glide.with(this)
                 .load(photoUrl)
-                .placeholder(R.drawable.image1)
-                .error(R.drawable.image1)
+                .placeholder(R.drawable.bg_skeleton_img)
+                .error(R.drawable.bg_skeleton_img)
                 .into(ivMainPhoto)
         }
 
