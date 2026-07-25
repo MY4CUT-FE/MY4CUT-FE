@@ -2,12 +2,10 @@ package com.umc.mobile.my4cut.ui.photo
 
 import android.app.DownloadManager
 import android.content.Context
-import android.graphics.Color
 import android.net.Uri
 import android.os.Environment
 import android.webkit.URLUtil
 import android.widget.Toast
-
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
@@ -15,19 +13,26 @@ import android.widget.TextView
 import android.widget.EditText
 import android.widget.Button
 import android.util.Log
+import android.util.TypedValue
+import android.graphics.drawable.Drawable
+
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.appcompat.app.AlertDialog
-import com.umc.mobile.my4cut.R
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import androidx.core.graphics.toColorInt
+
+import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.data.photo.model.CommentCreateRequest
 import com.umc.mobile.my4cut.data.photo.model.CommentDto
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
+
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -35,7 +40,9 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import androidx.core.graphics.toColorInt
+
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class PhotoDialogFragment : DialogFragment() {
 
@@ -54,7 +61,6 @@ class PhotoDialogFragment : DialogFragment() {
     private lateinit var ivToggleComment: ImageView
     private lateinit var ivToggleCommentTouchArea: View
     private lateinit var tvConfirm: TextView
-
     private lateinit var etComment: EditText
 
     // 전달받을 값
@@ -216,14 +222,98 @@ class PhotoDialogFragment : DialogFragment() {
         ivSend.visibility = View.VISIBLE
     }
 
+    private fun showSkeleton() {
+        tvUserName.text = ""
+        tvUserName.layoutParams = tvUserName.layoutParams.apply {
+            width = dpToPx(70)
+            height = dpToPx(12)
+        }
+        tvUserName.setBackgroundResource(
+            R.drawable.bg_skeleton_text_light
+        )
+
+        tvDate.text = ""
+        tvDate.layoutParams = tvDate.layoutParams.apply {
+            width = dpToPx(110)
+            height = dpToPx(10)
+        }
+        tvDate.setBackgroundResource(
+            R.drawable.bg_skeleton_text_light
+        )
+
+        tvChat.text = ""
+        tvChat.layoutParams = tvChat.layoutParams.apply {
+            width = dpToPx(64)
+            height = dpToPx(12)
+        }
+        tvChat.setBackgroundResource(
+            R.drawable.bg_skeleton_text_light
+        )
+
+        ivProfile.setImageResource(R.drawable.ic_profile_cat)
+
+        ivMainPhoto.setBackgroundResource(
+            R.drawable.bg_skeleton_img
+        )
+        ivMainPhoto.setImageResource(
+            R.drawable.ic_skeleton_img
+        )
+        ivMainPhoto.scaleType = ImageView.ScaleType.CENTER
+    }
+
+    private fun showCommentSkeleton() {
+        tvChat.text = ""
+
+        tvChat.layoutParams = tvChat.layoutParams.apply {
+            width = dpToPx(64)
+            height = dpToPx(12)
+        }
+
+        tvChat.setBackgroundResource(
+            R.drawable.bg_skeleton_text_light
+        )
+    }
+
+    private fun showCommentResult(commentCount: Int) {
+        tvChat.background = null
+
+        tvChat.layoutParams = tvChat.layoutParams.apply {
+            width = ViewGroup.LayoutParams.WRAP_CONTENT
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+
+        tvChat.text = "댓글  $commentCount"
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            dp.toFloat(),
+            resources.displayMetrics
+        ).toInt()
+    }
+
     private fun bindUploaderInfo() {
-        // 닉네임 표시
-        tvUserName.text = uploaderNickname ?: ""
+        // 닉네임과 날짜는 즉시 실제 데이터 표시
+        tvUserName.background = null
+        tvDate.background = null
 
-        // 시간 포맷
-        tvDate.text = createdAt?.let { formatAbsoluteDateTime(it) } ?: ""
+        tvUserName.layoutParams = tvUserName.layoutParams.apply {
+            width = ViewGroup.LayoutParams.WRAP_CONTENT
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
+        }
 
-        // 프로필 이미지 표시 (없으면 기본 이미지)
+        tvDate.layoutParams = tvDate.layoutParams.apply {
+            width = ViewGroup.LayoutParams.WRAP_CONTENT
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+
+        tvUserName.text = uploaderNickname.orEmpty()
+        tvDate.text = createdAt
+            ?.let { formatAbsoluteDateTime(it) }
+            .orEmpty()
+
+        // 프로필도 기존 방식 유지
         if (!uploaderProfileUrl.isNullOrEmpty()) {
             Glide.with(this)
                 .load(uploaderProfileUrl)
@@ -235,17 +325,64 @@ class PhotoDialogFragment : DialogFragment() {
             ivProfile.setImageResource(R.drawable.ic_profile_cat)
         }
 
-        // 메인 사진 표시
+        // 메인 사진만 로딩 스켈레톤 적용
+        ivMainPhoto.setBackgroundResource(
+            R.drawable.bg_skeleton_img
+        )
+        ivMainPhoto.setImageResource(
+            R.drawable.ic_skeleton_img
+        )
+        ivMainPhoto.scaleType = ImageView.ScaleType.CENTER
+
         if (!photoUrl.isNullOrEmpty()) {
             Glide.with(this)
                 .load(photoUrl)
-                .placeholder(R.drawable.bg_skeleton_img)
-                .error(R.drawable.bg_skeleton_img)
+                .placeholder(R.drawable.ic_skeleton_img)
+                .error(R.drawable.ic_skeleton_img)
+                .listener(object : RequestListener<Drawable> {
+
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        ivMainPhoto.setBackgroundResource(
+                            R.drawable.bg_skeleton_img
+                        )
+                        ivMainPhoto.scaleType =
+                            ImageView.ScaleType.CENTER
+
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: Drawable,
+                        model: Any,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        ivMainPhoto.background = null
+                        ivMainPhoto.scaleType =
+                            ImageView.ScaleType.CENTER_CROP
+
+                        return false
+                    }
+                })
                 .into(ivMainPhoto)
         }
 
-        // 디버그 로그
-        Log.d("PhotoDialog", "bindUploaderInfo -> uploaderId=$uploaderId myUserId=$myUserId uploaderNickname=$uploaderNickname profileUrl=$uploaderProfileUrl createdAt=$createdAt photoUrl=$photoUrl")
+        Log.d(
+            "PhotoDialog",
+            "bindUploaderInfo -> uploaderId=$uploaderId " +
+                    "myUserId=$myUserId " +
+                    "uploaderNickname=$uploaderNickname " +
+                    "profileUrl=$uploaderProfileUrl " +
+                    "createdAt=$createdAt " +
+                    "photoUrl=$photoUrl"
+        )
+
         updateDeleteButtonVisibility()
     }
 
@@ -497,29 +634,37 @@ class PhotoDialogFragment : DialogFragment() {
     }
 
     private fun loadComments() {
+        showCommentSkeleton()
+
         if (workspaceId == -1L || photoId == -1L) {
-            Log.e("PhotoDialog", "workspaceId 또는 photoId가 없음")
+            showCommentResult(0)
+
+            Log.e(
+                "PhotoDialog",
+                "workspaceId 또는 photoId가 없음"
+            )
             return
         }
 
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.workspacePhotoService
-                    .getComments(workspaceId, photoId)
+                val response =
+                    RetrofitClient.workspacePhotoService
+                        .getComments(workspaceId, photoId)
 
-                Log.d("PhotoDialog", "댓글 API 응답 code=${response.code}, message=${response.message}")
-                Log.d("PhotoDialog", "댓글 raw data=${response.data}")
+                Log.d(
+                    "PhotoDialog",
+                    "댓글 API 응답 code=${response.code}, " +
+                            "message=${response.message}"
+                )
 
-                val list: List<CommentDto> = response.data ?: emptyList()
+                val list: List<CommentDto> =
+                    response.data ?: emptyList()
 
-                // CommentData로 변환
                 val mapped = list.map { dto ->
-                    // 작성자 여부 판단 (서버 dto에 userId 필드가 있다고 가정)
-                    val isMine = myUserId != null && dto.userId?.toLong() == myUserId
-                    Log.d(
-                        "PhotoDialog",
-                        "댓글 매핑 -> commentId=${dto.id}, userId=${dto.userId}, myUserId=$myUserId, isMine=$isMine"
-                    )
+                    val isMine =
+                        myUserId != null &&
+                                dto.userId?.toLong() == myUserId
 
                     CommentData(
                         commentId = dto.id,
@@ -532,11 +677,19 @@ class PhotoDialogFragment : DialogFragment() {
                 }
 
                 updateComments(mapped)
-                Log.d("PhotoDialog", "댓글 로드 성공: ${mapped.size}")
-                Log.d("PhotoDialog", "현재 로그인 사용자 myUserId=$myUserId, 댓글 개수=${mapped.size}")
 
+                Log.d(
+                    "PhotoDialog",
+                    "댓글 로드 성공: ${mapped.size}"
+                )
             } catch (e: Exception) {
-                Log.e("PhotoDialog", "댓글 목록 조회 실패", e)
+                showCommentResult(0)
+
+                Log.e(
+                    "PhotoDialog",
+                    "댓글 목록 조회 실패",
+                    e
+                )
             }
         }
     }
@@ -544,7 +697,7 @@ class PhotoDialogFragment : DialogFragment() {
     /** 댓글 목록 갱신 */
     fun updateComments(list: List<CommentData>) {
         commentAdapter.updateData(list)
-        tvChat.text = "댓글  ${list.size}"
+        showCommentResult(list.size)
 
         // 마지막 댓글로 자동 스크롤
         if (list.isNotEmpty()) {
