@@ -69,6 +69,7 @@
         tools:listitem="@drawable/ic_profile_cat" />
 
     <TextView
+        android:id="@+id/tvExpire"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_label_pink"

@@ -101,6 +101,9 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentSpaceBinding.bind(view)
         binding.btnChange.visibility = View.GONE
+        binding.tvExpire.background = null
+        binding.tvExpire.text = ""
+        binding.tvExpire.setBackgroundResource(R.drawable.bg_skeleton_text)
 
         val membersRecyclerView = view.findViewById<RecyclerView>(R.id.rvMembers)
         memberAdapter = MemberAdapter(memberItems)
