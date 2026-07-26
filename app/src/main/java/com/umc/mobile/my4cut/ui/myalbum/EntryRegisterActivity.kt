@@ -48,10 +48,21 @@ class EntryRegisterActivity : AppCompatActivity() {
     private var selectedMoodIndex = 1  // 기본값: CALM (첫 번째 이모지)
 
     private val pickMultipleMedia = registerForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(50)
+        ActivityResultContracts.PickMultipleVisualMedia(3)
     ) { uris ->
         if (uris.isNotEmpty()) {
-            selectedImageUris.addAll(uris)
+            if (selectedImageUris.size >= 3) {
+                // 이미 3장을 다 채운 상태에서 "+" 카드로 다시 선택 → 전체 교체
+                selectedImageUris.clear()
+                selectedImageUris.addAll(uris.take(3))
+            } else {
+                val remaining = 3 - selectedImageUris.size
+                val toAdd = uris.take(remaining)
+                selectedImageUris.addAll(toAdd)
+                if (uris.size > remaining) {
+                    Toast.makeText(this, "사진은 최대 3장까지 추가할 수 있어요.", Toast.LENGTH_SHORT).show()
+                }
+            }
             updateButtonState()
         }
     }
@@ -111,6 +122,7 @@ class EntryRegisterActivity : AppCompatActivity() {
     }
 
     private fun launchPhotoPicker() {
+        // 3장이 다 찬 상태에서도 "+" 카드로 다시 선택해 전체 교체할 수 있도록 허용
         pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
     }
 
