@@ -229,14 +229,14 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
     private fun updateHeaderUi() {
         when (friendsMode) {
             FriendsMode.NORMAL -> {
-                // 기본: 추가/편집 보이기
                 binding.tvFriendsAdd.visibility = View.VISIBLE
                 binding.tvFriendsEdit.visibility = View.VISIBLE
                 binding.tvFriendsEdit.text = "편집"
                 binding.tvFriendsSelectClear.visibility = View.GONE
                 binding.tvFriendsDelete.visibility = View.GONE
+
                 binding.tvFriendsEdit.setTextColor(
-                    ContextCompat.getColor(requireContext(), R.color.black)
+                    Color.parseColor("#1A1A1A")
                 )
             }
 
@@ -270,14 +270,14 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
     }
 
     private fun updateEditHeaderState() {
-        val disabledColor = ContextCompat.getColor(requireContext(), R.color.text_disabled)
+        val editColor = Color.parseColor("#B2B2B2")
 
         // 완료 버튼 항상 비활성 색
-        binding.tvFriendsEdit.setTextColor(disabledColor)
+        binding.tvFriendsEdit.setTextColor(editColor)
 
         // 나머지 편집 액션들은 항상 비활성 색
-        binding.tvFriendsSelectClear?.setTextColor(disabledColor)
-        binding.tvFriendsDelete?.setTextColor(disabledColor)
+        binding.tvFriendsSelectClear?.setTextColor(editColor)
+        binding.tvFriendsDelete?.setTextColor(editColor)
     }
 
     private fun onFavoriteToggled(friend: Friend) {
