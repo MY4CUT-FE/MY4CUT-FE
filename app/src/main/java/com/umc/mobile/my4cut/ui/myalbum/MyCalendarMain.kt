@@ -121,10 +121,14 @@ class MyCalendarMain @JvmOverloads constructor(
                 updateYearMonthText()
             }
 
+            // 다음 달 버튼 (오늘이 속한 달 이후로는 이동 불가)
             binding.btnNextMonth.setOnClickListener {
-                currentMonth = currentMonth.plusMonths(1)
-                mcCustom.smoothScrollToMonth(currentMonth)
-                updateYearMonthText()
+                val nextMonth = currentMonth.plusMonths(1)
+                if (!nextMonth.isAfter(YearMonth.now())) {
+                    currentMonth = nextMonth
+                    mcCustom.smoothScrollToMonth(currentMonth)
+                    updateYearMonthText()
+                }
             }
 
             val today = LocalDate.now()
@@ -136,8 +140,9 @@ class MyCalendarMain @JvmOverloads constructor(
                 onDateSelectedListener?.invoke(getSelectedDateFormatted(), todayData)
             }
 
+            // 오늘이 속한 달까지만 페이지가 존재하도록 endMonth를 오늘로 제한 (스와이프도 자연히 막힘)
             val startMonth = currentMonth.minusMonths(100)
-            val endMonth = currentMonth.plusMonths(100)
+            val endMonth = YearMonth.now()
             val daysOfWeek: List<DayOfWeek> = daysOfWeek()
 
             mcCustom.setup(startMonth, endMonth, daysOfWeek.first())

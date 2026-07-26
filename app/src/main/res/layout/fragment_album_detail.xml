@@ -36,7 +36,8 @@
     <View
         android:id="@+id/line_title_dotted"
         android:layout_width="0dp"
-        android:layout_height="1dp"
+        android:layout_height="2dp"
+        android:layerType="software"
         android:background="@drawable/bg_dashed_line"
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="@id/tv_title"
@@ -75,7 +76,7 @@
         android:textSize="12sp"
         android:fontFamily="@font/suit_regular"
         android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="@id/tv_save"
+        app:layout_constraintEnd_toStartOf="@id/tv_save"
         app:layout_constraintTop_toTopOf="@id/tv_title"
         app:layout_constraintBottom_toBottomOf="@id/tv_title"/>
 
@@ -107,6 +108,7 @@
         android:id="@+id/rv_albums"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:clipChildren="false"
         android:clipToPadding="false"
         android:padding="16dp"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"

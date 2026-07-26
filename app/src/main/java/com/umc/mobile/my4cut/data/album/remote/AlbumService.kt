@@ -9,6 +9,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -37,8 +38,8 @@ interface AlbumService {
         @Body request: AlbumRequest
     ): BaseResponse<AlbumDetailResponse>
 
-    // 앨범에서 사진 삭제
-    @DELETE("/albums/{albumId}/photos")
+    // 앨범에서 사진 삭제(제외) — @DELETE는 hasBody 옵션이 없어 @HTTP로 구현
+    @HTTP(method = "DELETE", path = "/albums/{albumId}/photos", hasBody = true)
     suspend fun deletePhotosFromAlbum(
         @Path("albumId") albumId: Int,
         @Body request: AlbumRequest
