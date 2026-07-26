@@ -91,7 +91,18 @@ class MySpaceFragment : Fragment() {
             )
             overScrollMode = View.OVER_SCROLL_NEVER
 
-            PagerSnapHelper().attachToRecyclerView(this)
+            val snapHelper = object : PagerSnapHelper() {
+                override fun findTargetSnapPosition(
+                    layoutManager: RecyclerView.LayoutManager,
+                    velocityX: Int,
+                    velocityY: Int
+                ): Int {
+                    val position = super.findTargetSnapPosition(layoutManager, velocityX * 3, velocityY)
+                    return position
+                }
+            }
+
+            snapHelper.attachToRecyclerView(this)
 
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
@@ -116,7 +127,7 @@ class MySpaceFragment : Fragment() {
     }
 
     private fun setupAddButton() {
-        binding.tvAddSpace.setOnClickListener {
+        binding.layoutAddSpace.setOnClickListener {
             if (spaces.size >= MAX_SPACE_COUNT) {
                 Toast.makeText(
                     requireContext(),
