@@ -127,7 +127,7 @@ class MySpaceFragment : Fragment() {
     }
 
     private fun setupAddButton() {
-        binding.tvAddSpace.setOnClickListener {
+        binding.layoutAddSpace.setOnClickListener {
             if (spaces.size >= MAX_SPACE_COUNT) {
                 Toast.makeText(
                     requireContext(),
