@@ -57,6 +57,8 @@ import java.io.FileOutputStream
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+import java.time.Duration
+import java.time.LocalDateTime
 import java.util.Locale
 
 class SpaceFragment : Fragment(R.layout.fragment_space) {
@@ -100,8 +102,9 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentSpaceBinding.bind(view)
+
+        // API 호출 전
         binding.btnChange.visibility = View.GONE
-        binding.tvExpire.background = null
         binding.tvExpire.text = ""
         binding.tvExpire.setBackgroundResource(R.drawable.bg_skeleton_text)
 
@@ -174,6 +177,10 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                 // 스페이스 정보 UI 반영
                 binding.tvTitle.text = data.name
 
+                // API 응답 성공 후
+                binding.tvExpire.setBackgroundResource(R.drawable.bg_label_pink)
+                binding.tvExpire.text = formatExpireText(data.expiresAt)
+
                 existingMemberIds.clear()
                 existingMemberIds.addAll(data.alreadyInvitedFriendIds.orEmpty())
 
@@ -230,6 +237,37 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
             } catch (e: Exception) {
                 Log.e("SpaceFragment", "스페이스 정보 API 실패", e)
             }
+        }
+    }
+
+    private fun formatExpireText(expiresAt: String?): String {
+        if (expiresAt.isNullOrBlank()) {
+            return ""
+        }
+
+        return try {
+            val expireDateTime = LocalDateTime.parse(
+                expiresAt,
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME
+            )
+
+            val now = LocalDateTime.now()
+
+            val remainDays = Duration.between(now, expireDateTime)
+                .toDays()
+                .coerceAtLeast(0)
+
+            when {
+                remainDays <= 0 -> "오늘 만료"
+                else -> "${remainDays}일 뒤 만료"
+            }
+        } catch (e: Exception) {
+            Log.e(
+                "SpaceFragment",
+                "만료 일시 파싱 실패 expiresAt=$expiresAt",
+                e
+            )
+            ""
         }
     }
 
