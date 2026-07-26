@@ -120,7 +120,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:adjustViewBounds="true"
-                android:contentDescription="@   null"
+                android:contentDescription="@null"
                 android:scaleType="center"
                 android:background="@drawable/bg_skeleton_img"
                 android:src="@drawable/ic_skeleton_img"
@@ -210,12 +210,13 @@
             android:layout_height="wrap_content">
 
             <EditText
-                android:id="@+id/text"
+                android:id="@+id/etText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="10dp"
                 android:hint="댓글 입력하기"
                 android:background="@drawable/shape_edittext_background"
+                android:layout_marginStart="20dp"
                 android:paddingStart="14dp"
                 android:paddingTop="10dp"
                 android:paddingEnd="14dp"
@@ -232,11 +233,11 @@
                 android:id="@+id/ivSend"
                 android:layout_width="16dp"
                 android:layout_height="18dp"
-                android:layout_marginEnd="5dp"
+                android:layout_marginEnd="20dp"
                 android:src="@drawable/ic_send"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@id/text"
-                app:layout_constraintBottom_toBottomOf="@id/text" />
+                app:layout_constraintTop_toTopOf="@id/etText"
+                app:layout_constraintBottom_toBottomOf="@id/etText" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

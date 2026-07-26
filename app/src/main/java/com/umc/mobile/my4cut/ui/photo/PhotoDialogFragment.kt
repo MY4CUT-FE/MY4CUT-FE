@@ -213,7 +213,7 @@ class PhotoDialogFragment : DialogFragment() {
         rvChatList = view.findViewById(R.id.rvChatList)
         ivToggleComment = view.findViewById(R.id.ivToggleComment)
         ivToggleCommentTouchArea = view.findViewById(R.id.ivToggleCommentTouchArea)
-        etComment = view.findViewById(R.id.text)
+        etComment = view.findViewById(R.id.etText)
         etComment.setHintTextColor("#8F8F8F".toColorInt())
         etComment.setTextColor("#1A1A1A".toColorInt())
 

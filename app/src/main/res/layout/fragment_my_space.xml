@@ -42,16 +42,36 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <!-- + 추가 -->
-            <TextView
-                android:id="@+id/tvAddSpace"
+            <LinearLayout
+                android:id="@+id/layoutAddSpace"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="10dp"
-                android:fontFamily="@font/suit_regular"
-                android:text="+ 추가"
-                android:textSize="12sp"
+                android:layout_marginEnd="18dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:focusable="true"
                 app:layout_constraintBottom_toBottomOf="@id/tvMySpaceTitle"
-                app:layout_constraintEnd_toEndOf="parent" />
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <TextView
+                    android:id="@+id/tvAddSpace"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/suit_semibold"
+                    android:text="추가"
+                    android:textColor="#4A4A4A"
+                    android:textSize="12sp" />
+
+                <ImageView
+                    android:id="@+id/ivAddSpace"
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_marginStart="6dp"
+                    android:src="@drawable/ic_space_add_space"
+                    android:contentDescription="@null" />
+
+            </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvMySpaces"
