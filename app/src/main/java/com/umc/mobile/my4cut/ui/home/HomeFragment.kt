@@ -30,7 +30,6 @@ import com.umc.mobile.my4cut.databinding.FragmentHomeBinding
 import com.umc.mobile.my4cut.databinding.ItemCalendarDayBinding
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
-import com.umc.mobile.my4cut.ui.pose.PoseRecommendActivity
 import com.umc.mobile.my4cut.ui.myalbum.CalendarPickerActivity
 import com.umc.mobile.my4cut.ui.myalbum.EntryDetailFragment
 import com.umc.mobile.my4cut.ui.record.EntryRegisterActivity
@@ -426,7 +425,7 @@ class HomeFragment : Fragment() {
         }
 
         binding.clPoseRecommend.setOnClickListener {
-            startActivity(Intent(requireContext(), PoseRecommendActivity::class.java))
+            (activity as? com.umc.mobile.my4cut.MainActivity)?.selectPoseTab()
         }
 
         binding.ivNotification.setOnClickListener {

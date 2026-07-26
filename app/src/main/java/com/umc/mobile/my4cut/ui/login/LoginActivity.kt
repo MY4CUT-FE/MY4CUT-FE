@@ -137,6 +137,9 @@ class LoginActivity : AppCompatActivity() {
         binding.etPassword.setBackgroundResource(R.drawable.bg_edittext_error)
         binding.tvEmailError.visibility = View.VISIBLE
         binding.tvEmailError.text = "아이디 또는 비밀번호가 일치하지 않습니다."
+        binding.tvEmailError.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_error_circle, 0, 0, 0)
+        val color = ContextCompat.getColor(this, R.color.modal_red)
+        binding.tvEmailError.compoundDrawables[0]?.setTint(color)
         binding.tvPwError.visibility = View.GONE
         // [수정] 로그인 실패 시 토스트 메시지 표시
         Toast.makeText(this, "로그인 실패", Toast.LENGTH_SHORT).show()
