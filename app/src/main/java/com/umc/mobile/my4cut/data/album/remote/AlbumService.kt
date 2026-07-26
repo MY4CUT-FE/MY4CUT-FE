@@ -37,6 +37,13 @@ interface AlbumService {
         @Body request: AlbumRequest
     ): BaseResponse<AlbumDetailResponse>
 
+    // 앨범에서 사진 삭제
+    @DELETE("/albums/{albumId}/photos")
+    suspend fun deletePhotosFromAlbum(
+        @Path("albumId") albumId: Int,
+        @Body request: AlbumRequest
+    ): BaseResponse<AlbumDetailResponse>
+
     // 앨범 이름 수정
     @PATCH("/albums/{albumId}")
     suspend fun updateAlbumName(
