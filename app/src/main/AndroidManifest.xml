@@ -53,6 +53,7 @@
         <activity android:name=".ui.mypage.EditProfileActivity"/>
         <activity android:name=".ui.myalbum.CalendarPickerActivity"/>
         <activity android:name=".ui.myalbum.EntryRegisterActivity"/>
+        <activity android:name=".ui.myalbum.GalleryPickerActivity"/>
 
         <activity
             android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"

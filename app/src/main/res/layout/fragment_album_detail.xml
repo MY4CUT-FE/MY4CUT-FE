@@ -17,19 +17,34 @@
         app:layout_constraintTop_toTopOf="@id/tv_title"
         app:layout_constraintBottom_toBottomOf="@id/tv_title"/>
 
+    <!-- 편집 모드일 때 제목을 눌러 이름 수정 모달을 띄움 -->
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:text="ALL"
         android:textColor="#000000"
         android:textSize="20sp"
         android:fontFamily="@font/suit_bold"
+        android:paddingBottom="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="@id/line"/>
+        app:layout_constraintTop_toTopOf="parent"/>
 
+    <!-- 편집 모드에서만 보이는 제목 아래 점선 (이름 수정 가능 표시) -->
+    <View
+        android:id="@+id/line_title_dotted"
+        android:layout_width="0dp"
+        android:layout_height="2dp"
+        android:layerType="software"
+        android:background="@drawable/bg_dashed_line"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@id/tv_title"
+        app:layout_constraintEnd_toEndOf="@id/tv_title"
+        app:layout_constraintTop_toBottomOf="@id/tv_title"/>
+
+    <!-- 기본 모드: 수정/삭제 아이콘 -->
     <ImageView
         android:id="@+id/btn_edit"
         android:layout_width="17dp"
@@ -48,8 +63,36 @@
         android:src="@drawable/ic_delete"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/tv_title"
-        app:layout_constraintBottom_toBottomOf="@id/tv_title"
-        android:visibility="visible"/>
+        app:layout_constraintBottom_toBottomOf="@id/tv_title"/>
+
+    <!-- 편집 모드: 취소 / 저장 텍스트 -->
+    <TextView
+        android:id="@+id/tv_cancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        android:text="취소"
+        android:textColor="#B3B3B3"
+        android:textSize="12sp"
+        android:fontFamily="@font/suit_regular"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/tv_save"
+        app:layout_constraintTop_toTopOf="@id/tv_title"
+        app:layout_constraintBottom_toBottomOf="@id/tv_title"/>
+
+    <TextView
+        android:id="@+id/tv_save"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:text="저장"
+        android:textColor="@color/coral_900"
+        android:textSize="12sp"
+        android:fontFamily="@font/suit_regular"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tv_title"
+        app:layout_constraintBottom_toBottomOf="@id/tv_title"/>
 
     <View
         android:id="@+id/line"
@@ -59,17 +102,18 @@
         android:layout_marginTop="15dp"
         app:layout_constraintTop_toBottomOf="@id/tv_title"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:visibility="visible"/>
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_albums"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:clipChildren="false"
         android:clipToPadding="false"
         android:padding="16dp"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:layout_constraintTop_toBottomOf="@id/line"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:spanCount="3" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

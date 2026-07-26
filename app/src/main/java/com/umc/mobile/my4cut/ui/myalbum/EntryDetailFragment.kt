@@ -23,7 +23,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
-import coil.load
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.umc.mobile.my4cut.MainActivity
@@ -35,6 +34,7 @@ import com.umc.mobile.my4cut.databinding.FragmentEntryDetailBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoAddBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoSlider2Binding
 import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.ui.theme.loadWithSkeleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -660,10 +660,7 @@ class EntryDetailFragment : Fragment() {
                     if (isTypical) R.drawable.ic_typical_on else R.drawable.ic_typical_off
                 )
 
-                photoHolder.binding.ivPhoto.load(item.uri) {
-                    crossfade(true)
-                    error(R.drawable.img_ex_photo)
-                }
+                photoHolder.binding.ivPhoto.loadWithSkeleton(item.uri)
 
                 photoHolder.binding.ivTypical.setOnClickListener {
                     if (isEditMode) {

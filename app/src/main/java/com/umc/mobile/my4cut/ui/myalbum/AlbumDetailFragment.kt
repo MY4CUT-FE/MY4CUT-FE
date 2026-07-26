@@ -1,27 +1,20 @@
 package com.umc.mobile.my4cut.ui.myalbum
 
+import android.app.Activity
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Matrix
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
-import coil.size.Scale
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.model.GlideUrl
-import com.bumptech.glide.load.model.LazyHeaders
 import com.umc.mobile.my4cut.databinding.DialogChangeBinding
-import com.umc.mobile.my4cut.databinding.DialogExitBinding
 import com.umc.mobile.my4cut.databinding.FragmentAlbumDetailBinding
 import com.umc.mobile.my4cut.databinding.ItemAlbumAddBinding
 import com.umc.mobile.my4cut.databinding.ItemAlbumDetailBinding
@@ -30,9 +23,9 @@ import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.album.model.AlbumNameRequest
 import com.umc.mobile.my4cut.data.album.model.AlbumRequest
 import com.umc.mobile.my4cut.data.album.model.PhotoResponse
-import com.umc.mobile.my4cut.data.auth.local.TokenManager
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.databinding.DialogExit2Binding
+import com.umc.mobile.my4cut.ui.theme.loadWithSkeleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -41,7 +34,6 @@ import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -53,9 +45,20 @@ class AlbumDetailFragment : Fragment() {
     private val photoList = mutableListOf<PhotoResponse>()
     private lateinit var detailAdapter: AlbumDetailAdapter
 
-    private val pickMultipleMedia = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(50)) { uris ->
-        if (uris.isNotEmpty()) {
-            uploadImagesAndAddToAlbum(uris)
+    // 편집 모드 상태
+    private var isEditMode = false
+    private val pendingDeleteMediaIds = mutableSetOf<Int>()
+
+    private val galleryPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val viewUrls = result.data?.getStringArrayListExtra(
+                GalleryPickerActivity.EXTRA_SELECTED_VIEW_URLS
+            )
+            if (!viewUrls.isNullOrEmpty()) {
+                addSelectedPhotosToAlbum(viewUrls)
+            }
         }
     }
 
@@ -78,98 +81,167 @@ class AlbumDetailFragment : Fragment() {
 
         binding.btnBack.setOnClickListener { parentFragmentManager.popBackStack() }
 
-        binding.btnEdit.setOnClickListener { showChangeDialog() }
+        // 수정 아이콘 → 다이얼로그 대신 편집 모드 진입
+        binding.btnEdit.setOnClickListener { enterEditMode() }
         binding.btnDelete.setOnClickListener { showDeleteDialog() }
+
+        binding.tvCancel.setOnClickListener { exitEditMode(discardChanges = true) }
+        binding.tvSave.setOnClickListener { saveEditChanges() }
+
+        // 편집 모드에서만 제목 클릭 시 이름 수정 모달
+        binding.tvTitle.setOnClickListener {
+            if (isEditMode) showChangeDialog()
+        }
 
         setupRecyclerView()
         fetchAlbumDetail()
     }
 
-    private fun prepareMultipartList(uris: List<Uri>): List<MultipartBody.Part> {
-        val multipartList = mutableListOf<MultipartBody.Part>()
-        val contentResolver = requireContext().contentResolver
+    private fun enterEditMode() {
+        isEditMode = true
+        pendingDeleteMediaIds.clear()
 
-        uris.forEach { uri ->
-            // 1. 이미지를 압축하여 임시 파일로 생성 (EntryDetail에서 쓴 로직 활용)
-            val compressedFile = compressImage(uri)
+        binding.btnEdit.visibility = View.GONE
+        binding.btnDelete.visibility = View.GONE
+        binding.tvCancel.visibility = View.VISIBLE
+        binding.tvSave.visibility = View.VISIBLE
+        binding.lineTitleDotted.visibility = View.VISIBLE
+        binding.tvTitle.setTextColor(android.graphics.Color.parseColor("#808080"))
 
-            if (compressedFile != null) {
-                // 2. 압축된 파일로 RequestBody 생성
-                val requestFile = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
-
-                // 3. 서버 파라미터명인 "files"로 Part 생성
-                val part = MultipartBody.Part.createFormData("files", compressedFile.name, requestFile)
-                multipartList.add(part)
-            }
-        }
-        return multipartList
+        detailAdapter.setEditMode(true)
     }
 
-    private fun compressImage(uri: Uri): File? {
+    private fun exitEditMode(discardChanges: Boolean) {
+        isEditMode = false
+        pendingDeleteMediaIds.clear()
+
+        binding.btnEdit.visibility = View.VISIBLE
+        binding.btnDelete.visibility = View.VISIBLE
+        binding.tvCancel.visibility = View.GONE
+        binding.tvSave.visibility = View.GONE
+        binding.lineTitleDotted.visibility = View.GONE
+        binding.tvTitle.setTextColor(android.graphics.Color.parseColor("#000000"))
+
+        detailAdapter.setEditMode(false)
+
+        // 취소 시 삭제 표시했던 항목 복구 위해 서버에서 다시 불러옴
+        if (discardChanges) {
+            fetchAlbumDetail()
+        }
+    }
+
+    // 편집 모드에서 X 눌러 삭제 표시된 사진들을 실제 서버에 반영
+    private fun saveEditChanges() {
+        if (pendingDeleteMediaIds.isEmpty()) {
+            exitEditMode(discardChanges = false)
+            return
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.albumService.deletePhotosFromAlbum(
+                    albumId,
+                    AlbumRequest(mediaIds = pendingDeleteMediaIds.toList())
+                )
+
+                // 서버가 삭제 후 최신 mediaList를 바로 반환해주므로 재조회 없이 그대로 반영
+                updateUI(response.data?.mediaList)
+                exitEditMode(discardChanges = false)
+            } catch (e: Exception) {
+                Log.e("API_ERROR", "사진 삭제 중 오류: ${e.message}")
+            }
+        }
+    }
+
+    // [GET] 앨범 상세 정보 조회
+    private fun fetchAlbumDetail() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.albumService.getAlbumDetail(albumId)
+                if (response.code == "A2003") { // 서버 응답 코드 확인
+                    updateUI(response.data?.mediaList)
+                }
+            } catch (e: Exception) {
+                Log.e("API_ERROR", "상세 데이터 로드 실패: ${e.message}")
+            }
+        }
+    }
+
+    // [POST] 선택한 Day4cut 사진을 다시 업로드하여 앨범에 추가 (Day4cut 조회 응답엔 mediaId가 없어 재업로드로 mediaId를 새로 발급받음)
+    private fun addSelectedPhotosToAlbum(viewUrls: List<String>) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val multipartFiles = withContext(Dispatchers.IO) {
+                    viewUrls.mapNotNull { url ->
+                        downloadAndCompressImage(url)?.let { file ->
+                            MultipartBody.Part.createFormData(
+                                "files",
+                                file.name,
+                                file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+                            )
+                        }
+                    }
+                }
+
+                if (multipartFiles.isEmpty()) return@launch
+
+                val uploadResponse = RetrofitClient.imageService.uploadImagesMedia(multipartFiles)
+                if (uploadResponse.isSuccessful) {
+                    val uploadedMediaIds = uploadResponse.body()?.data?.map { it.mediaId }
+
+                    if (!uploadedMediaIds.isNullOrEmpty()) {
+                        val addRes = RetrofitClient.albumService.addPhotosToAlbum(
+                            albumId,
+                            AlbumRequest(mediaIds = uploadedMediaIds)
+                        )
+
+                        if (addRes.code == "A2006") {
+                            Log.d("ALBUM", "앨범에 사진 추가 성공!")
+                            fetchAlbumDetail()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("API_ERROR", "앨범에 사진 추가 중 오류: ${e.message}")
+            }
+        }
+    }
+
+    private fun downloadAndCompressImage(url: String): File? {
         return try {
-            val inputStream = requireContext().contentResolver.openInputStream(uri) ?: return null
+            val client = OkHttpClient()
+            val request = Request.Builder().url(url).build()
+            val response = client.newCall(request).execute()
+            val inputStream = response.body?.byteStream() ?: return null
 
             val originalBitmap = BitmapFactory.decodeStream(inputStream)
             inputStream.close()
 
             if (originalBitmap == null) {
-                Log.e("EntryDetail", "❌ Failed to decode bitmap from URI: $uri")
+                Log.e("ALBUM", "❌ Failed to decode bitmap from URL: $url")
                 return null
             }
 
-            val rotatedBitmap = rotateImageIfRequired(uri, originalBitmap)
-            val resizedBitmap = resizeBitmap(rotatedBitmap, 1920)
+            val resizedBitmap = resizeBitmap(originalBitmap, 1920)
 
             val outputStream = ByteArrayOutputStream()
             resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
-            val compressedBytes = outputStream.toByteArray()
 
-            val tempFile = File(requireContext().cacheDir, "compressed_${System.currentTimeMillis()}.jpg")
+            val tempFile = File(requireContext().cacheDir, "day4cut_${System.currentTimeMillis()}.jpg")
             FileOutputStream(tempFile).use { fos ->
-                fos.write(compressedBytes)
+                fos.write(outputStream.toByteArray())
             }
 
-            if (rotatedBitmap != originalBitmap) {
+            if (resizedBitmap != originalBitmap) {
                 originalBitmap.recycle()
             }
             resizedBitmap.recycle()
 
-            Log.d("EntryDetail", "✅ Image compressed: ${tempFile.length() / 1024}KB")
-
             tempFile
         } catch (e: Exception) {
-            Log.e("EntryDetail", "❌ Image compression failed", e)
+            Log.e("API_ERROR", "❌ 이미지 다운로드/압축 실패: ${e.message}")
             null
         }
-    }
-
-    private fun rotateImageIfRequired(uri: Uri, bitmap: Bitmap): Bitmap {
-        return try {
-            val inputStream = requireContext().contentResolver.openInputStream(uri) ?: return bitmap
-            val exif = ExifInterface(inputStream)
-            inputStream.close()
-
-            val orientation = exif.getAttributeInt(
-                ExifInterface.TAG_ORIENTATION,
-                ExifInterface.ORIENTATION_UNDEFINED
-            )
-
-            when (orientation) {
-                ExifInterface.ORIENTATION_ROTATE_90 -> rotateBitmap(bitmap, 90f)
-                ExifInterface.ORIENTATION_ROTATE_180 -> rotateBitmap(bitmap, 180f)
-                ExifInterface.ORIENTATION_ROTATE_270 -> rotateBitmap(bitmap, 270f)
-                else -> bitmap
-            }
-        } catch (e: Exception) {
-            Log.e("EntryDetail", "Failed to read EXIF", e)
-            bitmap
-        }
-    }
-
-    private fun rotateBitmap(bitmap: Bitmap, degrees: Float): Bitmap {
-        val matrix = Matrix()
-        matrix.postRotate(degrees)
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
     private fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
@@ -191,70 +263,35 @@ class AlbumDetailFragment : Fragment() {
         return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
     }
 
-    // [GET] 앨범 상세 정보 조회
-    private fun fetchAlbumDetail() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val response = RetrofitClient.albumService.getAlbumDetail(albumId)
-                if (response.code == "A2003") { // 서버 응답 코드 확인
-                    updateUI(response.data?.mediaList)
-                }
-            } catch (e: Exception) {
-                Log.e("API_ERROR", "상세 데이터 로드 실패: ${e.message}")
-            }
-        }
-    }
-
-    // [POST] 이미지 업로드 및 앨범 등록 프로세스
-    private fun uploadImagesAndAddToAlbum(uris: List<Uri>) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                // 1. Multipart 리스트 준비
-                val multipartFiles = prepareMultipartList(uris)
-
-                // 2. 미디어 업로드 API 호출
-                val response = RetrofitClient.imageService.uploadImagesMedia(multipartFiles)
-
-                if (response.isSuccessful) {
-                    val baseResponse = response.body()
-
-                    // 3. baseResponse.data는 List<UploadMediaData> 형태임
-                    val uploadedMediaList = baseResponse?.data
-
-                    if (!uploadedMediaList.isNullOrEmpty()) {
-                        val uploadedMediaIds = uploadedMediaList.map { it.mediaId }
-
-                        // 3. 앨범 사진 추가 API 호출
-                        val addRes = RetrofitClient.albumService.addPhotosToAlbum(
-                            albumId,
-                            AlbumRequest(mediaIds = uploadedMediaIds)
-                        )
-
-                        if (addRes.code == "A2006") {
-                            Log.d("ALBUM", "미디어 업로드 및 앨범 추가 성공!")
-                            fetchAlbumDetail()
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("API_ERROR", "업로드 중 오류: ${e.message}")
-            }
-        }
-    }
-
+    // 서버가 오래된 순으로 반환하므로 reversed()로 최신순(새로 추가된 게 앞) 정렬
     private fun updateUI(newList: List<PhotoResponse>?) {
         Log.d("ALBUM_DEBUG", "받아온 사진 개수: ${newList?.size ?: 0}")
         photoList.clear()
-        newList?.let { photoList.addAll(it) }
+        newList?.let { photoList.addAll(it.reversed()) }
         detailAdapter.notifyDataSetChanged()
     }
 
     private fun setupRecyclerView() {
-        detailAdapter = AlbumDetailAdapter(photoList, onAddClick = {
-            pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-        }, onPhotoClick = { viewUrl ->
-            showSimplePhotoModal(viewUrl)
-        })
+        detailAdapter = AlbumDetailAdapter(
+            photos = photoList,
+            onAddClick = {
+                val intent = Intent(requireContext(), GalleryPickerActivity::class.java).apply {
+                    putStringArrayListExtra(
+                        GalleryPickerActivity.EXTRA_EXISTING_VIEW_URLS,
+                        ArrayList(photoList.map { it.viewUrl })
+                    )
+                }
+                galleryPickerLauncher.launch(intent)
+            },
+            onPhotoClick = { viewUrl ->
+                if (!isEditMode) showSimplePhotoModal(viewUrl)
+            },
+            onDeleteClick = { photo, position ->
+                pendingDeleteMediaIds.add(photo.mediaId)
+                photoList.removeAt(position)
+                detailAdapter.notifyItemRemoved(position)
+            }
+        )
 
         binding.rvAlbums.adapter = detailAdapter
     }
@@ -357,13 +394,21 @@ class AlbumDetailFragment : Fragment() {
     }
 
     inner class AlbumDetailAdapter(  // 앨범 상세 프래그먼트 어댑터
-        private val photos: List<PhotoResponse>,
+        private val photos: MutableList<PhotoResponse>,
         private val onAddClick: () -> Unit,
-        private val onPhotoClick: (String) -> Unit
+        private val onPhotoClick: (String) -> Unit,
+        private val onDeleteClick: (PhotoResponse, Int) -> Unit
     ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         private val TYPE_PHOTO = 0
         private val TYPE_ADD = 1
+
+        private var editMode = false
+
+        fun setEditMode(enabled: Boolean) {
+            editMode = enabled
+            notifyDataSetChanged()
+        }
 
         inner class PhotoViewHolder(val binding: ItemAlbumDetailBinding) : RecyclerView.ViewHolder(binding.root)
         inner class AddViewHolder(val binding: ItemAlbumAddBinding) : RecyclerView.ViewHolder(binding.root)
@@ -389,15 +434,25 @@ class AlbumDetailFragment : Fragment() {
             if (holder is PhotoViewHolder) {
                 val photo = photos[position]
 
-                // 서버에서 받은 viewUrl을 사용하여 이미지 로드
-                holder.binding.ivAlbumCover.load(photo.viewUrl) {
-                    crossfade(true) // 부드러운 전환 효과
-                    placeholder(R.color.gray_300) // 로딩 중 이미지
-                    scale(Scale.FILL)
+                holder.binding.ivAlbumCover.loadWithSkeleton(photo.viewUrl)
+
+                // 편집 모드일 때만 회색 테두리 + 삭제 아이콘 노출
+                holder.binding.cvAlbumCover.strokeColor = if (editMode) {
+                    android.graphics.Color.parseColor("#B3B3B3")
+                } else {
+                    androidx.core.content.ContextCompat.getColor(holder.itemView.context, R.color.transparent)
+                }
+                holder.binding.ivDeletePhoto.visibility = if (editMode) View.VISIBLE else View.GONE
+
+                holder.binding.ivDeletePhoto.setOnClickListener {
+                    val currentPos = holder.bindingAdapterPosition
+                    if (currentPos != RecyclerView.NO_POSITION) {
+                        onDeleteClick(photos[currentPos], currentPos)
+                    }
                 }
 
                 holder.itemView.setOnClickListener {
-                    onPhotoClick(photo.viewUrl)
+                    if (!editMode) onPhotoClick(photo.viewUrl)
                 }
             } else if (holder is AddViewHolder) {
                 holder.itemView.setOnClickListener { onAddClick() }
