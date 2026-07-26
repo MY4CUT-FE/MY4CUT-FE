@@ -68,14 +68,19 @@ class EntryDetailFragment : Fragment() {
     private var typicalImageIndex: Int = 0
 
     private val pickMultipleMedia = registerForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(50)
+        ActivityResultContracts.PickMultipleVisualMedia(3)
     ) { uris ->
         if (uris.isNotEmpty()) {
-            uris.forEach { uri ->
+            val remaining = 3 - imageItems.size
+            val toAdd = uris.take(remaining)
+            toAdd.forEach { uri ->
                 imageItems.add(ImageItem(
                     uri = uri.toString(),
                     isNew = true
                 ))
+            }
+            if (uris.size > remaining) {
+                Toast.makeText(requireContext(), "사진은 최대 3장까지 추가할 수 있어요.", Toast.LENGTH_SHORT).show()
             }
             updatePhotoState()
             binding.vpPhotoSlider.currentItem = imageItems.size - 1
@@ -218,6 +223,10 @@ class EntryDetailFragment : Fragment() {
     }
 
     private fun launchPhotoPicker() {
+        if (imageItems.size >= 3) {
+            Toast.makeText(requireContext(), "사진은 최대 3장까지 추가할 수 있어요.", Toast.LENGTH_SHORT).show()
+            return
+        }
         pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
     }
 

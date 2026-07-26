@@ -1,6 +1,6 @@
 package com.umc.mobile.my4cut
 
-import com.umc.mobile.my4cut.ui.pose.PoseRecommendActivity
+import com.umc.mobile.my4cut.ui.pose.PoseRecommendFragment
 import com.umc.mobile.my4cut.ui.space.SpaceFragment
 import android.content.Intent
 import android.os.Bundle
@@ -137,9 +137,8 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.menu_pose -> {
-                    // 포즈추천은 별도 Activity로 전환 (BNV 선택 상태 변경 없이 진입)
-                    startActivity(Intent(this, PoseRecommendActivity::class.java))
-                    false
+                    changeFragment(PoseRecommendFragment())
+                    true
                 }
                 else -> false
             }
@@ -179,6 +178,14 @@ class MainActivity : AppCompatActivity() {
 
     fun navigateToMyPage() {
         changeFragment(MyPageFragment())
+    }
+
+    fun selectPoseTab() {
+        binding.bnvMain.selectedItemId = R.id.menu_pose
+    }
+
+    fun selectHomeTab() {
+        binding.bnvMain.selectedItemId = R.id.menu_home
     }
 
 }
