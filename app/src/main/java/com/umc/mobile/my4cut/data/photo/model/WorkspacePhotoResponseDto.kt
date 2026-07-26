@@ -8,5 +8,7 @@ data class WorkspacePhotoResponseDto(
     val takenDate: String?,
     val isFinal: Boolean?,
     val createdAt: String?,
-    val uploaderNickname: String?
+    val uploaderId: Long?,
+    val uploaderNickname: String?,
+    val uploaderProfileImageUrl: String?
 )

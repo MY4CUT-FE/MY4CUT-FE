@@ -392,13 +392,13 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                         newPhotos.add(
                             PhotoData(
                                 photoId = photoId,
-                                userProfileUrl = if (photoResponse.uploaderNickname == myNickname) myProfileImageUrl else null,
+                                userProfileUrl = photoResponse.uploaderProfileImageUrl,
                                 userName = photoResponse.uploaderNickname ?: "",
                                 dateTime = formatDateTime(photoResponse.createdAt),
                                 commentCount = 0,
                                 photoImageRes = null,
                                 photoUrl = photoResponse.viewUrl,
-                                uploaderId = if (photoResponse.uploaderNickname == myNickname) myUserId else null,
+                                uploaderId = photoResponse.uploaderId,
                                 isFinal = photoResponse.isFinal ?: false
                             )
                         )
