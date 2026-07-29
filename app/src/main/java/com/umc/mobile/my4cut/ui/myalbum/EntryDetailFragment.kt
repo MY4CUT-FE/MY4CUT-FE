@@ -13,8 +13,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.exifinterface.media.ExifInterface
@@ -66,6 +68,7 @@ class EntryDetailFragment : Fragment() {
     private var originalContent: String = ""
     private var originalEmojiType: String? = null
     private var typicalImageIndex: Int = 0
+    private var heightFixListener: ViewTreeObserver.OnGlobalLayoutListener? = null
 
     private val pickMultipleMedia = registerForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(3)
@@ -105,10 +108,27 @@ class EntryDetailFragment : Fragment() {
         setupClickListeners()
         setupDiaryLogic()
         setupKeyboardScroll()
+        setupBackPressHandling()
 
         if (apiDate != null) {
             fetchDay4CutDetail()
         }
+    }
+
+    // 뒤로가기 화살표 클릭과 하드웨어/제스처 뒤로가기를 모두 여기서 처리 (둘 다 popBackStack으로 통일)
+    private fun setupBackPressHandling() {
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    goBack()
+                }
+            }
+        )
+    }
+
+    private fun goBack() {
+        parentFragmentManager.popBackStack()
     }
 
     // 일기 EditText에 포커스가 갈 때(키보드가 올라올 때) 해당 영역이 가려지지 않도록 아래로 스크롤
@@ -130,7 +150,10 @@ class EntryDetailFragment : Fragment() {
         // fcv_main(부모)은 리사이즈됐는데 nsvEntryDetail(자식)이 이전 크기에 멈춰있는 경우가 있어서,
         // 어긋나면 실제 높이값을 직접 계산해서 강제로 덮어쓰고, 스크롤 위치도 새 범위로 당겨온다.
         var isFixingHeight = false
-        binding.nsvEntryDetail.viewTreeObserver.addOnGlobalLayoutListener {
+        heightFixListener = ViewTreeObserver.OnGlobalLayoutListener {
+            // Fragment가 이미 화면에서 내려간(백스택 pop 등) 뒤에 콜백이 늦게 들어오는 경우 방어
+            if (!isAdded) return@OnGlobalLayoutListener
+
             val nsv = binding.nsvEntryDetail
             val fcvMain = requireActivity().findViewById<View>(R.id.fcv_main)
 
@@ -159,6 +182,16 @@ class EntryDetailFragment : Fragment() {
                 }
             }
         }
+        binding.nsvEntryDetail.viewTreeObserver.addOnGlobalLayoutListener(heightFixListener)
+    }
+
+    override fun onDestroyView() {
+        // 뷰가 사라질 때 리스너를 확실히 제거해서 크래시/누수 방지
+        heightFixListener?.let {
+            binding.nsvEntryDetail.viewTreeObserver.removeOnGlobalLayoutListener(it)
+        }
+        heightFixListener = null
+        super.onDestroyView()
     }
 
     private fun fetchDay4CutDetail() {
@@ -222,10 +255,7 @@ class EntryDetailFragment : Fragment() {
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener {
-            // ✅ Activity면 finish(), Fragment면 popBackStack()
-            if (activity != null) {
-                requireActivity().onBackPressedDispatcher.onBackPressed()
-            }
+            goBack()
         }
 
         binding.btnEdit.setOnClickListener {
