@@ -175,6 +175,7 @@ class SignUpStep2Fragment : Fragment() {
                     Log.d("SignUp", "verifyCode http=${response.code()}, body=${response.body()}")
 
                     if (response.isSuccessful) {
+                        viewModel.verificationToken = response.body()?.data?.verificationToken
                         showVerificationComplete()
                     } else {
                         val errorCode = response.code()

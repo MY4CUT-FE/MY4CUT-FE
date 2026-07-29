@@ -71,8 +71,19 @@ class SignUpStep3Fragment : Fragment() {
                 return@setOnClickListener
             }
 
+            val token = viewModel.verificationToken
+            if (token.isNullOrEmpty()) {
+                Toast.makeText(
+                    requireContext(),
+                    "이메일 인증이 필요합니다. 이전 화면으로 돌아가 인증을 완료해주세요.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+
             val request = SignUpRequest(
                 email = emailStr,
+                verificationToken = token,
                 password = passwordStr,
                 nickname = nickname
             )
