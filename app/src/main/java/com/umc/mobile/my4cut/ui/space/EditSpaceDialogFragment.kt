@@ -87,7 +87,7 @@ class EditSpaceDialogFragment : DialogFragment() {
         expandTouchArea()
         updateFriendSummary()
 
-        binding.ivClose.setOnClickListener { dismiss() }
+        binding.layoutClose.setOnClickListener { dismiss() }
 
         /** 수정 완료 */
         binding.mainText.text = "확인"
