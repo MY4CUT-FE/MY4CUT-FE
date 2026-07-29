@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.umc.mobile.my4cut.databinding.ActivityMainBinding
@@ -29,6 +30,20 @@ class MainActivity : AppCompatActivity() {
 
         // 바텀 네비게이션 초기화 및 리스너 설정
         initBottomNavigation(savedInstanceState)
+
+        // 백스택에 쌓인 화면(마이페이지, 네컷 기록 상세 등)이 있으면 뒤로가기 시 그것부터 pop,
+        // 없으면 앱을 종료
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (supportFragmentManager.backStackEntryCount > 0) {
+                    supportFragmentManager.popBackStack()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        })
 
         // 외부에서 들어온 인텐트가 있는지 확인 (예: 앨범 상세 보기 등)
         // checkIntent(intent)
@@ -169,15 +184,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 프래그먼트 교체 헬퍼 함수
+    // 프래그먼트 교체 헬퍼 함수 (바텀 네비게이션 탭 전환용 - 백스택에 안 쌓임)
     fun changeFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fcv_main, fragment)
             .commitAllowingStateLoss()
     }
 
+    // 마이페이지처럼 "들어갔다가 뒤로가기로 돌아와야 하는" 화면은 백스택에 쌓이도록 별도 처리
     fun navigateToMyPage() {
-        changeFragment(MyPageFragment())
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fcv_main, MyPageFragment())
+            .addToBackStack(null)
+            .commitAllowingStateLoss()
     }
 
     fun selectPoseTab() {
