@@ -56,6 +56,10 @@ class MySpaceFragment : Fragment() {
         setupRecyclerView()
         setupAddButton()
         setupFragmentResultListener()
+
+        binding.swipeRefresh.setOnRefreshListener {
+            loadSpacesFromApi()
+        }
     }
 
     override fun onStart() {
@@ -209,6 +213,8 @@ class MySpaceFragment : Fragment() {
                     "API 호출 실패",
                     e
                 )
+            } finally {
+                binding.swipeRefresh.isRefreshing = false
             }
         }
     }

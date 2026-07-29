@@ -66,11 +66,6 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
         // 최초 로드
         loadChildFragments()
 
-        // 아래로 당겨 새로고침
-        binding.swipeRefresh.setOnRefreshListener {
-            loadChildFragments()
-            binding.swipeRefresh.isRefreshing = false
-        }
         updateNotificationIcon()
         // RetouchFragment가 살아있는 동안 푸시 수신 이벤트를 감지
         registerNotificationReceiver()
