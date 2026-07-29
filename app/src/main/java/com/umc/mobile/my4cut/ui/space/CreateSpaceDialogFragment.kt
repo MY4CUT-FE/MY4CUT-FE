@@ -118,7 +118,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
         }
 
         // X 버튼 → 다이얼로그 닫기
-        binding.ivClose.setOnClickListener {
+        binding.layoutClose.setOnClickListener {
             dismiss()
         }
 
