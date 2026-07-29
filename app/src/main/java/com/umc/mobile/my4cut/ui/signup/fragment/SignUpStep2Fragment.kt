@@ -113,7 +113,7 @@ class SignUpStep2Fragment : Fragment() {
             if (!viewModel.isValidPassword(password)) {
                 Toast.makeText(
                     requireContext(),
-                    "영어/숫자/특수기호 포함 8~15자로 작성해주세요.",
+                    "영어/숫자/특수기호만 입력 가능하며, 8~15자로 비밀번호를 설정해주세요.",
                     Toast.LENGTH_SHORT
                 ).show()
                 return@setOnClickListener

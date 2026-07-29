@@ -65,7 +65,7 @@ class SignUpStep3Fragment : Fragment() {
             if (!viewModel.isValidNickname(nickname)) {
                 Toast.makeText(
                     requireContext(),
-                    "한글/영어 포함 최대 7자로 작성해주세요.",
+                    "한글, 영어만 입력 가능하며, 7자 이내로 입력해주세요.",
                     Toast.LENGTH_SHORT
                 ).show()
                 return@setOnClickListener
@@ -173,7 +173,7 @@ class SignUpStep3Fragment : Fragment() {
                         saveUserInfo(tokenResult.userId)
                         Toast.makeText(
                             requireContext(),
-                            "회원가입 및 로그인 성공!",
+                            "회원가입이 완료되었습니다!",
                             Toast.LENGTH_SHORT
                         ).show()
                         val intent = Intent(requireContext(), MainActivity::class.java)

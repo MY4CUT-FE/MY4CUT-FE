@@ -11,12 +11,12 @@
         android:id="@+id/tv_logo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="MY4CUT"
-        android:fontFamily="@font/hakgyoansim_ttwimteul"
-        android:textSize="20sp"
-        android:textColor="#FF7E67"
         android:layout_marginStart="20dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="24dp"
+        android:fontFamily="@font/hakgyoansim_ttwimteul"
+        android:text="MY4CUT"
+        android:textColor="#FF7E67"
+        android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -46,7 +46,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         tools:text="2026 January 2th"
-        android:fontFamily="@font/suit_medium"
+        android:fontFamily="@font/suit_extrabold"
         android:textColor="#6A6A6A"
         android:textSize="14sp"
         android:layout_marginTop="50dp"
@@ -157,8 +157,8 @@
 
             <ImageView
                 android:id="@+id/iv_calendar_back"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
                 android:src="@drawable/ic_calendar_left"
                 android:layout_marginStart="10dp"
                 app:layout_constraintStart_toStartOf="parent"
@@ -180,8 +180,8 @@
 
             <ImageView
                 android:id="@+id/iv_calendar_next"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
                 android:src="@drawable/ic_calendar_right"
                 android:layout_marginEnd="10dp"
                 app:layout_constraintEnd_toEndOf="parent"

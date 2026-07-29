@@ -21,7 +21,7 @@
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="네컷 업로드"
+        android:text="네컷 기록"
         android:textSize="18sp"
         android:textColor="#000000"
         android:fontFamily="@font/suit_bold"
@@ -206,26 +206,14 @@
                     android:layout_height="wrap_content"
                     android:background="@null"
                     android:hint="오늘의 네컷을 기록해보세요."
+                    android:textColor="#1A1A1A"
                     android:lineSpacingExtra="10dp"
                     android:minLines="3"
-                    android:padding="10dp"
+                    android:padding="8dp"
                     android:gravity="top|start"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toStartOf="@id/iv_mood_1"/>
-
-<!--                <EditText-->
-<!--                    android:id="@+id/et_diary"-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="120dp"-->
-<!--                    android:background="@drawable/bg_diary_input2"-->
-<!--                    android:hint="오늘의 네컷을 기록해보세요."-->
-<!--                    android:inputType="textMultiLine"-->
-<!--                    android:textSize="14sp"-->
-<!--                    android:textColor="#1A1A1A"-->
-<!--                    android:padding="16dp"-->
-<!--                    android:gravity="top|start"-->
-<!--                    app:layout_constraintTop_toTopOf="parent"/>-->
 
                 <TextView
                     android:id="@+id/tv_text_count"
@@ -235,17 +223,17 @@
                     android:textSize="8sp"
                     android:textColor="#888888"
                     android:layout_marginEnd="8dp"
-                    app:layout_constraintBottom_toBottomOf="@id/et_diary"
+                    app:layout_constraintTop_toBottomOf="@id/et_diary"
                     app:layout_constraintEnd_toEndOf="@id/et_diary"
                     android:visibility="visible"/>
 
                 <ImageView
                     android:id="@+id/iv_mood_1"
-                    android:layout_width="38dp"
-                    android:layout_height="36dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_marginStart="5dp"
                     android:layout_marginTop="20dp"
-                    android:padding="5dp"
+                    android:padding="8dp"
                     android:background="@drawable/bg_img_circle"
                     android:src="@drawable/img_mood_happy"
                     app:layout_constraintEnd_toEndOf="parent"

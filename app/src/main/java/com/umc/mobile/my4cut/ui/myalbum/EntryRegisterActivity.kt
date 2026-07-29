@@ -45,7 +45,7 @@ class EntryRegisterActivity : AppCompatActivity() {
     private val selectedImageUris = mutableStateListOf<Uri>()
 
     private var isDiaryExpanded = false
-    private var selectedMoodIndex = 2  // 기본값: HAPPY (두 번째 이모지)
+    private var selectedMoodIndex = 1  // 기본값: CALM (첫 번째 이모지)
 
     private val pickMultipleMedia = registerForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(50)
@@ -405,8 +405,8 @@ class EntryRegisterActivity : AppCompatActivity() {
                 }
             }
         }
-        // 기본 선택: Happy (두 번째 이모지, index=1)
-        updateMoodUI(moodViews, 1)
+        // 기본 선택: Calm (첫 번째 이모지, index=0)
+        updateMoodUI(moodViews, 0)
     }
 
     private fun updateMoodUI(views: List<ImageView>, selectedIndex: Int) {

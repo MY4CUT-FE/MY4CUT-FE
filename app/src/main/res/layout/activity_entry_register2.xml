@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="#FFFCFC">
 
     <ImageView
         android:id="@+id/btn_back"
@@ -153,7 +153,7 @@
                     android:textSize="12sp"
                     android:textColor="#888888"
                     android:layout_marginEnd="8dp"
-                    android:layout_marginBottom="10dp"
+                    android:layout_marginBottom="8dp"
                     app:layout_constraintBottom_toTopOf="@id/ll_mood_container"
                     app:layout_constraintEnd_toEndOf="@id/et_diary"/>
 

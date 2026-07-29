@@ -84,6 +84,11 @@ class EditProfileActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            if (!Regex("^[가-힣a-zA-Z]{1,7}$").matches(nickname)) {
+                Toast.makeText(this, "한글, 영어만 입력 가능하며, 7자 이내로 입력해주세요.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             if (selectedImageUri != null) {
                 // 이미지 + 닉네임 함께 수정
                 updateProfileImage(selectedImageUri!!) {

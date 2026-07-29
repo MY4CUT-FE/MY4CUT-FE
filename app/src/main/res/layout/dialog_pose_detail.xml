@@ -9,8 +9,8 @@
 
     <ImageView
         android:id="@+id/iv_dialog_close"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="19dp"
+        android:layout_height="19dp"
         android:padding="2dp"
         android:src="@drawable/ic_close"
         app:tint="#1A1A1A"
@@ -22,7 +22,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:scaleType="centerCrop"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="7dp"
         app:layout_constraintDimensionRatio="169:237"
         app:layout_constraintTop_toBottomOf="@id/iv_dialog_close"
         app:layout_constraintStart_toStartOf="parent"
