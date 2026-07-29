@@ -39,8 +39,8 @@
 
             <ImageView
                 android:id="@+id/ivProfile"
-                android:layout_width="27dp"
-                android:layout_height="27dp"
+                android:layout_width="29dp"
+                android:layout_height="29dp"
                 android:src="@drawable/ic_profile_cat"
                 style="@style/CircleImage"
                 app:layout_constraintTop_toTopOf="parent"
@@ -52,7 +52,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
                 android:fontFamily="@font/suit_regular"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:text="아몬드"
                 android:textColor="#1A1A1A"
                 app:layout_constraintStart_toEndOf="@id/ivProfile"
