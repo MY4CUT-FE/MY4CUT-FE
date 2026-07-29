@@ -23,12 +23,12 @@ import android.widget.Toast
 import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceUpdateRequestDto
-import com.umc.mobile.my4cut.databinding.DialogChangeSpaceBinding
+import com.umc.mobile.my4cut.databinding.DialogSpaceChangeBinding
 import com.umc.mobile.my4cut.ui.friend.FriendsMode
 
 class EditSpaceDialogFragment : DialogFragment() {
 
-    private var _binding: DialogChangeSpaceBinding? = null
+    private var _binding: DialogSpaceChangeBinding? = null
     private val binding get() = _binding!!
 
     private var popupWindow: PopupWindow? = null
@@ -64,7 +64,7 @@ class EditSpaceDialogFragment : DialogFragment() {
         savedInstanceState: Bundle?
     ): View {
         dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        _binding = DialogChangeSpaceBinding.inflate(inflater, container, false)
+        _binding = DialogSpaceChangeBinding.inflate(inflater, container, false)
         return binding.root
     }
 

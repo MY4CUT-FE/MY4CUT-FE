@@ -17,7 +17,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.umc.mobile.my4cut.ui.friend.Friend
 import com.umc.mobile.my4cut.R
-import com.umc.mobile.my4cut.databinding.DialogCreateSpaceBinding
+import com.umc.mobile.my4cut.databinding.DialogSpaceCreateBinding
 import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
 
 import androidx.lifecycle.lifecycleScope
@@ -36,7 +36,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
         onConfirmListener = listener
     }
 
-    private var _binding: DialogCreateSpaceBinding? = null
+    private var _binding: DialogSpaceCreateBinding? = null
     private val binding get() = _binding!!
 
     private var popupWindow: PopupWindow? = null
@@ -57,7 +57,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
         savedInstanceState: Bundle?
     ): View {
         dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        _binding = DialogCreateSpaceBinding.inflate(inflater, container, false)
+        _binding = DialogSpaceCreateBinding.inflate(inflater, container, false)
         return binding.root
     }
 
