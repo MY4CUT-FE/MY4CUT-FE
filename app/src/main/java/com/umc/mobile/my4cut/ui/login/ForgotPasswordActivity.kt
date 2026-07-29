@@ -1,18 +1,23 @@
 package com.umc.mobile.my4cut.ui.login
 
 import android.annotation.SuppressLint
+import android.app.Dialog
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.InputType
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.view.WindowManager
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.gson.JsonParser
 import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.auth.model.EmailVerifyResult
 import com.umc.mobile.my4cut.data.auth.model.PasswordResetRequest
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.ActivityForgotPasswordBinding
@@ -29,8 +34,8 @@ class ForgotPasswordActivity : AppCompatActivity() {
 
     // 인증코드 발송된 이메일 (인증 완료 후 비밀번호 재설정 시 사용)
     private var sentEmail: String = ""
-    // 검증 완료된 인증코드 (비밀번호 재설정 API 호출 시 함께 전달)
-    private var verifiedCode: String = ""
+    // 검증 완료 시 발급되는 토큰 (비밀번호 재설정 API 호출 시 code 대신 전달)
+    private var verificationToken: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,39 +72,30 @@ class ForgotPasswordActivity : AppCompatActivity() {
         }
     }
 
-    /** POST /auth/email/send - 비밀번호 재설정 인증코드 발송 (인증 불필요 엔드포인트 사용) */
+    /** POST /auth/email/password-reset/send - 비밀번호 재설정 인증코드 발송 */
     private fun sendVerificationCode(email: String) {
         binding.btnSendCode.isEnabled = false
         hideEmailError()
 
-        RetrofitClient.authServiceNoAuth.sendEmailVerificationCode(mapOf("email" to email))
+        RetrofitClient.authServiceNoAuth.sendPasswordResetEmailCode(mapOf("email" to email))
             .enqueue(object : Callback<BaseResponse<String>> {
                 override fun onResponse(
                     call: Call<BaseResponse<String>>,
                     response: Response<BaseResponse<String>>
                 ) {
                     binding.btnSendCode.isEnabled = true
-                    Log.d("ForgotPw_Send", "http=${response.code()}, body=${response.body()}")
+                    val errorBody = try { response.errorBody()?.string() } catch (e: Exception) { null }
+                    Log.d("ForgotPw_Send", "http=${response.code()}, body=${response.body()}, errorBody=$errorBody")
 
-                    when (response.code()) {
-                        200, 201 -> {
-                            sentEmail = email
-                            viewModel.setEmailVerified(false)
-                            verifiedCode = ""
-                            showSendGuide(email)
-                        }
-                        404 -> showEmailError("존재하지 않는 아이디입니다.")
-                        409 -> {
-                            // 이미 가입된 이메일 = 비밀번호 찾기 대상 이메일이 맞음 → 발송 안내
-                            sentEmail = email
-                            viewModel.setEmailVerified(false)
-                            verifiedCode = ""
-                            showSendGuide(email)
-                        }
-                        else -> {
-                            val msg = response.body()?.message ?: "인증코드 발송에 실패했습니다."
-                            showEmailError(msg)
-                        }
+                    if (response.isSuccessful) {
+                        sentEmail = email
+                        viewModel.setEmailVerified(false)
+                        verificationToken = ""
+                        showSendGuide(email)
+                    } else {
+                        val msg = extractErrorMessage(errorBody)
+                            ?: "인증코드 발송에 실패했습니다. (${response.code()})"
+                        showEmailError(msg)
                     }
                 }
 
@@ -111,7 +107,7 @@ class ForgotPasswordActivity : AppCompatActivity() {
             })
     }
 
-    /** POST /auth/email/verify - 인증코드 검증 (회원가입 로직 재사용) */
+    /** POST /auth/email/password-reset/verify - 인증코드 검증 */
     private fun verifyCode(email: String, code: String) {
         if (email.isEmpty()) {
             showEmailError("먼저 이메일을 입력하고 인증코드를 발송해주세요.")
@@ -120,21 +116,22 @@ class ForgotPasswordActivity : AppCompatActivity() {
         hideCodeError()
         binding.btnConfirm.isEnabled = false
 
-        RetrofitClient.authServiceNoAuth.verifyEmailCode(mapOf("email" to email, "code" to code))
-            .enqueue(object : Callback<BaseResponse<String>> {
+        RetrofitClient.authServiceNoAuth.verifyPasswordResetEmailCode(mapOf("email" to email, "code" to code))
+            .enqueue(object : Callback<BaseResponse<EmailVerifyResult>> {
                 override fun onResponse(
-                    call: Call<BaseResponse<String>>,
-                    response: Response<BaseResponse<String>>
+                    call: Call<BaseResponse<EmailVerifyResult>>,
+                    response: Response<BaseResponse<EmailVerifyResult>>
                 ) {
                     binding.btnConfirm.isEnabled = true
                     Log.d("ForgotPw_Verify", "http=${response.code()}, body=${response.body()}")
 
                     if (response.isSuccessful) {
-                        // 인증 성공 → ViewModel 상태 업데이트 후 BottomSheet 표시
-                        verifiedCode = code
+                        // 인증 성공 → 응답으로 받은 verificationToken을 저장 후 비밀번호 변경 모달 표시
+                        verificationToken = response.body()?.data?.verificationToken ?: ""
                         viewModel.setEmailVerified(true, email)
                         binding.etCode.setBackgroundResource(R.drawable.bg_edittext_success)
-                        showChangePasswordBottomSheet(email, code)
+                        showCodeSuccess("인증이 완료되었습니다.")
+                        showChangePasswordDialog(email, verificationToken)
                     } else {
                         val message = when (response.code()) {
                             400 -> "인증코드가 일치하지 않습니다."
@@ -145,7 +142,7 @@ class ForgotPasswordActivity : AppCompatActivity() {
                     }
                 }
 
-                override fun onFailure(call: Call<BaseResponse<String>>, t: Throwable) {
+                override fun onFailure(call: Call<BaseResponse<EmailVerifyResult>>, t: Throwable) {
                     binding.btnConfirm.isEnabled = true
                     Log.e("ForgotPw_Verify", "failure", t)
                     Toast.makeText(this@ForgotPasswordActivity, "네트워크 연결 상태를 확인해주세요.", Toast.LENGTH_SHORT).show()
@@ -153,17 +150,22 @@ class ForgotPasswordActivity : AppCompatActivity() {
             })
     }
 
-    /** [수정] Dialog → BottomSheetDialog로 교체 */
-    private fun showChangePasswordBottomSheet(email: String, code: String) {
-        val bottomSheet = BottomSheetDialog(this)
+    /** 비밀번호 변경 모달을 화면 중앙에 표시 */
+    private fun showChangePasswordDialog(email: String, verificationToken: String) {
+        val dialog = Dialog(this)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         val dialogBinding = DialogChangePasswordBinding.inflate(layoutInflater)
-        bottomSheet.setContentView(dialogBinding.root)
-        bottomSheet.setCanceledOnTouchOutside(false)
+        dialog.setContentView(dialogBinding.root)
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.88).toInt(),
+            WindowManager.LayoutParams.WRAP_CONTENT
+        )
 
         setupPasswordToggle(dialogBinding.etNewPassword)
         setupPasswordToggle(dialogBinding.etConfirmPassword)
 
-        dialogBinding.btnClose.setOnClickListener { bottomSheet.dismiss() }
+        dialogBinding.btnClose.setOnClickListener { dialog.dismiss() }
 
         dialogBinding.btnChange.setOnClickListener {
             val newPassword = dialogBinding.etNewPassword.text.toString()
@@ -178,9 +180,9 @@ class ForgotPasswordActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // 비밀번호 형식 검사: 영어/숫자/특수기호 8~15자
+            // 비밀번호 형식 검사: 영어/숫자/특수기호를 모두 포함, 8~15자
             if (!viewModel.isValidPassword(newPassword)) {
-                showDialogError(dialogBinding.tvNewPasswordError, dialogBinding.etNewPassword, "영어/숫자/특수기호 포함 8~15자로 작성해주세요.")
+                showDialogError(dialogBinding.tvNewPasswordError, dialogBinding.etNewPassword, "영어/숫자/특수기호를 모두 사용해 8~15자로 설정해주세요.")
                 return@setOnClickListener
             }
 
@@ -196,49 +198,52 @@ class ForgotPasswordActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            resetPassword(email, code, newPassword, bottomSheet, dialogBinding)
+            resetPassword(email, verificationToken, newPassword, dialog, dialogBinding)
         }
 
-        bottomSheet.show()
+        dialog.show()
     }
 
     /** POST /auth/password/reset - 비밀번호 재설정 */
     private fun resetPassword(
         email: String,
-        code: String,
+        verificationToken: String,
         newPassword: String,
-        bottomSheet: BottomSheetDialog,
+        dialog: Dialog,
         dialogBinding: DialogChangePasswordBinding
     ) {
         dialogBinding.btnChange.isEnabled = false
 
         RetrofitClient.authServiceNoAuth.resetPassword(
-            PasswordResetRequest(email = email, code = code, newPassword = newPassword)
+            PasswordResetRequest(email = email, verificationToken = verificationToken, newPassword = newPassword)
         ).enqueue(object : Callback<BaseResponse<Any>> {
             override fun onResponse(
                 call: Call<BaseResponse<Any>>,
                 response: Response<BaseResponse<Any>>
             ) {
                 dialogBinding.btnChange.isEnabled = true
-                Log.d("ForgotPw_Reset", "http=${response.code()}, body=${response.body()}")
+                val errorBody = try { response.errorBody()?.string() } catch (e: Exception) { null }
+                Log.d("ForgotPw_Reset", "http=${response.code()}, body=${response.body()}, errorBody=$errorBody")
 
                 when (response.code()) {
                     200, 201 -> {
-                        bottomSheet.dismiss()
+                        dialog.dismiss()
                         Toast.makeText(this@ForgotPasswordActivity, "비밀번호가 변경되었습니다.", Toast.LENGTH_SHORT).show()
                         finish()
                     }
                     400 -> {
-                        // 인증코드 불일치: BottomSheet 닫고 메인 화면에 코드 에러 표시
-                        bottomSheet.dismiss()
-                        showCodeError("인증코드가 일치하지 않습니다.")
+                        // 모달 닫고 메인 화면에 코드 에러 표시 (서버가 준 실제 메시지 우선 사용)
+                        dialog.dismiss()
+                        showCodeError(extractErrorMessage(errorBody) ?: "인증코드가 일치하지 않습니다.")
                     }
                     409 -> {
-                        // 이전과 동일한 비밀번호
-                        showDialogError(dialogBinding.tvNewPasswordError, dialogBinding.etNewPassword, "이전과 동일한 비밀번호입니다.")
+                        // 이전과 동일한 비밀번호 (새 비밀번호 + 재입력 칸 모두 표시)
+                        val message = "이전과 동일한 비밀번호입니다."
+                        showDialogError(dialogBinding.tvNewPasswordError, dialogBinding.etNewPassword, message)
+                        showDialogError(dialogBinding.tvConfirmPasswordError, dialogBinding.etConfirmPassword, message)
                     }
                     else -> {
-                        val msg = response.body()?.message ?: "비밀번호 변경에 실패했습니다."
+                        val msg = extractErrorMessage(errorBody) ?: "비밀번호 변경에 실패했습니다."
                         Toast.makeText(this@ForgotPasswordActivity, msg, Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -249,6 +254,15 @@ class ForgotPasswordActivity : AppCompatActivity() {
                 Toast.makeText(this@ForgotPasswordActivity, "네트워크 연결 상태를 확인해주세요.", Toast.LENGTH_SHORT).show()
             }
         })
+    }
+
+    /** 에러 응답 body(JSON)에서 message 필드 추출 */
+    private fun extractErrorMessage(errorBody: String?): String? {
+        return try {
+            errorBody?.let { JsonParser.parseString(it).asJsonObject.get("message")?.asString }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     // ───────────────────── UI 헬퍼 ─────────────────────
@@ -274,8 +288,19 @@ class ForgotPasswordActivity : AppCompatActivity() {
         binding.tvCodeError.visibility = View.VISIBLE
         binding.tvCodeError.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_error_circle, 0, 0, 0)
         val color = ContextCompat.getColor(this, R.color.modal_red)
+        binding.tvCodeError.setTextColor(color)
         binding.tvCodeError.compoundDrawables[0]?.setTint(color)
         binding.etCode.setBackgroundResource(R.drawable.bg_edittext_error)
+    }
+
+    /** 인증코드 검증 완료 표시 */
+    private fun showCodeSuccess(message: String) {
+        binding.tvCodeError.text = message
+        binding.tvCodeError.visibility = View.VISIBLE
+        binding.tvCodeError.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_check_circle, 0, 0, 0)
+        val color = ContextCompat.getColor(this, R.color.success_green)
+        binding.tvCodeError.setTextColor(color)
+        binding.tvCodeError.compoundDrawables[0]?.setTint(color)
     }
 
     private fun hideCodeError() {

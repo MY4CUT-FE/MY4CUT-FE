@@ -19,18 +19,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!--
-            [핵심 수정] layout_gravity="center" → "start|center_vertical"
-            이유: ViewPager paddingHorizontal=40dp일 때 다음 카드의 좌측 40dp만 peek으로 노출됨.
-            center 배치 시 아이콘이 카드 중앙(~120dp)에 위치해 40dp peek 영역 밖에 있어 보이지 않음.
-            start 배치 + marginStart=4dp → 아이콘 범위(4~33dp)가 peek 영역(0~36dp) 안에 완전히 포함됨.
-        -->
+        <!-- 카드 어느 상태에서든 항상 정중앙에 고정 -->
         <ImageView
             android:id="@+id/iv_add_icon"
             android:layout_width="29dp"
             android:layout_height="29dp"
-            android:layout_gravity="start|center_vertical"
-            android:layout_marginStart="12dp"
+            android:layout_gravity="center"
             android:src="@drawable/btn_upload_photo"
             android:scaleType="fitCenter"/>
 

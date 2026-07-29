@@ -21,7 +21,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="centerCrop"
-            android:src="@color/white" />
+            android:background="@drawable/bg_skeleton_img"
+            android:src="@drawable/ic_skeleton_img" />
     </com.google.android.material.card.MaterialCardView>
 
     <TextView

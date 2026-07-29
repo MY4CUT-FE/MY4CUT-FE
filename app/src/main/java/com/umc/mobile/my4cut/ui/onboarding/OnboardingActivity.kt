@@ -10,6 +10,9 @@ import android.view.animation.Animation
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.umc.mobile.my4cut.MainActivity
+import com.umc.mobile.my4cut.data.auth.local.TokenManager
 import com.umc.mobile.my4cut.databinding.ActivityOnboardingBinding
 import com.umc.mobile.my4cut.ui.login.LoginActivity
 
@@ -23,7 +26,18 @@ class OnboardingActivity : AppCompatActivity() {
         ) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
+
+        // 유효한 토큰이 있으면 온보딩/로그인 건너뛰고 바로 메인으로 이동
+        if (TokenManager.isAccessTokenValid(this)) {
+            val intent = Intent(this, MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+            return
+        }
+
         binding = ActivityOnboardingBinding.inflate(layoutInflater)
         setContentView(binding.root)
 

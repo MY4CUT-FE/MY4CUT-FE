@@ -3,10 +3,9 @@ package com.umc.mobile.my4cut.ui.myalbum
 import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import com.bumptech.glide.Glide
-import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.album.model.AlbumResponse
 import com.umc.mobile.my4cut.databinding.ItemAlbumBinding
+import com.umc.mobile.my4cut.ui.theme.loadWithSkeleton
 
 
 class AlbumRVAdapter (
@@ -30,9 +29,7 @@ class AlbumRVAdapter (
     inner class ViewHolder(val binding: ItemAlbumBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: AlbumResponse) {
             binding.tvAlbumTitle.text = item.name
-            Glide.with(binding.root.context)
-                .load(item.coverImageUrl)
-                .into(binding.ivAlbumCover)
+            binding.ivAlbumCover.loadWithSkeleton(item.coverImageUrl)
             binding.root.setOnClickListener { onClick(item) }
         }
     }

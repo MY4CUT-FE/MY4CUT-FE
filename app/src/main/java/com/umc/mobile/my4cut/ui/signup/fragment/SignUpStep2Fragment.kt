@@ -12,10 +12,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.Toast
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.auth.model.EmailVerifyResult
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.FragmentSignUpStep2Binding
 import com.umc.mobile.my4cut.network.RetrofitClient
@@ -110,15 +112,6 @@ class SignUpStep2Fragment : Fragment() {
             val email = binding.etEmail.text.toString()
             val password = binding.etPassword.text.toString()
 
-            if (!viewModel.isValidPassword(password)) {
-                Toast.makeText(
-                    requireContext(),
-                    "영어/숫자/특수기호만 입력 가능하며, 8~15자로 비밀번호를 설정해주세요.",
-                    Toast.LENGTH_SHORT
-                ).show()
-                return@setOnClickListener
-            }
-
             val fragment = SignUpStep3Fragment()
             val bundle = Bundle()
             bundle.putString("email", email)
@@ -128,7 +121,7 @@ class SignUpStep2Fragment : Fragment() {
         }
     }
 
-    /** POST /auth/email/send - 이메일 인증코드 발송 */
+    /** POST /auth/email/signup/send - 이메일 인증코드 발송 */
     private fun sendVerificationCode(email: String) {
         binding.btnSendVerification.isEnabled = false
 
@@ -167,16 +160,16 @@ class SignUpStep2Fragment : Fragment() {
             })
     }
 
-    /** POST /auth/email/verify - 인증코드 검증 */
+    /** POST /auth/email/signup/verify - 인증코드 검증 */
     private fun verifyCode(email: String, code: String) {
         binding.btnVerify.isEnabled = false
 
         val request = mapOf("email" to email, "code" to code)
         RetrofitClient.authServiceNoAuth.verifyEmailCode(request)
-            .enqueue(object : Callback<BaseResponse<String>> {
+            .enqueue(object : Callback<BaseResponse<EmailVerifyResult>> {
                 override fun onResponse(
-                    call: Call<BaseResponse<String>>,
-                    response: Response<BaseResponse<String>>
+                    call: Call<BaseResponse<EmailVerifyResult>>,
+                    response: Response<BaseResponse<EmailVerifyResult>>
                 ) {
                     binding.btnVerify.isEnabled = true
                     Log.d("SignUp", "verifyCode http=${response.code()}, body=${response.body()}")
@@ -194,12 +187,19 @@ class SignUpStep2Fragment : Fragment() {
                     }
                 }
 
-                override fun onFailure(call: Call<BaseResponse<String>>, t: Throwable) {
+                override fun onFailure(call: Call<BaseResponse<EmailVerifyResult>>, t: Throwable) {
                     binding.btnVerify.isEnabled = true
                     Log.e("SignUp", "verifyCode failure", t)
                     Toast.makeText(requireContext(), "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
                 }
             })
+    }
+
+    /** tv_email_status의 가로 정렬 전환 (발송 안내=왼쪽, 에러=오른쪽) */
+    private fun setEmailStatusAlignEnd(alignEnd: Boolean) {
+        val params = binding.tvEmailStatus.layoutParams as? ConstraintLayout.LayoutParams ?: return
+        params.horizontalBias = if (alignEnd) 1f else 0f
+        binding.tvEmailStatus.layoutParams = params
     }
 
     /** 인증코드 발송 후 안내 문구 + 입력 영역 표시 */
@@ -209,6 +209,7 @@ class SignUpStep2Fragment : Fragment() {
         binding.tvEmailStatus.text = "${email}로 인증 코드를 발송했습니다.\n메일을 확인하고 인증코드 6자리를 입력해 주세요."
         binding.tvEmailStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.gray_500))
         binding.tvEmailStatus.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+        setEmailStatusAlignEnd(false)
         binding.etVerificationCode.visibility = View.VISIBLE
         binding.btnVerify.visibility = View.VISIBLE
         // 재발송 시 인증 상태 초기화
@@ -230,6 +231,7 @@ class SignUpStep2Fragment : Fragment() {
         binding.tvEmailStatus.setTextColor(color)
         binding.tvEmailStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_error_circle, 0, 0, 0)
         binding.tvEmailStatus.compoundDrawables[0]?.setTint(color)
+        setEmailStatusAlignEnd(true)
         binding.etVerificationCode.visibility = View.GONE
         binding.btnVerify.visibility = View.GONE
         binding.tvVerificationStatus.visibility = View.GONE
@@ -292,8 +294,35 @@ class SignUpStep2Fragment : Fragment() {
             }
         })
 
-        binding.etPassword.addTextChangedListener(watcher)
+        binding.etPassword.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                checkPasswordFormat()
+                checkPasswordMatch()
+                checkInputValidity()
+            }
+        })
         binding.etPasswordCheck.addTextChangedListener(watcher)
+    }
+
+    /** 비밀번호 형식 검사: 영어/숫자/특수기호 모두 포함 8~15자 */
+    private fun checkPasswordFormat() {
+        val pw = binding.etPassword.text.toString()
+
+        if (pw.isEmpty() || viewModel.isValidPassword(pw)) {
+            binding.tvPasswordStatus.visibility = View.GONE
+            binding.etPassword.setBackgroundResource(R.drawable.bg_edittext_rounded)
+            return
+        }
+
+        binding.etPassword.setBackgroundResource(R.drawable.bg_edittext_error)
+        binding.tvPasswordStatus.visibility = View.VISIBLE
+        binding.tvPasswordStatus.text = "영어/숫자/특수기호를 모두 사용해 8~15자로 설정해주세요."
+        val color = ContextCompat.getColor(requireContext(), R.color.modal_red)
+        binding.tvPasswordStatus.setTextColor(color)
+        binding.tvPasswordStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_error_circle, 0, 0, 0)
+        binding.tvPasswordStatus.compoundDrawables[0]?.setTint(color)
     }
 
     private fun checkPasswordMatch() {
@@ -323,7 +352,7 @@ class SignUpStep2Fragment : Fragment() {
             binding.tvPwStatus.setTextColor(color)
             binding.tvPwStatus.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_error_circle, 0, 0, 0)
             binding.tvPwStatus.compoundDrawables[0]?.setTint(color)
-            binding.etPasswordCheck.setBackgroundResource(R.drawable.bg_edittext_rounded)
+            binding.etPasswordCheck.setBackgroundResource(R.drawable.bg_edittext_error)
             isPasswordMatched = false
         }
     }
@@ -331,7 +360,8 @@ class SignUpStep2Fragment : Fragment() {
     private fun checkInputValidity() {
         val email = binding.etEmail.text.toString()
         val pw = binding.etPassword.text.toString()
-        binding.btnNext.isEnabled = email.isNotEmpty() && isEmailVerified && pw.isNotEmpty() && isPasswordMatched
+        binding.btnNext.isEnabled = email.isNotEmpty() && isEmailVerified && pw.isNotEmpty() &&
+            isPasswordMatched && viewModel.isValidPassword(pw)
     }
 
     override fun onDestroyView() {

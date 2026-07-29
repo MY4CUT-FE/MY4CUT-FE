@@ -23,7 +23,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
-import coil.load
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.umc.mobile.my4cut.MainActivity
@@ -35,6 +34,7 @@ import com.umc.mobile.my4cut.databinding.FragmentEntryDetailBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoAddBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoSlider2Binding
 import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.ui.theme.loadWithSkeleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -68,14 +68,19 @@ class EntryDetailFragment : Fragment() {
     private var typicalImageIndex: Int = 0
 
     private val pickMultipleMedia = registerForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(50)
+        ActivityResultContracts.PickMultipleVisualMedia(3)
     ) { uris ->
         if (uris.isNotEmpty()) {
-            uris.forEach { uri ->
+            val remaining = 3 - imageItems.size
+            val toAdd = uris.take(remaining)
+            toAdd.forEach { uri ->
                 imageItems.add(ImageItem(
                     uri = uri.toString(),
                     isNew = true
                 ))
+            }
+            if (uris.size > remaining) {
+                Toast.makeText(requireContext(), "사진은 최대 3장까지 추가할 수 있어요.", Toast.LENGTH_SHORT).show()
             }
             updatePhotoState()
             binding.vpPhotoSlider.currentItem = imageItems.size - 1
@@ -99,9 +104,60 @@ class EntryDetailFragment : Fragment() {
 
         setupClickListeners()
         setupDiaryLogic()
+        setupKeyboardScroll()
 
         if (apiDate != null) {
             fetchDay4CutDetail()
+        }
+    }
+
+    // 일기 EditText에 포커스가 갈 때(키보드가 올라올 때) 해당 영역이 가려지지 않도록 아래로 스크롤
+    private fun setupKeyboardScroll() {
+        // 이 앱은 엣지투엣지 모드가 아니라 windowSoftInputMode="adjustResize"로 동작하므로
+        // 창이 자동으로 리사이즈된다. 여기서는 리사이즈된 화면 안에서 다이어리 입력창이
+        // 가려지지 않도록 스크롤 위치만 보정해준다.
+        binding.etDiary.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                binding.etDiary.post {
+                    binding.nsvEntryDetail.smoothScrollTo(0, binding.clDiaryContent.bottom)
+                }
+            }
+        }
+
+        // 타이핑 중 커서 위치 추적은 NestedScrollView의 기본 동작에 맡긴다.
+        // (매 글자마다 강제로 맨 아래까지 스크롤시키면 커서가 위쪽에 있어도 화면 밖으로 밀려남)
+
+        // fcv_main(부모)은 리사이즈됐는데 nsvEntryDetail(자식)이 이전 크기에 멈춰있는 경우가 있어서,
+        // 어긋나면 실제 높이값을 직접 계산해서 강제로 덮어쓰고, 스크롤 위치도 새 범위로 당겨온다.
+        var isFixingHeight = false
+        binding.nsvEntryDetail.viewTreeObserver.addOnGlobalLayoutListener {
+            val nsv = binding.nsvEntryDetail
+            val fcvMain = requireActivity().findViewById<View>(R.id.fcv_main)
+
+            Log.d(
+                "HeightDebug",
+                "nsvEntryDetail height=${nsv.height}, top=${nsv.top}, scrollY=${nsv.scrollY}, " +
+                        "childHeight=${nsv.getChildAt(0)?.height}, fcvMainHeight=${fcvMain?.height}"
+            )
+
+            if (!isFixingHeight && fcvMain != null && fcvMain.height > 0) {
+                val desiredHeight = fcvMain.height - nsv.top
+                if (desiredHeight > 0 && desiredHeight != nsv.height) {
+                    isFixingHeight = true
+                    val params = nsv.layoutParams
+                    params.height = desiredHeight
+                    nsv.layoutParams = params
+                    nsv.post { isFixingHeight = false }
+                }
+            }
+
+            val child = nsv.getChildAt(0)
+            if (child != null) {
+                val maxScroll = (child.height - nsv.height).coerceAtLeast(0)
+                if (nsv.scrollY > maxScroll) {
+                    nsv.scrollTo(0, maxScroll)
+                }
+            }
         }
     }
 
@@ -218,6 +274,10 @@ class EntryDetailFragment : Fragment() {
     }
 
     private fun launchPhotoPicker() {
+        if (imageItems.size >= 3) {
+            Toast.makeText(requireContext(), "사진은 최대 3장까지 추가할 수 있어요.", Toast.LENGTH_SHORT).show()
+            return
+        }
         pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
     }
 
@@ -252,16 +312,17 @@ class EntryDetailFragment : Fragment() {
                         targetCard.strokeColor = color
                     }
 
+                    // position=0(완전히 현재 페이지) → 카드 정중앙
+                    // position=1(오른쪽에 40dp만 peek로 보이는 상태) → peek 영역(0~40dp)의 중앙(20dp 지점)
                     val addIcon = page.findViewById<ImageView>(R.id.iv_add_icon)
-
-                    if (addIcon != null && addCard != null) {
-                        if (position > 0) {
-                            val cardWidth = if (addCard.width > 0) addCard.width.toFloat() else 1000f
-                            val moveDistance = (cardWidth / 2f) - (addIcon.width / 2f) - 20f
-                            addIcon.translationX = -position * moveDistance
-                        } else {
-                            addIcon.translationX = 0f
-                        }
+                    if (addIcon != null && addCard != null && addCard.width > 0) {
+                        val density = page.resources.displayMetrics.density
+                        val peekCenterX = 20f * density // ViewPager2 paddingHorizontal(40dp)의 절반
+                        val cardCenterX = addCard.width / 2f
+                        val clampedPosition = position.coerceIn(0f, 1f)
+                        addIcon.translationX = clampedPosition * (peekCenterX - cardCenterX)
+                    } else {
+                        addIcon?.translationX = 0f
                     }
                 }
                 setPageTransformer(transform)
@@ -651,10 +712,7 @@ class EntryDetailFragment : Fragment() {
                     if (isTypical) R.drawable.ic_typical_on else R.drawable.ic_typical_off
                 )
 
-                photoHolder.binding.ivPhoto.load(item.uri) {
-                    crossfade(true)
-                    error(R.drawable.img_ex_photo)
-                }
+                photoHolder.binding.ivPhoto.loadWithSkeleton(item.uri)
 
                 photoHolder.binding.ivTypical.setOnClickListener {
                     if (isEditMode) {
