@@ -66,7 +66,7 @@
             android:layout_width="16dp"
             android:layout_height="14dp"
             android:layout_marginStart="18dp"
-            android:src="@drawable/ic_down" />
+            android:src="@drawable/ic_space_down" />
 
     </LinearLayout>
 
