@@ -27,6 +27,7 @@ import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.databinding.DialogExit2Binding
 import com.umc.mobile.my4cut.ui.theme.loadWithSkeleton
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -44,6 +45,8 @@ class AlbumDetailFragment : Fragment() {
     private var albumId: Int = -1
     private val photoList = mutableListOf<PhotoResponse>()
     private lateinit var detailAdapter: AlbumDetailAdapter
+
+    private val MIN_SKELETON_DURATION_MS = 400L
 
     // 편집 모드 상태
     private var isEditMode = false
@@ -106,7 +109,7 @@ class AlbumDetailFragment : Fragment() {
         binding.tvCancel.visibility = View.VISIBLE
         binding.tvSave.visibility = View.VISIBLE
         binding.lineTitleDotted.visibility = View.VISIBLE
-        binding.tvTitle.setTextColor(android.graphics.Color.parseColor("#808080"))
+        binding.tvTitle.setTextColor(android.graphics.Color.parseColor("#AAAAAA"))
 
         detailAdapter.setEditMode(true)
     }
@@ -155,14 +158,27 @@ class AlbumDetailFragment : Fragment() {
 
     // [GET] 앨범 상세 정보 조회
     private fun fetchAlbumDetail() {
+        detailAdapter.showSkeleton()
+        val startTime = android.os.SystemClock.elapsedRealtime()
+
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response = RetrofitClient.albumService.getAlbumDetail(albumId)
+
+                // 로딩이 너무 빨리 끝나면 스켈레톤이 한 프레임도 안 보이고 지나가버리므로
+                // 최소 MIN_SKELETON_DURATION_MS만큼은 스켈레톤이 보이도록 지연 처리
+                val elapsed = android.os.SystemClock.elapsedRealtime() - startTime
+                val remaining = MIN_SKELETON_DURATION_MS - elapsed
+                if (remaining > 0) delay(remaining)
+
                 if (response.code == "A2003") { // 서버 응답 코드 확인
                     updateUI(response.data?.mediaList)
+                } else {
+                    detailAdapter.hideSkeleton()
                 }
             } catch (e: Exception) {
                 Log.e("API_ERROR", "상세 데이터 로드 실패: ${e.message}")
+                detailAdapter.hideSkeleton()
             }
         }
     }
@@ -268,7 +284,7 @@ class AlbumDetailFragment : Fragment() {
         Log.d("ALBUM_DEBUG", "받아온 사진 개수: ${newList?.size ?: 0}")
         photoList.clear()
         newList?.let { photoList.addAll(it.reversed()) }
-        detailAdapter.notifyDataSetChanged()
+        detailAdapter.hideSkeleton()
     }
 
     private fun setupRecyclerView() {
@@ -287,6 +303,7 @@ class AlbumDetailFragment : Fragment() {
                 if (!isEditMode) showSimplePhotoModal(viewUrl)
             },
             onDeleteClick = { photo, position ->
+                // TODO: PhotoResponse에 mediaId 필드명이 다르면 photo.mediaId 부분 수정 필요
                 pendingDeleteMediaIds.add(photo.mediaId)
                 photoList.removeAt(position)
                 detailAdapter.notifyItemRemoved(position)
@@ -402,47 +419,92 @@ class AlbumDetailFragment : Fragment() {
 
         private val TYPE_PHOTO = 0
         private val TYPE_ADD = 1
+        private val TYPE_SKELETON = 2
 
         private var editMode = false
+        private var isLoading = false
+        private val SKELETON_COUNT = 12
 
         fun setEditMode(enabled: Boolean) {
             editMode = enabled
             notifyDataSetChanged()
         }
 
-        inner class PhotoViewHolder(val binding: ItemAlbumDetailBinding) : RecyclerView.ViewHolder(binding.root)
+        // 데이터 로딩 시작 전 호출 - 진짜 사진 대신 스켈레톤 아이템들을 먼저 보여줌
+        fun showSkeleton() {
+            isLoading = true
+            notifyDataSetChanged()
+        }
+
+        // 데이터 로딩이 끝났을 때 호출 - 실제 photos 리스트 내용으로 전환
+        fun hideSkeleton() {
+            isLoading = false
+            notifyDataSetChanged()
+        }
+
+        inner class PhotoViewHolder(val binding: ItemAlbumDetailBinding) : RecyclerView.ViewHolder(binding.root) {
+
+            // 로딩 중일 때 표시할 스켈레톤 상태
+            fun bindSkeleton() {
+                itemView.isClickable = false
+                itemView.setOnClickListener(null)
+
+                binding.ivDeletePhoto.visibility = View.GONE
+                binding.ivDeletePhoto.setOnClickListener(null)
+
+                binding.cvAlbumCover.strokeColor = androidx.core.content.ContextCompat.getColor(
+                    itemView.context, R.color.transparent
+                )
+
+                binding.ivAlbumCover.setImageResource(R.drawable.ic_skeleton_img)
+                binding.ivAlbumCover.scaleType = android.widget.ImageView.ScaleType.CENTER
+                binding.ivAlbumCover.setBackgroundResource(R.drawable.bg_skeleton_img)
+            }
+        }
         inner class AddViewHolder(val binding: ItemAlbumAddBinding) : RecyclerView.ViewHolder(binding.root)
 
         override fun getItemViewType(position: Int): Int {
-            return if (position == photos.size) TYPE_ADD else TYPE_PHOTO
+            return when {
+                isLoading -> TYPE_SKELETON
+                position == photos.size -> TYPE_ADD
+                else -> TYPE_PHOTO
+            }
         }
 
-        override fun getItemCount(): Int = photos.size + 1
+        override fun getItemCount(): Int = if (isLoading) SKELETON_COUNT else photos.size + 1
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             val inflater = LayoutInflater.from(parent.context)
-            return if (viewType == TYPE_PHOTO) {
-                val binding = ItemAlbumDetailBinding.inflate(inflater, parent, false)
-                PhotoViewHolder(binding)
-            } else {
+            return if (viewType == TYPE_ADD) {
                 val binding = ItemAlbumAddBinding.inflate(inflater, parent, false)
                 AddViewHolder(binding)
+            } else {
+                // TYPE_PHOTO, TYPE_SKELETON 둘 다 같은 레이아웃 재사용
+                val binding = ItemAlbumDetailBinding.inflate(inflater, parent, false)
+                PhotoViewHolder(binding)
             }
         }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             if (holder is PhotoViewHolder) {
+                if (isLoading) {
+                    holder.bindSkeleton()
+                    return
+                }
+
                 val photo = photos[position]
 
                 holder.binding.ivAlbumCover.loadWithSkeleton(photo.viewUrl)
 
                 // 편집 모드일 때만 회색 테두리 + 삭제 아이콘 노출
                 holder.binding.cvAlbumCover.strokeColor = if (editMode) {
-                    android.graphics.Color.parseColor("#B3B3B3")
+                    android.graphics.Color.parseColor("#999999")
                 } else {
                     androidx.core.content.ContextCompat.getColor(holder.itemView.context, R.color.transparent)
                 }
                 holder.binding.ivDeletePhoto.visibility = if (editMode) View.VISIBLE else View.GONE
+
+                holder.itemView.isClickable = true
 
                 holder.binding.ivDeletePhoto.setOnClickListener {
                     val currentPos = holder.bindingAdapterPosition
