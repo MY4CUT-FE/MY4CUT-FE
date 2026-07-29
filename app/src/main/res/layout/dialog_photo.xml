@@ -165,7 +165,7 @@
                 android:id="@+id/ivToggleComment"
                 android:layout_width="10dp"
                 android:layout_height="9dp"
-                android:src="@drawable/ic_down"
+                android:src="@drawable/ic_space_down"
                 android:layout_marginTop="35dp"
                 app:layout_constraintTop_toBottomOf="@id/ivMainPhoto"
                 app:layout_constraintEnd_toEndOf="parent" />
