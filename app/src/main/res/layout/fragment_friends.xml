@@ -120,8 +120,8 @@
 
                 <ImageView
                     android:id="@+id/ivEmptyFriends"
-                    android:layout_width="98dp"
-                    android:layout_height="66dp"
+                    android:layout_width="110dp"
+                    android:layout_height="90dp"
                     android:adjustViewBounds="true"
                     android:src="@drawable/img_empty_state_character"
                     android:contentDescription="@null"
@@ -134,11 +134,10 @@
                     android:id="@+id/tvEmptyFriends"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:fontFamily="@font/suit_medium"
+                    android:fontFamily="@font/suit_regular"
                     android:text="아직 추가된 친구가 없어요"
-                    android:textColor="#D1D1D1"
-                    android:textSize="14sp"
+                    android:textColor="#B6B6B6"
+                    android:textSize="12sp"
                     app:layout_constraintTop_toBottomOf="@id/ivEmptyFriends"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent" />
