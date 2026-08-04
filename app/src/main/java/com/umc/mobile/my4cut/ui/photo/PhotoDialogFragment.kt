@@ -2,6 +2,8 @@ package com.umc.mobile.my4cut.ui.photo
 
 import android.app.DownloadManager
 import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Environment
 import android.webkit.URLUtil
@@ -712,10 +714,15 @@ class PhotoDialogFragment : DialogFragment() {
 
     override fun onStart() {
         super.onStart()
-        dialog?.window?.setLayout(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            (resources.displayMetrics.heightPixels * 0.85).toInt(),
-        )
+
+        dialog?.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+            setLayout(
+                (resources.displayMetrics.widthPixels * 0.9).toInt(),
+                (resources.displayMetrics.heightPixels * 0.85).toInt()
+            )
+        }
     }
 
     companion object {
