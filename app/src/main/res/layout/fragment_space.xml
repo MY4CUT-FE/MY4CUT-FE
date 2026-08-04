@@ -98,6 +98,45 @@
         tools:layout_editor_absoluteX="0dp"
         tools:listitem="@layout/item_photo" />
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutEmptyPhotos"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/rvMembers"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:id="@+id/ivEmptyPhotos"
+            android:layout_width="110dp"
+            android:layout_height="90dp"
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"
+            android:src="@drawable/img_empty_state_character"
+            android:contentDescription="@null"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/tvEmptyPhotos"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintVertical_chainStyle="packed" />
+
+        <TextView
+            android:id="@+id/tvEmptyPhotos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/suit_regular"
+            android:text="아직 업로드한 사진이 없어요"
+            android:textColor="#B6B6B6"
+            android:textSize="12sp"
+            app:layout_constraintTop_toBottomOf="@id/ivEmptyPhotos"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
     <LinearLayout
         android:id="@+id/btnUpload"
         android:layout_width="wrap_content"

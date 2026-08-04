@@ -130,6 +130,14 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
 
             if (deletedPhotoId != -1L) {
                 photoAdapter.removePhoto(deletedPhotoId)
+
+                val isEmpty = photoAdapter.itemCount == 0
+
+                binding.layoutEmptyPhotos.visibility =
+                    if (isEmpty) View.VISIBLE else View.GONE
+
+                binding.rvPhotoList.visibility =
+                    if (isEmpty) View.GONE else View.VISIBLE
             }
         }
 
@@ -384,6 +392,15 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     val list = response.body()?.data ?: emptyList()
                     Log.d("PHOTO_DEBUG", "서버에서 받은 사진 개수 = ${list.size}")
 
+                    // empty state
+                    val isEmpty = list.isEmpty()
+
+                    binding.layoutEmptyPhotos.visibility =
+                        if (isEmpty) View.VISIBLE else View.GONE
+
+                    binding.rvPhotoList.visibility =
+                        if (isEmpty) View.GONE else View.VISIBLE
+
                     val newPhotos = ArrayList<PhotoData>()
 
                     for (photoResponse in list) {
@@ -411,6 +428,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     photoDatas.clear()
                     photoDatas.addAll(newPhotos)
                     photoAdapter.updatePhotos(newPhotos)
+                    photoAdapter.hideSkeleton()
 
                     for (photo in newPhotos) {
                         viewLifecycleOwner.lifecycleScope.launch {
