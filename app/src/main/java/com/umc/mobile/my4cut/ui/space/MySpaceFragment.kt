@@ -196,6 +196,18 @@ class MySpaceFragment : Fragment() {
                     }
                 )
 
+                // empty state
+                val isEmpty = spaces.isEmpty()
+
+                binding.tvEmptyMySpace.visibility =
+                    if (isEmpty) View.VISIBLE else View.GONE
+
+                binding.rvMySpaces.visibility =
+                    if (isEmpty) View.GONE else View.VISIBLE
+
+                binding.layoutSpaceIndicator.visibility =
+                    if (isEmpty) View.GONE else View.VISIBLE
+
                 currentPage = 0
 
                 mySpaceAdapter.submitList(

@@ -69,6 +69,8 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
                 val friends = response.data ?: return@launch
                 Log.d("FRIEND_API", "response size = ${friends.size}")
 
+                allFriends.clear()
+
                 allFriends.addAll(
                     friends.map {
                         Log.d("FRIEND_API", "nickname=${it.nickname}, profileImageUrl=${it.profileImageUrl}")
@@ -93,19 +95,36 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
 
     // allFriends에서 UI 리스트 생성 및 어댑터에 반영
     private fun submitFriends() {
+        val isEmpty = allFriends.isEmpty()
+
+        friendsAdapter.hideSkeleton()
+
+        binding.layoutEmptyFriends.visibility =
+            if (isEmpty) View.VISIBLE else View.GONE
+
+        binding.rvFriends.visibility =
+            if (isEmpty) View.GONE else View.VISIBLE
+
+        binding.layoutIndexScroller.visibility =
+            if (isEmpty) View.GONE else View.VISIBLE
+
+        if (isEmpty) {
+            friendsAdapter.submitList(emptyList())
+            return
+        }
+
         val favorites = allFriends.filter { it.isFavorite }
         val normalFriends = allFriends.filter { !it.isFavorite }
+
         val uiItems = buildList<FriendUiItem> {
             if (favorites.isNotEmpty()) {
                 add(FriendUiItem.Header("즐겨찾기"))
                 favorites.forEach { add(FriendUiItem.Item(it)) }
             }
+
             add(FriendUiItem.Header("친구 목록"))
             normalFriends.forEach { add(FriendUiItem.Item(it)) }
         }
-
-        // 스켈레톤 취소
-        friendsAdapter.hideSkeleton()
 
         friendsAdapter.submitList(uiItems)
     }
