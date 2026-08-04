@@ -108,6 +108,43 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
 
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/layoutEmptyFriends"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@id/tvFriendsTitle"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <ImageView
+                    android:id="@+id/ivEmptyFriends"
+                    android:layout_width="98dp"
+                    android:layout_height="66dp"
+                    android:adjustViewBounds="true"
+                    android:src="@drawable/img_empty_state_character"
+                    android:contentDescription="@null"
+                    android:layout_marginTop="80dp"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
+                <TextView
+                    android:id="@+id/tvEmptyFriends"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="@font/suit_medium"
+                    android:text="아직 추가된 친구가 없어요"
+                    android:textColor="#D1D1D1"
+                    android:textSize="14sp"
+                    app:layout_constraintTop_toBottomOf="@id/ivEmptyFriends"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
             <!-- ㄱㄴㄷ 인덱스 스크롤러 -->
             <LinearLayout
                 android:id="@+id/layoutIndexScroller"
