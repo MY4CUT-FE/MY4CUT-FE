@@ -62,7 +62,6 @@ class PhotoDialogFragment : DialogFragment() {
     private lateinit var rvChatList: RecyclerView
     private lateinit var ivToggleComment: ImageView
     private lateinit var ivToggleCommentTouchArea: View
-    private lateinit var tvConfirm: TextView
     private lateinit var etComment: EditText
 
     // 전달받을 값
@@ -210,7 +209,6 @@ class PhotoDialogFragment : DialogFragment() {
         tvUserName = view.findViewById(R.id.tvUserName)
         tvDate = view.findViewById(R.id.tvDate)
         tvChat = view.findViewById(R.id.tvChat)
-        tvConfirm = view.findViewById(R.id.mainText)
 
         rvChatList = view.findViewById(R.id.rvChatList)
         ivToggleComment = view.findViewById(R.id.ivToggleComment)
