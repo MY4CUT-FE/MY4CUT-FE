@@ -2,6 +2,8 @@ package com.umc.mobile.my4cut.ui.photo
 
 import android.app.DownloadManager
 import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Environment
 import android.webkit.URLUtil
@@ -60,7 +62,6 @@ class PhotoDialogFragment : DialogFragment() {
     private lateinit var rvChatList: RecyclerView
     private lateinit var ivToggleComment: ImageView
     private lateinit var ivToggleCommentTouchArea: View
-    private lateinit var tvConfirm: TextView
     private lateinit var etComment: EditText
 
     // 전달받을 값
@@ -208,7 +209,6 @@ class PhotoDialogFragment : DialogFragment() {
         tvUserName = view.findViewById(R.id.tvUserName)
         tvDate = view.findViewById(R.id.tvDate)
         tvChat = view.findViewById(R.id.tvChat)
-        tvConfirm = view.findViewById(R.id.mainText)
 
         rvChatList = view.findViewById(R.id.rvChatList)
         ivToggleComment = view.findViewById(R.id.ivToggleComment)
@@ -712,10 +712,15 @@ class PhotoDialogFragment : DialogFragment() {
 
     override fun onStart() {
         super.onStart()
-        dialog?.window?.setLayout(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            (resources.displayMetrics.heightPixels * 0.85).toInt(),
-        )
+
+        dialog?.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+            setLayout(
+                (resources.displayMetrics.widthPixels * 0.9).toInt(),
+                (resources.displayMetrics.heightPixels * 0.85).toInt()
+            )
+        }
     }
 
     companion object {
