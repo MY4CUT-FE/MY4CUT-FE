@@ -38,7 +38,22 @@ class OnboardingActivity : AppCompatActivity() {
                         intent.hasExtra("google.message_id")
 
             val destinationIntent = if (openedFromNotification) {
-                Intent(this, NotificationActivity::class.java)
+                when (intent.getStringExtra("type")) {
+                    "WORKSPACE_INVITE",
+                    "FRIEND_REQUEST" -> {
+                        Intent(this, NotificationActivity::class.java)
+                    }
+
+                    "PHOTO_COMMENT" -> {
+                        Intent(this, MainActivity::class.java)
+                    }
+
+                    else -> {
+                        Intent(this, NotificationActivity::class.java)
+                    }
+                }.apply {
+                    intent.extras?.let(::putExtras)
+                }
             } else {
                 Intent(this, MainActivity::class.java)
             }
