@@ -105,16 +105,17 @@ class NotificationActivity : AppCompatActivity() {
                             referenceId = dto.referenceId ?: dto.notificationId,
                             type = dto.type,
                             iconResId = when (dto.type) {
-                                "WORKSPACE_INVITE" -> R.drawable.ic_noti_invite
+                                "WORKSPACE_INVITE", "WORKSPACE_ACCEPTED" -> R.drawable.ic_noti_invite
                                 "FRIEND_REQUEST" -> R.drawable.ic_noti_friend_add
                                 "FRIEND_ACCEPTED" -> R.drawable.ic_noti_people
-                                "MEDIA_COMMENT" -> R.drawable.ic_noti_comment
+                                "MEDIA_COMMENT", "MEDIA_UPLOADED" -> R.drawable.ic_noti_comment
                                 else -> R.drawable.ic_noti_people
                             },
                             category = when (dto.type) {
                                 "FRIEND_REQUEST", "FRIEND_ACCEPTED" -> "친구"
-                                "WORKSPACE_INVITE" -> "초대"
+                                "WORKSPACE_INVITE", "WORKSPACE_ACCEPTED" -> "초대"
                                 "MEDIA_COMMENT" -> "댓글"
+                                "MEDIA_UPLOADED" -> "사진"
                                 else -> dto.type
                             },
                             content = when (dto.type) {
