@@ -17,6 +17,7 @@ import com.umc.mobile.my4cut.ui.myalbum.CalendarData
 import com.umc.mobile.my4cut.ui.myalbum.CalendarMainFragment
 import com.umc.mobile.my4cut.ui.myalbum.EntryDetailFragment
 import com.umc.mobile.my4cut.ui.mypage.MyPageFragment
+import com.umc.mobile.my4cut.ui.photo.PhotoDialogFragment
 import com.umc.mobile.my4cut.ui.retouch.RetouchFragment
 
 class MainActivity : AppCompatActivity() {
@@ -30,6 +31,18 @@ class MainActivity : AppCompatActivity() {
 
         // 바텀 네비게이션 초기화 및 리스너 설정
         initBottomNavigation(savedInstanceState)
+
+        val navigateToTab = intent.getIntExtra("NAVIGATE_TO_TAB", -1)
+
+        if (navigateToTab != -1) {
+            binding.bnvMain.selectedItemId = navigateToTab
+        }
+
+        // 알림 화면에서 전달된 이동 요청 처리
+        handleNotificationNavigation(intent)
+
+        // fcm 분기
+//        handlePushNavigation(intent)
 
         // 백스택에 쌓인 화면(마이페이지, 네컷 기록 상세 등)이 있으면 뒤로가기 시 그것부터 pop,
         // 없으면 앱을 종료
@@ -58,6 +71,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
+
+        // fcm 분기
+//        handlePushNavigation(intent)
+
+        handleNotificationNavigation(intent)
 
         if (intent.getBooleanExtra("NAVIGATE_TO_HOME", false)) {
             binding.bnvMain.selectedItemId = R.id.menu_home
@@ -78,6 +97,51 @@ class MainActivity : AppCompatActivity() {
 
         // 액티비티가 이미 켜져 있는 상태에서 새로운 인텐트를 받았을 때 처리
         // checkIntent(intent)
+    }
+
+    /**
+     * NotificationActivity에서 전달받은 값을 확인하여
+     * 해당 스페이스 또는 사진 상세 화면으로 이동한다.
+     */
+    private fun handleNotificationNavigation(intent: Intent?) {
+
+        val workspaceId =
+            intent?.getLongExtra("OPEN_SPACE_ID", -1L) ?: -1L
+
+        val photoId =
+            intent?.getLongExtra("OPEN_PHOTO_ID", -1L) ?: -1L
+
+        // 스페이스 이동 요청이 아닌 경우
+        if (workspaceId == -1L) {
+            return
+        }
+
+        val fragment = if (photoId != -1L) {
+
+            // MEDIA_COMMENT / MEDIA_UPLOADED
+            // 스페이스 진입 후 해당 사진 모달까지 오픈
+            SpaceFragment.newInstance(
+                spaceId = workspaceId,
+                photoId = photoId
+            )
+
+        } else {
+
+            // WORKSPACE_ACCEPTED
+            // 해당 스페이스까지만 진입
+            SpaceFragment.newInstance(
+                spaceId = workspaceId
+            )
+        }
+
+        supportFragmentManager
+            .beginTransaction()
+            .replace(
+                R.id.fcv_main,
+                fragment
+            )
+            .addToBackStack("SpaceFragment")
+            .commit()
     }
 
     private fun checkMoveToDetail(intent: Intent?) {
@@ -206,5 +270,27 @@ class MainActivity : AppCompatActivity() {
     fun selectHomeTab() {
         binding.bnvMain.selectedItemId = R.id.menu_home
     }
+
+//    private fun handlePushNavigation(intent: Intent?) {
+//        when (intent?.getStringExtra("type")
+//            ?: intent?.getStringExtra("PUSH_TYPE")) {
+//
+//            "PHOTO_COMMENT" -> {
+//                val photoId = intent.getStringExtra("photoId")
+//                    ?: intent.getStringExtra("PHOTO_ID")
+//
+//                val fragment = PhotoDialogFragment().apply {
+//                    arguments = Bundle().apply {
+//                        putString("PHOTO_ID", photoId)
+//                    }
+//                }
+//
+//                supportFragmentManager.beginTransaction()
+//                    .replace(R.id.fcv_main, fragment)
+//                    .addToBackStack(null)
+//                    .commit()
+//            }
+//        }
+//    }
 
 }

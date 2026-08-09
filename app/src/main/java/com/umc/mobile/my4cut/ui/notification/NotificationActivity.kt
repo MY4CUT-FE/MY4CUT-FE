@@ -12,8 +12,10 @@ import com.umc.mobile.my4cut.network.RetrofitClient
 import kotlinx.coroutines.launch
 import android.view.View
 import android.app.Dialog
+import android.content.Intent
 import android.view.Window
 import android.view.WindowManager
+import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.data.notification.model.NotificationMarkReadByIdsDto
 import com.umc.mobile.my4cut.databinding.DialogDeleteNotiAllBinding
 
@@ -100,10 +102,22 @@ class NotificationActivity : AppCompatActivity() {
                             "NotificationDebug",
                             "type=${dto.type}, referenceId=${dto.referenceId}, notificationId=${dto.notificationId}, senderNickname=${dto.senderNickname}, workspaceName=${dto.workspaceName}, message=${dto.message}"
                         )
-                        NotificationData(
-                            id = dto.notificationId,
-                            referenceId = dto.referenceId ?: dto.notificationId,
-                            type = dto.type,
+                            NotificationData(
+                                id = dto.notificationId,
+
+                                // 알림 종류별 대상 ID
+                                // 사진 알림이면 mediaId,
+                                // 친구 요청이면 friendRequestId,
+                                // 워크스페이스 초대면 invitationId
+                                referenceId = dto.referenceId ?: dto.notificationId,
+
+                                // 해당 알림이 어느 워크스페이스에 속하는지
+                                workspaceId = dto.workspaceId,
+
+                                // 알림을 발생시킨 사용자 ID
+                                senderId = dto.senderId,
+
+                                type = dto.type,
                             iconResId = when (dto.type) {
                                 "WORKSPACE_INVITE", "WORKSPACE_ACCEPTED" -> R.drawable.ic_noti_invite
                                 "FRIEND_REQUEST" -> R.drawable.ic_noti_friend_add
@@ -247,6 +261,9 @@ class NotificationActivity : AppCompatActivity() {
                                     Toast.makeText(this@NotificationActivity, "삭제 실패: ${e.message}", Toast.LENGTH_SHORT).show()
                                 }
                             }
+                        },
+                        onItemClick = { item ->
+                            handleNotificationClick(item)
                         }
                     )
                     binding.btnMore.setOnClickListener {
@@ -267,19 +284,29 @@ class NotificationActivity : AppCompatActivity() {
                                         )
                                         NotificationData(
                                             id = dto.notificationId,
+
+                                            // 알림 대상 ID
                                             referenceId = dto.referenceId ?: dto.notificationId,
+
+                                            // 해당 알림의 워크스페이스 ID
+                                            workspaceId = dto.workspaceId,
+
+                                            // 알림을 발생시킨 사용자 ID
+                                            senderId = dto.senderId,
+
                                             type = dto.type,
                                             iconResId = when (dto.type) {
-                                                "WORKSPACE_INVITE" -> R.drawable.ic_noti_invite
+                                                "WORKSPACE_INVITE", "WORKSPACE_ACCEPTED" -> R.drawable.ic_noti_invite
                                                 "FRIEND_REQUEST" -> R.drawable.ic_noti_friend_add
                                                 "FRIEND_ACCEPTED" -> R.drawable.ic_noti_people
-                                                "MEDIA_COMMENT" -> R.drawable.ic_noti_comment
+                                                "MEDIA_COMMENT", "MEDIA_UPLOADED" -> R.drawable.ic_noti_comment
                                                 else -> R.drawable.ic_noti_people
                                             },
                                             category = when (dto.type) {
                                                 "FRIEND_REQUEST", "FRIEND_ACCEPTED" -> "친구"
-                                                "WORKSPACE_INVITE" -> "초대"
+                                                "WORKSPACE_INVITE", "WORKSPACE_ACCEPTED" -> "초대"
                                                 "MEDIA_COMMENT" -> "댓글"
+                                                "MEDIA_UPLOADED" -> "사진"
                                                 else -> dto.type
                                             },
                                             content = when (dto.type) {
@@ -326,6 +353,86 @@ class NotificationActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("NotificationAPI", "error=" + e.message, e)
                 Toast.makeText(this@NotificationActivity, "네트워크 오류: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /**
+     * 알림 아이템 클릭 시
+     * 알림 타입에 따라 이동할 화면을 결정한다.
+     */
+    /**
+     * 알림 아이템 클릭 시
+     * 알림 타입에 따라 MainActivity에 이동 정보를 전달한다.
+     */
+    private fun handleNotificationClick(item: NotificationData) {
+
+        Log.d(
+            "NotificationClick",
+            "type=${item.type}, referenceId=${item.referenceId}, " +
+                    "workspaceId=${item.workspaceId}, senderId=${item.senderId}"
+        )
+
+        when (item.type) {
+
+            // 사진에 댓글이 달린 경우
+            // 해당 스페이스로 이동한 뒤 그 사진의 상세 모달을 연다.
+            "MEDIA_COMMENT" -> {
+                val workspaceId = item.workspaceId ?: return
+                val mediaId = item.referenceId
+
+                val intent = Intent(this, MainActivity::class.java).apply {
+                    putExtra("OPEN_SPACE_ID", workspaceId)
+                    putExtra("OPEN_PHOTO_ID", mediaId)
+                }
+
+                startActivity(intent)
+                finish()
+            }
+
+            // 워크스페이스에 새 사진이 올라온 경우
+            // 해당 스페이스로 이동한 뒤 업로드된 사진 상세를 연다.
+            "MEDIA_UPLOADED" -> {
+                val workspaceId = item.workspaceId ?: return
+                val mediaId = item.referenceId
+
+                val intent = Intent(this, MainActivity::class.java).apply {
+                    putExtra("OPEN_SPACE_ID", workspaceId)
+                    putExtra("OPEN_PHOTO_ID", mediaId)
+                }
+
+                startActivity(intent)
+                finish()
+            }
+
+            // 상대방이 워크스페이스 초대를 수락한 경우
+            // 해당 스페이스 상세까지만 이동한다.
+            "WORKSPACE_ACCEPTED" -> {
+                val workspaceId = item.workspaceId ?: return
+
+                val intent = Intent(this, MainActivity::class.java).apply {
+                    putExtra("OPEN_SPACE_ID", workspaceId)
+                }
+
+                startActivity(intent)
+                finish()
+            }
+
+            // 상대방이 내 친구 요청을 수락한 경우
+            "FRIEND_ACCEPTED" -> {
+                val intent = Intent(this, MainActivity::class.java).apply {
+                    putExtra("NAVIGATE_TO_TAB", R.id.menu_retouch)
+                }
+
+                startActivity(intent)
+                finish()
+            }
+
+            // 알림 화면 자체에서 수락/거절하므로
+            // 아이템 클릭 시에는 이동하지 않는다.
+            "WORKSPACE_INVITE",
+            "FRIEND_REQUEST" -> {
+                // 아무 동작 없음
             }
         }
     }

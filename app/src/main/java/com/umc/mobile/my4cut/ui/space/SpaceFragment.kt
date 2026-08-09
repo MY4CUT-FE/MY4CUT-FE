@@ -72,6 +72,9 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     private val memberItems = ArrayList<MemberItem>()
 
     private var spaceId: Long = -1L
+    // 알림에서 특정 사진을 눌러 들어온 경우
+    // 자동으로 열어야 할 mediaId
+    private var targetPhotoId: Long? = null
     private var isOwner: Boolean = false
     private var myUserId: Long = -1L
     private var myNickname: String = ""
@@ -96,7 +99,14 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 열어야 할 워크스페이스 ID
         spaceId = arguments?.getLong(ARG_SPACE_ID) ?: -1L
+
+        // 알림에서 사진을 눌러 진입했다면 mediaId도 전달받음
+        targetPhotoId = arguments
+            ?.takeIf { it.containsKey(ARG_PHOTO_ID) }
+            ?.getLong(ARG_PHOTO_ID)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -430,6 +440,41 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     photoAdapter.updatePhotos(newPhotos)
                     photoAdapter.hideSkeleton()
 
+                    // 알림에서 특정 사진을 눌러 들어온 경우
+                    // 서버에서 사진 목록을 다 받은 뒤 해당 사진 모달을 자동으로 연다.
+                    targetPhotoId?.let { targetId ->
+
+                        Log.d(
+                            "NotificationNavigation",
+                            "targetPhotoId=$targetId, photoIds=${newPhotos.map { it.photoId }}"
+                        )
+
+                        val targetPhoto = newPhotos.find { photo ->
+                            photo.photoId == targetId
+                        }
+
+                        if (targetPhoto != null) {
+
+                            Log.d(
+                                "NotificationNavigation",
+                                "target photo found: ${targetPhoto.photoId}"
+                            )
+
+                            showPhotoDialog(
+                                photo = targetPhoto,
+                                isCommentExpanded = true
+                            )
+
+                            targetPhotoId = null
+
+                        } else {
+                            Log.e(
+                                "NotificationNavigation",
+                                "target photo not found: $targetId"
+                            )
+                        }
+                    }
+
                     for (photo in newPhotos) {
                         viewLifecycleOwner.lifecycleScope.launch {
                             try {
@@ -655,12 +700,36 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     }
 
     companion object {
+
+        // 열어야 할 워크스페이스 ID
         private const val ARG_SPACE_ID = "arg_space_id"
 
-        fun newInstance(spaceId: Long): SpaceFragment {
+        // 알림에서 특정 사진을 열어야 할 경우 전달하는 mediaId
+        private const val ARG_PHOTO_ID = "arg_photo_id"
+
+        /**
+         * 일반적인 스페이스 진입:
+         * SpaceFragment.newInstance(spaceId)
+         *
+         * 알림에서 특정 사진으로 진입:
+         * SpaceFragment.newInstance(
+         *     spaceId = workspaceId,
+         *     photoId = mediaId
+         * )
+         */
+        fun newInstance(
+            spaceId: Long,
+            photoId: Long? = null
+        ): SpaceFragment {
+
             return SpaceFragment().apply {
                 arguments = Bundle().apply {
+
                     putLong(ARG_SPACE_ID, spaceId)
+
+                    if (photoId != null) {
+                        putLong(ARG_PHOTO_ID, photoId)
+                    }
                 }
             }
         }
