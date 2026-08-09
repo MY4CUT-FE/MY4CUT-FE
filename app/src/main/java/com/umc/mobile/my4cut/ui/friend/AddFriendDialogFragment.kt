@@ -24,6 +24,8 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
 import com.umc.mobile.my4cut.databinding.DialogAddFriendBinding
+import org.json.JSONObject
+import retrofit2.HttpException
 
 class AddFriendDialogFragment : DialogFragment() {
 
@@ -201,8 +203,47 @@ class AddFriendDialogFragment : DialogFragment() {
                 } else {
                     Toast.makeText(requireContext(), response.message, Toast.LENGTH_SHORT).show()
                 }
+            } catch (e: HttpException) {
+                val errorBody = e.response()?.errorBody()?.string()
+
+                val errorMessage = try {
+                    val errorJson = JSONObject(errorBody.orEmpty())
+                    val code = errorJson.optString("code")
+                    val message = errorJson.optString("message")
+
+                    when {
+                        code == "F4002" -> {
+                            "이미 친구 요청을 전송했어요"
+                        }
+
+                        message.contains("이미 친구") -> {
+                            "이미 추가된 친구예요"
+                        }
+
+                        message.isNotBlank() -> {
+                            message
+                        }
+
+                        else -> {
+                            "친구 요청을 처리하지 못했어요"
+                        }
+                    }
+                } catch (_: Exception) {
+                    "친구 요청을 처리하지 못했어요"
+                }
+
+                Toast.makeText(
+                    requireContext(),
+                    errorMessage,
+                    Toast.LENGTH_SHORT
+                ).show()
+
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "이미 존재하는 친구예요", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "네트워크 연결을 확인해주세요",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }

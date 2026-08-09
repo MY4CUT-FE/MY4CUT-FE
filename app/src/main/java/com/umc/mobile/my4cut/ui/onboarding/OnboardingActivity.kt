@@ -15,6 +15,7 @@ import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.data.auth.local.TokenManager
 import com.umc.mobile.my4cut.databinding.ActivityOnboardingBinding
 import com.umc.mobile.my4cut.ui.login.LoginActivity
+import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 
 class OnboardingActivity : AppCompatActivity() {
 
@@ -31,9 +32,36 @@ class OnboardingActivity : AppCompatActivity() {
 
         // 유효한 토큰이 있으면 온보딩/로그인 건너뛰고 바로 메인으로 이동
         if (TokenManager.isAccessTokenValid(this)) {
-            val intent = Intent(this, MainActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
+            val openedFromNotification =
+                intent.hasExtra("type") ||
+                        intent.hasExtra("notificationId") ||
+                        intent.hasExtra("google.message_id")
+
+            val destinationIntent = if (openedFromNotification) {
+                when (intent.getStringExtra("type")) {
+                    "WORKSPACE_INVITE",
+                    "FRIEND_REQUEST" -> {
+                        Intent(this, NotificationActivity::class.java)
+                    }
+
+                    "PHOTO_COMMENT" -> {
+                        Intent(this, MainActivity::class.java)
+                    }
+
+                    else -> {
+                        Intent(this, NotificationActivity::class.java)
+                    }
+                }.apply {
+                    intent.extras?.let(::putExtras)
+                }
+            } else {
+                Intent(this, MainActivity::class.java)
+            }
+
+            destinationIntent.flags =
+                Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+            startActivity(destinationIntent)
             finish()
             return
         }

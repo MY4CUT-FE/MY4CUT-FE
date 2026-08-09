@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 import com.umc.mobile.my4cut.ui.home.HomeFragment
@@ -64,10 +65,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 .setPackage(packageName)
         )
 
-        showNotification(title, body)
+        showNotification(title, body, data)
     }
 
-    private fun showNotification(title: String, body: String) {
+    private fun showNotification(
+        title: String,
+        body: String,
+        data: Map<String, String>
+    ) {
         Log.d(TAG, "showNotification: start")
         Log.d(TAG, "Preparing notification intent")
 
@@ -85,17 +90,17 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.d(TAG, "Notification channel created/updated: $channelId")
         }
 
-        val intent = Intent(this, NotificationActivity::class.java).apply {
+        val intent = createNotificationIntent(data).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
 
-        Log.d(TAG, "PendingIntent created for NotificationActivity")
+        Log.d(TAG, "PendingIntent target=${intent.component?.className}")
         Log.d(TAG, "Intent flags=${intent.flags}")
 
         val pendingIntent = PendingIntent.getActivity(
             this,
-            0,
+            System.currentTimeMillis().toInt(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -126,6 +131,67 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.d(TAG, "Notification displayed")
         } catch (e: SecurityException) {
             Log.e(TAG, "Notification display failed", e)
+        }
+    }
+
+    private fun createNotificationIntent(
+        data: Map<String, String>
+    ): Intent {
+        val type = data["type"]
+
+        return when (type) {
+
+            // 댓글 알림 → 해당 스페이스의 해당 사진
+            "MEDIA_COMMENT" -> {
+                val workspaceId = data["workspaceId"]?.toLongOrNull() ?: -1L
+                val mediaId = data["mediaId"]?.toLongOrNull() ?: -1L
+
+                Intent(this, MainActivity::class.java).apply {
+                    putExtra("OPEN_SPACE_ID", workspaceId)
+                    putExtra("OPEN_PHOTO_ID", mediaId)
+                }
+            }
+
+            // 미디어 업로드 알림 → 해당 스페이스의 해당 사진
+            "MEDIA_UPLOADED" -> {
+                val workspaceId = data["workspaceId"]?.toLongOrNull() ?: -1L
+                val mediaId = data["mediaId"]?.toLongOrNull() ?: -1L
+
+                Intent(this, MainActivity::class.java).apply {
+                    putExtra("OPEN_SPACE_ID", workspaceId)
+                    putExtra("OPEN_PHOTO_ID", mediaId)
+                }
+            }
+
+            // 워크스페이스 초대 수락 → 해당 스페이스
+            "WORKSPACE_ACCEPTED" -> {
+                val workspaceId = data["workspaceId"]?.toLongOrNull() ?: -1L
+
+                Intent(this, MainActivity::class.java).apply {
+                    putExtra("OPEN_SPACE_ID", workspaceId)
+                }
+            }
+
+            // 친구 수락 → 리터치 스페이스 탭
+            "FRIEND_ACCEPTED" -> {
+                Intent(this, MainActivity::class.java).apply {
+                    putExtra("NAVIGATE_TO_TAB", R.id.menu_retouch)
+                }
+            }
+
+            // 수락/거절이 필요한 알림은 알림 목록으로
+            "WORKSPACE_INVITE",
+            "FRIEND_REQUEST" -> {
+                Intent(this, NotificationActivity::class.java)
+            }
+
+            else -> {
+                Intent(this, NotificationActivity::class.java)
+            }
+        }.apply {
+            data.forEach { (key, value) ->
+                putExtra(key, value)
+            }
         }
     }
 }
