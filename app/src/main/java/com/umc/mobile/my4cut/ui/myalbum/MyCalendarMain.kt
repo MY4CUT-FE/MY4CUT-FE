@@ -85,6 +85,13 @@ class MyCalendarMain @JvmOverloads constructor(
     fun getCurrentYear(): Int = currentMonth.year
     fun getCurrentMonth(): Int = currentMonth.monthValue
 
+    // 외부에서 특정 연/월로 캘린더를 바로 이동시킬 때 사용 (예: 뒤로가기 시 마지막 보던 달 복원)
+    fun scrollToMonth(year: Int, month: Int) {
+        currentMonth = YearMonth.of(year, month)
+        updateYearMonthText()
+        binding.mcCustom.scrollToMonth(currentMonth)
+    }
+
     fun getSelectedDateFormatted(): String {
         return selectedDate?.let {
             "${it.year}.${it.monthValue}.${it.dayOfMonth}"
@@ -282,9 +289,6 @@ class MyCalendarMain @JvmOverloads constructor(
 
     private fun updateYearMonthText() {
         binding.tvYearMonth.text = "${currentMonth.monthValue}월"
-
-        // 월이 바뀔 때 리스너 실행
-//        onMonthChangeListener?.invoke(currentMonth.year, currentMonth.monthValue)
     }
 }
 

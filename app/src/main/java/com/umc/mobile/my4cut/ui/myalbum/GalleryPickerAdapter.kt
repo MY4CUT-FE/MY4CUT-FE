@@ -5,9 +5,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import coil.load
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.ItemGalleryPhotoBinding
+import com.umc.mobile.my4cut.ui.theme.loadWithSkeleton
 
 class GalleryPickerAdapter(
     private val maxSelectable: Int,
@@ -40,10 +40,7 @@ class GalleryPickerAdapter(
         val url = photoUrls[position]
         val isSelected = selectedPositions.contains(position)
 
-        holder.binding.ivPhoto.load(url) {
-            crossfade(true)
-            placeholder(R.color.gray_300)
-        }
+        holder.binding.ivPhoto.loadWithSkeleton(url)
 
         val context = holder.binding.root.context
         holder.binding.cvPhoto.strokeColor = ContextCompat.getColor(

@@ -44,7 +44,8 @@ class EntryRegisterActivity : AppCompatActivity() {
 
     private val selectedImageUris = mutableStateListOf<Uri>()
 
-    private var isDiaryExpanded = false
+    // ✅ 화면 진입 시 일기 드롭다운이 펼쳐진 상태로 시작하도록 기본값 true
+    private var isDiaryExpanded = true
     private var selectedMoodIndex = 1  // 기본값: CALM (첫 번째 이모지)
 
     private val pickMultipleMedia = registerForActivityResult(
@@ -88,6 +89,9 @@ class EntryRegisterActivity : AppCompatActivity() {
         updateButtonState()
         setupDiaryLogic()
         setupMoodSelection()
+
+        // ✅ isDiaryExpanded 초기값(true)에 맞춰 화면도 펼쳐진 상태로 시작
+        applyDiaryExpandedState()
     }
 
     private fun setupDateData() {
@@ -237,8 +241,7 @@ class EntryRegisterActivity : AppCompatActivity() {
                             Toast.makeText(this@EntryRegisterActivity, "일기 내용을 입력해주세요.", Toast.LENGTH_SHORT).show()
                             if (!isDiaryExpanded) {
                                 isDiaryExpanded = true
-                                binding.clDiaryContent.visibility = View.VISIBLE
-                                binding.ivDiaryArrow.setImageResource(R.drawable.ic_arrow_up_gray)
+                                applyDiaryExpandedState()
                             }
                             binding.etDiary.requestFocus()
                         }
@@ -377,13 +380,7 @@ class EntryRegisterActivity : AppCompatActivity() {
     private fun setupDiaryLogic() {
         binding.clDiaryHeader.setOnClickListener {
             isDiaryExpanded = !isDiaryExpanded
-            if (isDiaryExpanded) {
-                binding.clDiaryContent.visibility = View.VISIBLE
-                binding.ivDiaryArrow.setImageResource(R.drawable.ic_arrow_up_gray)
-            } else {
-                binding.clDiaryContent.visibility = View.GONE
-                binding.ivDiaryArrow.setImageResource(R.drawable.ic_arrow_down_gray)
-            }
+            applyDiaryExpandedState()
         }
 
         binding.etDiary.addTextChangedListener(object : TextWatcher {
@@ -398,6 +395,17 @@ class EntryRegisterActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    // isDiaryExpanded 값에 맞춰 실제 화면(펼침/접힘)을 갱신
+    private fun applyDiaryExpandedState() {
+        if (isDiaryExpanded) {
+            binding.clDiaryContent.visibility = View.VISIBLE
+            binding.ivDiaryArrow.setImageResource(R.drawable.ic_arrow_up_gray)
+        } else {
+            binding.clDiaryContent.visibility = View.GONE
+            binding.ivDiaryArrow.setImageResource(R.drawable.ic_arrow_down_gray)
+        }
     }
 
     private fun setupMoodSelection() {
