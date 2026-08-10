@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
@@ -25,6 +26,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.umc.mobile.my4cut.MainActivity
@@ -107,11 +113,14 @@ class EntryDetailFragment : Fragment() {
 
         setupClickListeners()
         setupDiaryLogic()
+        setupMoodSelection()
         setupKeyboardScroll()
         setupBackPressHandling()
 
         if (apiDate != null) {
             fetchDay4CutDetail()
+        } else {
+            hideLoadingSkeleton()
         }
     }
 
@@ -195,6 +204,8 @@ class EntryDetailFragment : Fragment() {
     }
 
     private fun fetchDay4CutDetail() {
+        showLoadingSkeleton()
+
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 Log.d("EntryDetail", "📖 Fetching detail for date: $apiDate")
@@ -205,52 +216,123 @@ class EntryDetailFragment : Fragment() {
 
                 // ✅ isSuccess 제거, code 체크만 사용
                 if (response.code == "C2001") {
-                    response.data?.let { data ->
-                        Log.d("EntryDetail", "✅ Data loaded:")
-                        Log.d("EntryDetail", "   ├─ content: ${data.content}")
-                        Log.d("EntryDetail", "   ├─ emojiType: ${data.emojiType}")
-                        Log.d("EntryDetail", "   └─ images: ${data.viewUrls?.size ?: 0}")
-
-                        binding.etDiary.setText(data.content ?: "")
-                        originalContent = data.content ?: ""
-
-                        originalEmojiType = data.emojiType
-                        setEmojiByType(originalEmojiType)
-
-                        imageItems.clear()
-                        data.viewUrls?.forEach { url ->
-                            imageItems.add(ImageItem(
-                                uri = url,
-                                isNew = false
-                            ))
-                        }
-
-                        val dateObj = LocalDate.parse(apiDate)
-                        val statusResponse = RetrofitClient.day4CutService.getCalendarStatus(
-                            dateObj.year, dateObj.monthValue
-                        )
-
-                        if (statusResponse.code == "C2001") {
-                            // 해당 날짜의 데이터를 찾음
-                            val dayStatus = statusResponse.data?.dates?.find { it.day == dateObj.dayOfMonth }
-                            val serverThumbnailUrl = dayStatus?.thumbnailUrl
-
-                            // 리스트 중 서버 썸네일 URL과 일치하는 인덱스 찾기
-                            val foundIndex = data.viewUrls?.indexOf(serverThumbnailUrl) ?: 0
-                            typicalImageIndex = if (foundIndex != -1) foundIndex else 0
-
-                            updatePhotoState()
-                        }
+                    val data = response.data
+                    if (data == null) {
+                        hideLoadingSkeleton()
+                        return@launch
                     }
+
+                    Log.d("EntryDetail", "✅ Data loaded:")
+                    Log.d("EntryDetail", "   ├─ content: ${data.content}")
+                    Log.d("EntryDetail", "   ├─ emojiType: ${data.emojiType}")
+                    Log.d("EntryDetail", "   └─ images: ${data.viewUrls?.size ?: 0}")
+
+                    binding.etDiary.setText(data.content ?: "")
+                    originalContent = data.content ?: ""
+
+                    originalEmojiType = data.emojiType
+                    setEmojiByType(originalEmojiType)
+
+                    imageItems.clear()
+                    data.viewUrls?.forEach { url ->
+                        imageItems.add(ImageItem(
+                            uri = url,
+                            isNew = false
+                        ))
+                    }
+
+                    val dateObj = LocalDate.parse(apiDate)
+                    val statusResponse = RetrofitClient.day4CutService.getCalendarStatus(
+                        dateObj.year, dateObj.monthValue
+                    )
+
+                    if (statusResponse.code == "C2001") {
+                        // 해당 날짜의 데이터를 찾음
+                        val dayStatus = statusResponse.data?.dates?.find { it.day == dateObj.dayOfMonth }
+                        val serverThumbnailUrl = dayStatus?.thumbnailUrl
+
+                        // 리스트 중 서버 썸네일 URL과 일치하는 인덱스 찾기
+                        val foundIndex = data.viewUrls?.indexOf(serverThumbnailUrl) ?: 0
+                        typicalImageIndex = if (foundIndex != -1) foundIndex else 0
+                    }
+
+                    // 대표 사진이 실제로 로드 완료된 순간에만 스켈레톤을 내리고 실제 화면으로 전환
+                    revealAfterTypicalImageLoaded()
                 } else {
                     Log.e("EntryDetail", "❌ Failed to load: ${response.code} - ${response.message}")
                     Toast.makeText(requireContext(), "데이터를 불러올 수 없습니다", Toast.LENGTH_SHORT).show()
+                    hideLoadingSkeleton()
                 }
             } catch (e: Exception) {
                 Log.e("EntryDetail", "💥 Failed to fetch detail", e)
                 Toast.makeText(requireContext(), "조회 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                hideLoadingSkeleton()
             }
         }
+    }
+
+    // 대표(썸네일) 사진 하나를 미리 로드해두고, 완료(성공/실패 상관없이)된 순간에만
+    // 스켈레톤을 내리고 실제 ViewPager로 전환한다. 이렇게 해야 전환 직후 그 사진 자체가
+    // 다시 자체 스켈레톤(작은 아이콘)을 보여주는 이중 깜빡임이 없어진다.
+    private fun revealAfterTypicalImageLoaded() {
+        val typicalUrl = imageItems.getOrNull(typicalImageIndex)?.uri
+
+        if (typicalUrl.isNullOrBlank()) {
+            hideLoadingSkeleton()
+            return
+        }
+
+        Glide.with(this)
+            .load(typicalUrl)
+            .listener(object : RequestListener<Drawable> {
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any?,
+                    target: Target<Drawable>,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    if (isAdded) hideLoadingSkeleton()
+                    return false
+                }
+
+                override fun onResourceReady(
+                    resource: Drawable,
+                    model: Any,
+                    target: Target<Drawable>?,
+                    dataSource: DataSource,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    if (isAdded) hideLoadingSkeleton()
+                    return false
+                }
+            })
+            .preload()
+    }
+
+    // 데이터 요청 시작 시 호출 - 날짜 캡슐 텍스트를 비우고, 사진/일기 자리를 스켈레톤으로 전환
+    private fun showLoadingSkeleton() {
+        binding.tvDateCapsule.text = ""
+        binding.tvDateCapsule.setBackgroundResource(R.drawable.bg_skeleton_text_light)
+
+        binding.clPhotoEmpty.visibility = View.GONE
+        binding.vpPhotoSlider.visibility = View.GONE
+        binding.clPhotoLoadingSkeleton.visibility = View.VISIBLE
+
+        binding.clDiaryContent.visibility = View.GONE
+        binding.clDiaryLoadingSkeleton.visibility = View.VISIBLE
+    }
+
+    // 데이터 요청이 끝났을 때(성공/실패 상관없이) 호출 - 날짜 캡슐 원래대로, 스켈레톤 숨기고 실제 콘텐츠 표시
+    private fun hideLoadingSkeleton() {
+        binding.tvDateCapsule.text = selectedDate
+        binding.tvDateCapsule.setBackgroundResource(R.drawable.bg_date_capsule2)
+
+        binding.clPhotoLoadingSkeleton.visibility = View.GONE
+        binding.clDiaryLoadingSkeleton.visibility = View.GONE
+        binding.clDiaryContent.visibility = View.VISIBLE
+
+        // 사진 상태(빈 상태 vs 실제 사진)는 updatePhotoState()가 담당
+        updatePhotoState()
     }
 
     private fun setupClickListeners() {
@@ -273,6 +355,7 @@ class EntryDetailFragment : Fragment() {
             imageItems.addAll(originalImageItems.map { it.copy() })
             binding.etDiary.setText(originalContent)
             setEmojiByType(originalEmojiType)
+            currentEmojiType = originalEmojiType
 
             setEditMode(false)
         }
@@ -298,6 +381,16 @@ class EntryDetailFragment : Fragment() {
         binding.etDiary.isEnabled = isEditing
         binding.etDiary.isFocusable = isEditing
         binding.etDiary.isFocusableInTouchMode = isEditing
+
+        // 읽기 모드: 선택된 이모지 하나만 / 수정 모드: 5개 이모지 선택 박스 (원래 선택값으로 채워서 시작)
+        binding.ivMoodDisplay.visibility = if (isEditing) View.GONE else View.VISIBLE
+        binding.ivMoodEditIcon.visibility = if (isEditing) View.VISIBLE else View.GONE
+        binding.llMoodContainer.visibility = if (isEditing) View.VISIBLE else View.GONE
+
+        if (isEditing) {
+            currentEmojiType = originalEmojiType
+            updateMoodSelectionUI()
+        }
 
         // 편집 모드에 따라 어댑터 재생성 (추가 버튼 노출 여부 때문)
         updatePhotoState()
@@ -330,7 +423,9 @@ class EntryDetailFragment : Fragment() {
 
                 transform.addTransformer { page, position ->
                     val r = 1 - abs(position)
-                    page.scaleY = 0.85f + r * 0.15f
+                    val scale = 0.85f + r * 0.15f
+                    page.scaleX = scale
+                    page.scaleY = scale
 
                     val photoCard = page.findViewById<MaterialCardView>(R.id.cv_photo_card)
                     val addCard = page.findViewById<MaterialCardView>(R.id.cv_add_card)
@@ -384,14 +479,52 @@ class EntryDetailFragment : Fragment() {
             else -> null
         }
         if (emojiRes != null) {
-            binding.ivMood1.setImageResource(emojiRes)
+            binding.ivMoodDisplay.setImageResource(emojiRes)
         } else {
-            binding.ivMood1.setImageDrawable(null)
+            binding.ivMoodDisplay.setImageDrawable(null)
+        }
+    }
+
+    // 현재 수정 중인(아직 저장 전) 무드 상태. 수정 모드 진입 시 originalEmojiType으로 초기화되고,
+    // 5개 이모지 중 클릭할 때마다 갱신됨. 저장 시 이 값을 서버로 보냄.
+    private var currentEmojiType: String? = null
+
+    private val moodOrder = listOf("CALM", "HAPPY", "TIRED", "ANGRY", "SAD")
+
+    private fun moodSelectViews(): List<ImageView> = listOf(
+        binding.ivMoodSelect1,
+        binding.ivMoodSelect2,
+        binding.ivMoodSelect3,
+        binding.ivMoodSelect4,
+        binding.ivMoodSelect5
+    )
+
+    private fun setupMoodSelection() {
+        moodSelectViews().forEachIndexed { index, imageView ->
+            imageView.setOnClickListener {
+                val clickedType = moodOrder[index]
+                currentEmojiType = if (currentEmojiType == clickedType) null else clickedType
+                updateMoodSelectionUI()
+            }
+        }
+    }
+
+    // 5개 이모지 중 currentEmojiType에 해당하는 것만 강조 표시
+    private fun updateMoodSelectionUI() {
+        val selectedIndex = moodOrder.indexOf(currentEmojiType)
+        moodSelectViews().forEachIndexed { index, imageView ->
+            if (index == selectedIndex) {
+                imageView.setBackgroundResource(R.drawable.bg_mood_selected)
+                imageView.alpha = 1.0f
+            } else {
+                imageView.background = null
+                imageView.alpha = 0.4f
+            }
         }
     }
 
     private fun getCurrentEmojiType(): String? {
-        return originalEmojiType
+        return if (isEditMode) currentEmojiType else originalEmojiType
     }
 
     private fun compressImage(uri: Uri): File? {
@@ -611,6 +744,8 @@ class EntryDetailFragment : Fragment() {
                         originalImageItems.clear()
                         originalImageItems.addAll(imageItems.map { it.copy() })
                         originalContent = binding.etDiary.text.toString()
+                        originalEmojiType = currentEmojiType
+                        setEmojiByType(originalEmojiType)
 
                         setEditMode(false)
                     }
@@ -659,7 +794,7 @@ class EntryDetailFragment : Fragment() {
 
                     withContext(Dispatchers.Main) {
                         Toast.makeText(requireContext(), "기록이 삭제되었습니다", Toast.LENGTH_SHORT).show()
-                        (requireActivity() as? MainActivity)?.changeFragment(CalendarChildFragment())
+                        (requireActivity() as? MainActivity)?.changeFragment(CalendarMainFragment())
                     }
                 } else {
                     throw Exception("삭제 실패: ${response.message}")

@@ -27,6 +27,13 @@ class CalendarChildFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.myCalendar.setHeaderVisible(true)
 
+        // 마지막으로 보던 달이 기억되어 있으면 그 달로, 없으면(최초 진입) 기본 현재 달 그대로 사용
+        val savedYear = lastViewedYear
+        val savedMonth = lastViewedMonth
+        if (savedYear != null && savedMonth != null) {
+            binding.myCalendar.scrollToMonth(savedYear, savedMonth)
+        }
+
         val year = binding.myCalendar.getCurrentYear()
         val month = binding.myCalendar.getCurrentMonth()
 
@@ -89,12 +96,19 @@ class CalendarChildFragment : Fragment() {
 
         // Month change listener
         binding.myCalendar.setOnMonthChangeListener { year, month ->
+            // 사용자가 달을 넘길 때마다 마지막으로 보던 달을 기억해둠
+            lastViewedYear = year
+            lastViewedMonth = month
             fetchCalendarData(year, month)
         }
 
         // Date selection listener
         binding.myCalendar.setOnDateSelectedListener { dateText, data ->
             if (data != null) {
+                // 상세 화면으로 넘어가는 시점의 달도 기억해둠 (달을 안 넘기고 바로 클릭한 경우 대비)
+                lastViewedYear = binding.myCalendar.getCurrentYear()
+                lastViewedMonth = binding.myCalendar.getCurrentMonth()
+
                 val entryDetailFragment = EntryDetailFragment().apply {
                     arguments = Bundle().apply {
                         putString("SELECTED_DATE", dateText)
@@ -109,5 +123,11 @@ class CalendarChildFragment : Fragment() {
                     .commit()
             }
         }
+    }
+
+    companion object {
+        // 프래그먼트가 통째로 재생성돼도(뒤로가기 등) 유지되도록 companion object에 저장
+        private var lastViewedYear: Int? = null
+        private var lastViewedMonth: Int? = null
     }
 }

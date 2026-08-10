@@ -22,53 +22,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="갤러리에서 불러오기"
-        android:textColor="#000000"
+        android:text="사진 추가"
+        android:textColor="#4D4D4D"
         android:textSize="20sp"
         android:fontFamily="@font/suit_bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <View
-        android:id="@+id/line"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#E9E9E9"
-        android:layout_marginTop="15dp"
-        app:layout_constraintTop_toBottomOf="@id/tv_title"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <LinearLayout
-        android:id="@+id/layout_folder"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingTop="14dp"
-        android:paddingBottom="10dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/line">
-
-        <TextView
-            android:id="@+id/tv_folder_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="네컷 사진"
-            android:textColor="#000000"
-            android:textSize="20sp"
-            android:fontFamily="@font/suit_medium" />
-
-        <ImageView
-            android:layout_width="16dp"
-            android:layout_height="14dp"
-            android:layout_marginStart="18dp"
-            android:src="@drawable/ic_space_down" />
-
-    </LinearLayout>
 
     <TextView
         android:id="@+id/btn_upload"
@@ -81,8 +41,18 @@
         android:textSize="17sp"
         android:fontFamily="@font/suit_medium"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/layout_folder"
-        app:layout_constraintBottom_toBottomOf="@id/layout_folder" />
+        app:layout_constraintTop_toTopOf="@id/tv_title"
+        app:layout_constraintBottom_toBottomOf="@id/tv_title" />
+
+    <View
+        android:id="@+id/line"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E9E9E9"
+        android:layout_marginTop="15dp"
+        app:layout_constraintTop_toBottomOf="@id/tv_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_gallery"
@@ -90,9 +60,10 @@
         android:layout_height="0dp"
         android:clipToPadding="false"
         android:paddingHorizontal="12dp"
+        android:paddingTop="12dp"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:spanCount="3"
-        app:layout_constraintTop_toBottomOf="@id/layout_folder"
+        app:layout_constraintTop_toBottomOf="@id/line"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -101,7 +72,7 @@
         android:id="@+id/progress_loading"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/layout_folder"
+        app:layout_constraintTop_toBottomOf="@id/line"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

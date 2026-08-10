@@ -54,12 +54,14 @@
             android:layout_height="wrap_content"
             android:clipChildren="false"
             android:clipToPadding="false"
-            android:paddingBottom="100dp">
+            android:paddingBottom="24dp">
 
             <TextView
                 android:id="@+id/tv_date_capsule"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minWidth="70dp"
+                android:minHeight="26dp"
                 tools:text="2026.01.08"
                 android:background="@drawable/bg_date_capsule2"
                 android:paddingHorizontal="12dp"
@@ -125,7 +127,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_photo_container_border"
-                    android:padding="20dp">
+                    android:padding="20dp"
+                    android:visibility="gone">
 
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
@@ -189,6 +192,45 @@
                     android:clipChildren="false"
                     tools:visibility="visible" />
 
+                <!-- 데이터 로딩 중 상태: 사진 박스 스켈레톤 (앨범 스켈레톤과 동일한 스타일) -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/cl_photo_loading_skeleton"
+                    android:layout_width="match_parent"
+                    android:layout_height="350dp"
+                    android:layout_marginHorizontal="40dp"
+                    android:background="@drawable/bg_skeleton_img"
+                    android:visibility="visible">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_skeleton_img"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent" />
+
+                    <!-- 페이지 개수 인디케이터: 로딩 스켈레톤 전용, 실제 사진 뜨면 이 박스 통째로 같이 사라짐 -->
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
+                        android:src="@drawable/ic_page_indicator"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent" />
+
+                    <!-- 대표(typical) 뱃지 자리 원형 스켈레톤 -->
+                    <View
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_margin="8dp"
+                        android:background="@drawable/bg_skeleton_circle"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
             </FrameLayout>
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -198,6 +240,7 @@
                 android:layout_marginHorizontal="20dp"
                 android:padding="16dp"
                 android:layout_marginTop="8dp"
+                android:visibility="gone"
                 app:layout_constraintTop_toBottomOf="@id/fl_photo_container"
                 app:layout_constraintStart_toStartOf="parent">
 
@@ -214,7 +257,7 @@
                     android:gravity="top|start"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/iv_mood_1"/>
+                    app:layout_constraintEnd_toStartOf="@id/iv_mood_display"/>
 
                 <TextView
                     android:id="@+id/tv_text_count"
@@ -228,8 +271,9 @@
                     app:layout_constraintEnd_toEndOf="@id/et_diary"
                     android:visibility="visible"/>
 
+                <!-- 읽기 모드: 선택된 이모지 하나만 표시 (기존 위치 그대로 - et_diary 오른쪽) -->
                 <ImageView
-                    android:id="@+id/iv_mood_1"
+                    android:id="@+id/iv_mood_display"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:layout_marginStart="5dp"
@@ -237,9 +281,137 @@
                     android:padding="8dp"
                     android:background="@drawable/bg_img_circle"
                     android:src="@drawable/img_mood_happy"
-                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@id/et_diary"
+                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="@id/et_diary"/>
+
+                <!-- 수정 모드: 등록 화면과 동일한 5개 이모지 선택 박스 -->
+                <ImageView
+                    android:id="@+id/iv_mood_edit_icon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_mood_icon_small"
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone"
+                    app:layout_constraintTop_toBottomOf="@id/tv_text_count"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/ll_mood_container"
+                    android:layout_width="0dp"
+                    android:layout_height="61dp"
+                    android:layout_marginTop="18dp"
+                    android:layout_marginStart="10dp"
+                    android:background="@drawable/bg_dashed_mood_speech"
+                    android:paddingStart="22dp"
+                    android:paddingEnd="10dp"
+                    android:visibility="gone"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/iv_mood_edit_icon"
+                    app:layout_constraintTop_toBottomOf="@id/tv_text_count">
+
+                    <ImageView
+                        android:id="@+id/iv_mood_select_1"
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/img_mood_calm"
+                        app:layout_constraintDimensionRatio="1:1"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toStartOf="@id/iv_mood_select_2"
+                        app:layout_constraintHorizontal_chainStyle="spread_inside"/>
+
+                    <ImageView
+                        android:id="@+id/iv_mood_select_2"
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/img_mood_happy"
+                        app:layout_constraintDimensionRatio="1:1"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/iv_mood_select_1"
+                        app:layout_constraintEnd_toStartOf="@id/iv_mood_select_3"/>
+
+                    <ImageView
+                        android:id="@+id/iv_mood_select_3"
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/img_mood_tired"
+                        app:layout_constraintDimensionRatio="1:1"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/iv_mood_select_2"
+                        app:layout_constraintEnd_toStartOf="@id/iv_mood_select_4"/>
+
+                    <ImageView
+                        android:id="@+id/iv_mood_select_4"
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/img_mood_angry"
+                        app:layout_constraintDimensionRatio="1:1"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/iv_mood_select_3"
+                        app:layout_constraintEnd_toStartOf="@id/iv_mood_select_5"/>
+
+                    <ImageView
+                        android:id="@+id/iv_mood_select_5"
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/img_mood_sad"
+                        app:layout_constraintDimensionRatio="1:1"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/iv_mood_select_4"
+                        app:layout_constraintEnd_toEndOf="parent"/>
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- 데이터 로딩 중 상태: 일기 텍스트 두 줄 + 무드 아이콘 자리 스켈레톤 -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/cl_diary_loading_skeleton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:padding="16dp"
+                android:layout_marginTop="8dp"
+                android:visibility="visible"
+                app:layout_constraintTop_toBottomOf="@id/fl_photo_container"
+                app:layout_constraintStart_toStartOf="parent">
+
+                <View
+                    android:id="@+id/view_diary_skeleton_line1"
+                    android:layout_width="0dp"
+                    android:layout_height="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:background="@drawable/bg_skeleton_text_diary"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/view_mood_skeleton_circle" />
+
+                <View
+                    android:id="@+id/view_diary_skeleton_line2"
+                    android:layout_width="180dp"
+                    android:layout_height="12dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_skeleton_text_diary"
+                    app:layout_constraintTop_toBottomOf="@id/view_diary_skeleton_line1"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <View
+                    android:id="@+id/view_mood_skeleton_circle"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_skeleton_circle"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
