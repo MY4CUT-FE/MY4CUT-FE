@@ -6,7 +6,8 @@ data class NotificationData(
     val referenceId: Long,    // 알림 대상 ID
     // FRIEND_REQUEST -> friendRequestId
     // WORKSPACE_INVITE -> invitationId
-    // MEDIA_COMMENT / MEDIA_UPLOADED -> mediaId
+
+    val mediaId: Long?,       // 댓글이 달린 사진 또는 업로드된 사진의 mediaId
 
     val workspaceId: Long?,   // 워크스페이스 관련 알림의 workspaceId
     // MEDIA_COMMENT, MEDIA_UPLOADED,

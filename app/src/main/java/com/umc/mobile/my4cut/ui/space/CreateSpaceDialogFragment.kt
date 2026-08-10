@@ -21,6 +21,7 @@ import com.umc.mobile.my4cut.databinding.DialogSpaceCreateBinding
 import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
 
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.internal.ViewUtils.hideKeyboard
 import kotlinx.coroutines.launch
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceCreateRequestDto
 import com.umc.mobile.my4cut.network.RetrofitClient
@@ -71,7 +72,11 @@ class CreateSpaceDialogFragment : DialogFragment() {
             if (popupWindow?.isShowing == true) {
                 popupWindow?.dismiss()
             } else {
-                showFriendPopup()
+                hideKeyboard()
+
+                binding.root.postDelayed({
+                    showFriendPopup()
+                }, 150)
             }
         }
 
@@ -307,7 +312,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
         }
 
         // 드롭다운 최소/최대 높이 제한
-        val maxHeightDp = 240
+        val maxHeightDp = 290
         val minHeightDp = 50
         val density = resources.displayMetrics.density
         val maxHeightPx = (maxHeightDp * density).toInt()
@@ -328,6 +333,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
         ).apply {
             isOutsideTouchable = true
             isFocusable = true
+            inputMethodMode = PopupWindow.INPUT_METHOD_NOT_NEEDED
             elevation = 0f
 
             setOnDismissListener {
@@ -343,4 +349,12 @@ class CreateSpaceDialogFragment : DialogFragment() {
         submitDialogFriends()
     }
 
+    private fun hideKeyboard() {
+        val imm = requireContext()
+            .getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                as android.view.inputmethod.InputMethodManager
+
+        imm.hideSoftInputFromWindow(binding.etSpaceName.windowToken, 0)
+        binding.etSpaceName.clearFocus()
+    }
 }

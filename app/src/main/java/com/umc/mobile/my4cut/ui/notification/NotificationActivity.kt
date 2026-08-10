@@ -106,10 +106,12 @@ class NotificationActivity : AppCompatActivity() {
                                 id = dto.notificationId,
 
                                 // 알림 종류별 대상 ID
-                                // 사진 알림이면 mediaId,
                                 // 친구 요청이면 friendRequestId,
                                 // 워크스페이스 초대면 invitationId
                                 referenceId = dto.referenceId ?: dto.notificationId,
+
+                                // 사진 상세 이동에 사용할 mediaId
+                                mediaId = dto.mediaId,
 
                                 // 해당 알림이 어느 워크스페이스에 속하는지
                                 workspaceId = dto.workspaceId,
@@ -288,6 +290,9 @@ class NotificationActivity : AppCompatActivity() {
                                             // 알림 대상 ID
                                             referenceId = dto.referenceId ?: dto.notificationId,
 
+                                            // 사진 상세 이동에 사용할 mediaId
+                                            mediaId = dto.mediaId,
+
                                             // 해당 알림의 워크스페이스 ID
                                             workspaceId = dto.workspaceId,
 
@@ -379,7 +384,7 @@ class NotificationActivity : AppCompatActivity() {
             // 해당 스페이스로 이동한 뒤 그 사진의 상세 모달을 연다.
             "MEDIA_COMMENT" -> {
                 val workspaceId = item.workspaceId ?: return
-                val mediaId = item.referenceId
+                val mediaId = item.mediaId ?: return
 
                 val intent = Intent(this, MainActivity::class.java).apply {
                     putExtra("OPEN_SPACE_ID", workspaceId)

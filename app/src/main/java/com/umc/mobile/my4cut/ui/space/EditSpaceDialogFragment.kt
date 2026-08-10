@@ -20,6 +20,7 @@ import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import android.widget.Toast
+import com.google.android.material.internal.ViewUtils.hideKeyboard
 import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceUpdateRequestDto
@@ -80,8 +81,15 @@ class EditSpaceDialogFragment : DialogFragment() {
         binding.layoutFriendSelect.setBackgroundResource(R.drawable.bg_dropdown_closed)
 
         binding.layoutFriendSelect.setOnClickListener {
-            if (popupWindow?.isShowing == true) popupWindow?.dismiss()
-            else showFriendPopup()
+            if (popupWindow?.isShowing == true) {
+                popupWindow?.dismiss()
+            } else {
+                hideKeyboard()
+
+                binding.root.postDelayed({
+                    showFriendPopup()
+                }, 150)
+            }
         }
 
         expandTouchArea()
@@ -163,7 +171,7 @@ class EditSpaceDialogFragment : DialogFragment() {
         popupBinding.rvFriends.clipToPadding = false
 
         // 드롭다운 최소/최대 높이 제한 (CreateSpace와 동일)
-        val maxHeightDp = 240
+        val maxHeightDp = 290
         val minHeightDp = 50
         val density = resources.displayMetrics.density
         val maxHeightPx = (maxHeightDp * density).toInt()
@@ -183,6 +191,7 @@ class EditSpaceDialogFragment : DialogFragment() {
         ).apply {
             isOutsideTouchable = true
             isFocusable = true
+            inputMethodMode = PopupWindow.INPUT_METHOD_NOT_NEEDED
             elevation = 0f
 
             setOnDismissListener {
@@ -339,6 +348,15 @@ class EditSpaceDialogFragment : DialogFragment() {
                 }
             }
         }
+    }
+
+    private fun hideKeyboard() {
+        val imm = requireContext()
+            .getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                as android.view.inputmethod.InputMethodManager
+
+        imm.hideSoftInputFromWindow(binding.etSpaceName.windowToken, 0)
+        binding.etSpaceName.clearFocus()
     }
 
     private var onEditCompleteListener: (() -> Unit)? = null
