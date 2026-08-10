@@ -75,8 +75,8 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     // 알림에서 특정 사진을 눌러 들어온 경우
     // 자동으로 열어야 할 mediaId
     private var targetPhotoId: Long? = null
-    private var isOwner: Boolean = false
     private var myUserId: Long = -1L
+    private var memberCount: Int = 0
     private var myNickname: String = ""
     private var myProfileImageUrl: String? = null
     private val existingMemberIds = mutableListOf<Long>()
@@ -194,6 +194,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
 
                 // 스페이스 정보 UI 반영
                 binding.tvTitle.text = data.name
+                memberCount = data.memberCount ?: 0
 
                 // API 응답 성공 후
                 binding.tvExpire.setBackgroundResource(R.drawable.bg_label_pink)
@@ -230,15 +231,8 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                         myUserId = userData?.userId?.toLong() ?: -1L
                         myNickname = userData?.nickname.orEmpty()
                         myProfileImageUrl = userData?.profileImageViewUrl
-                        isOwner = data.ownerId?.toLong() == myUserId
 
-                        Log.d(
-                            "SpaceFragment",
-                            "isOwner=$isOwner ownerId=${data.ownerId} myUserId=$myUserId"
-                        )
-
-                        binding.btnChange.visibility =
-                            if (isOwner) View.VISIBLE else View.GONE
+                        binding.btnChange.visibility = View.VISIBLE
 
                         updateMemberUi(data.memberProfiles)
                         updatePhotoUploaderProfiles()
@@ -561,16 +555,15 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     private fun showExitDialog() {
         val dialogBinding = DialogExitBinding.inflate(layoutInflater)
 
-        // 방장 여부에 따라 문구 변경
-        if (isOwner) {
-            dialogBinding.tvTitle.text = "정말 나가시겠어요?"
-            dialogBinding.tvMessage.text = "나가면 스페이스가 삭제되어 복구할 수 없어요."
-            dialogBinding.btnExit.text = "나가기"
+        dialogBinding.tvTitle.text = "정말 나가시겠어요?"
+
+        dialogBinding.tvMessage.text = if (memberCount <= 1) {
+            "마지막 멤버가 나가면 스페이스가 삭제되어 복구할 수 없어요."
         } else {
-            dialogBinding.tvTitle.text = "정말 나가시겠어요?"
-            dialogBinding.tvMessage.text = "다시 초대받기 전까지 스페이스를 이용할 수 없어요."
-            dialogBinding.btnExit.text = "나가기"
+            "다시 초대받기 전까지 스페이스를 이용할 수 없어요."
         }
+
+        dialogBinding.btnExit.text = "나가기"
 
         val builder = MaterialAlertDialogBuilder(requireContext())
             .setView(dialogBinding.root)
@@ -585,13 +578,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         dialogBinding.btnExit.setOnClickListener {
             lifecycleScope.launch {
                 try {
-                    if (isOwner) {
-                        // 방장 → 스페이스 삭제 API
-                        RetrofitClient.workspaceService.deleteWorkspace(spaceId)
-                    } else {
-                        // 일반 멤버 → 나가기 API
-                        workspaceMemberService.leaveWorkspace(spaceId)
-                    }
+                    workspaceMemberService.leaveWorkspace(spaceId)
 
                     dialog.dismiss()
 
