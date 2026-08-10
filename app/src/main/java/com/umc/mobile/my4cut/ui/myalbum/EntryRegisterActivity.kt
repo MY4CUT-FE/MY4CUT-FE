@@ -16,7 +16,10 @@ import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.lifecycleScope
@@ -44,8 +47,10 @@ class EntryRegisterActivity : AppCompatActivity() {
 
     private val selectedImageUris = mutableStateListOf<Uri>()
 
-    // ✅ 화면 진입 시 일기 드롭다운이 펼쳐진 상태로 시작하도록 기본값 true
-    private var isDiaryExpanded = true
+   // ✅ 썸네일(대표 사진)로 지정된 사진의 인덱스 (기본값: 첫 번째 사진)
+    private var thumbnailIndex by mutableStateOf(0)
+
+    private var isDiaryExpanded = true  // ✅ 하루 일기 탭 기본 펼침 상태
     private var selectedMoodIndex = 1  // 기본값: CALM (첫 번째 이모지)
 
     private val pickMultipleMedia = registerForActivityResult(
@@ -78,7 +83,10 @@ class EntryRegisterActivity : AppCompatActivity() {
             setContent {
                 PhotoUploadPager(
                     photos = selectedImageUris,
-                    onAddPhotoClick = ::launchPhotoPicker
+                    onAddPhotoClick = ::launchPhotoPicker,
+                    thumbnailIndex = thumbnailIndex,
+                    onThumbnailClick = { index -> thumbnailIndex = index },
+                    onDeleteClick = { index -> deletePhotoAt(index) }
                 )
             }
         }
@@ -123,6 +131,21 @@ class EntryRegisterActivity : AppCompatActivity() {
         binding.btnComplete.setOnClickListener {
             saveDay4Cut()
         }
+    }
+
+    // ✅ 업로드 전 사진 삭제 - 삭제된 사진이 썸네일이었다면 첫 번째 사진으로, 썸네일보다 앞쪽이면 인덱스 보정
+    private fun deletePhotoAt(index: Int) {
+        if (index < 0 || index >= selectedImageUris.size) return
+
+        selectedImageUris.removeAt(index)
+
+        if (index == thumbnailIndex) {
+            thumbnailIndex = 0
+        } else if (index < thumbnailIndex) {
+            thumbnailIndex--
+        }
+
+        updateButtonState()
     }
 
     private fun launchPhotoPicker() {
@@ -177,7 +200,7 @@ class EntryRegisterActivity : AppCompatActivity() {
                 val images = uploadedFiles.mapIndexed { index, file ->
                     Day4CutImage(
                         mediaId = file.mediaId,
-                        isThumbnail = (index == 0)
+                        isThumbnail = (index == thumbnailIndex)
                     )
                 }
 

@@ -141,7 +141,6 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!-- [수정] 오늘의 네컷 기록 타이틀 상단 마진: 8dp → 24dp -->
             <TextView
                 android:id="@+id/tv_record_title"
                 android:layout_width="wrap_content"
