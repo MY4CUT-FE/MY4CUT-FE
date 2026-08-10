@@ -15,10 +15,37 @@
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:spanCount="2" />
 
+    <!-- 앨범이 하나도 없을 때만 화면 중앙에 표시 -->
+    <ImageView
+        android:id="@+id/iv_empty_state"
+        android:layout_width="101dp"
+        android:layout_height="62dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/img_empty_state_character"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/btn_create_album"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_empty_state"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="아직 생성한 앨범이 없어요"
+        android:textSize="10sp"
+        android:textColor="#B6B6B6"
+        android:fontFamily="@font/suit_regular"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/iv_empty_state"
+        app:layout_constraintStart_toStartOf="@id/iv_empty_state"
+        app:layout_constraintEnd_toEndOf="@id/iv_empty_state" />
+
     <ImageView
         android:id="@+id/btn_create_album"
-        android:layout_width="29dp"
-        android:layout_height="26dp"
+        android:layout_width="36dp"
+        android:layout_height="32dp"
         android:layout_marginBottom="3dp"
         android:src="@drawable/ic_album"
         app:layout_constraintBottom_toTopOf="@id/tv_create_album"
@@ -32,7 +59,8 @@
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="10dp"
         android:text="앨범 생성"
-        android:textSize="8sp"
+        android:textSize="10sp"
+        android:textColor="#595959"
         android:fontFamily="@font/suit_bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
