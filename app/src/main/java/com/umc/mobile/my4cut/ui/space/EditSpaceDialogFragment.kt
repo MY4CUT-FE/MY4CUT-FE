@@ -253,9 +253,29 @@ class EditSpaceDialogFragment : DialogFragment() {
                 // 다이얼로그 닫기
                 dismiss()
 
+            } catch (e: retrofit2.HttpException) {
+                Log.e("EditSpace", "스페이스 수정 실패", e)
+
+                if (e.code() == 400) {
+                    Toast.makeText(
+                        requireContext(),
+                        "스페이스 이름은 영어, 한글, 숫자만 가능하며 15자까지 입력할 수 있어요.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "스페이스 수정에 실패했습니다",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             } catch (e: Exception) {
                 Log.e("EditSpace", "스페이스 수정 실패", e)
-                Toast.makeText(requireContext(), "스페이스 수정에 실패했습니다", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "스페이스 수정에 실패했습니다",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }

@@ -191,9 +191,29 @@ class CreateSpaceDialogFragment : DialogFragment() {
 
                     dismiss()
 
-                } catch (e: Exception) {
+                } catch (e: retrofit2.HttpException) {
                     Log.e("CreateSpace", "스페이스 생성 또는 초대 실패", e)
-                    Toast.makeText(requireContext(), "스페이스 생성 또는 초대에 실패했습니다", Toast.LENGTH_SHORT).show()
+
+                    if (e.code() == 400) {
+                        Toast.makeText(
+                            requireContext(),
+                            "스페이스 이름은 영어, 한글, 숫자만 가능하며 15자까지 입력할 수 있어요.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            "스페이스 생성 또는 초대 실패에 실패했습니다",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                } catch (e: Exception) {
+                    Log.e("CreateSpace", "스페이스 생성 또는 초대 실패 실패", e)
+                    Toast.makeText(
+                        requireContext(),
+                        "스페이스 생성 또는 초대 실패에 실패했습니다",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
