@@ -69,6 +69,11 @@ class AlbumFragment : Fragment() {
                 albumList.clear()
                 response.data?.let { albumList.addAll(it) }
                 albumAdapter.notifyDataSetChanged()
+
+                // 앨범이 하나도 없을 때만 빈 상태 캐릭터+텍스트 표시
+                val emptyVisibility = if (albumList.isEmpty()) View.VISIBLE else View.GONE
+                binding.ivEmptyState.visibility = emptyVisibility
+                binding.tvEmptyState.visibility = emptyVisibility
             } catch (e: Exception) {
                 Log.e("API_ERROR", "목록 조회 실패: ${e.message}")
             }
