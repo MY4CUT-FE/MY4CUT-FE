@@ -69,6 +69,9 @@ private val CoralColor = Color(0xFFFF7E67)
 fun PhotoUploadPager(
     photos: List<Uri>,
     onAddPhotoClick: () -> Unit,
+    thumbnailIndex: Int = 0,
+    onThumbnailClick: (Int) -> Unit = {},
+    onDeleteClick: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -125,6 +128,9 @@ fun PhotoUploadPager(
                     page < photos.size -> PhotoCard(
                         uri = photos[page],
                         isCurrent = isCurrent,
+                        isThumbnail = page == thumbnailIndex,
+                        onDeleteClick = { onDeleteClick(page) },
+                        onThumbnailClick = { onThumbnailClick(page) },
                         modifier = scaledModifier
                     )
                     // [사진 있음] 마지막 페이지 → + 추가 슬롯 (사진 추가 직접 연결)
@@ -215,7 +221,14 @@ private fun EmptyPhotoCard(
 // ─── 사진 카드 ─────────────────────────────────────────────────────────────────
 
 @Composable
-private fun PhotoCard(uri: Uri, isCurrent: Boolean, modifier: Modifier = Modifier) {
+private fun PhotoCard(
+    uri: Uri,
+    isCurrent: Boolean,
+    isThumbnail: Boolean,
+    onDeleteClick: () -> Unit,
+    onThumbnailClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
 
     val bitmap by produceState<ImageBitmap?>(initialValue = null, key1 = uri) {
@@ -248,6 +261,34 @@ private fun PhotoCard(uri: Uri, isCurrent: Boolean, modifier: Modifier = Modifie
                 modifier = Modifier.fillMaxSize()
             )
         }
+
+        // 삭제 아이콘 (우측 상단) - 마이앨범 네컷수정하기 화면과 동일한 아이콘/위치/크기
+        Image(
+            painter = painterResource(R.drawable.ic_delete),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 8.dp, end = 8.dp)
+                .size(26.dp)
+                .background(Color.White, CircleShape)
+                .border(1.dp, Color(0xFFD1D1D1), CircleShape)
+                .clickable { onDeleteClick() }
+                .padding(5.dp)
+        )
+
+        // 썸네일(대표) 아이콘 (우측 하단) - 마이앨범 네컷수정하기 화면과 동일한 아이콘/위치/크기
+        Image(
+            painter = painterResource(if (isThumbnail) R.drawable.ic_typical_on else R.drawable.ic_typical_off),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 8.dp, end = 8.dp)
+                .size(26.dp)
+                .background(Color.White, CircleShape)
+                .border(1.dp, Color(0xFFD1D1D1), CircleShape)
+                .clickable { onThumbnailClick() }
+                .padding(5.dp)
+        )
     }
 }
 

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:minWidth="132dp"
+    android:orientation="vertical"
+    android:background="@drawable/bg_popup_menu">
+
+    <LinearLayout
+        android:id="@+id/row_sort_default"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="4dp"
+        android:layout_marginTop="4dp"
+        android:background="?attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="11dp">
+
+        <TextView
+            android:id="@+id/tv_sort_default"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/suit_medium"
+            android:text="기본순"
+            android:textColor="#1A1A1A"
+            android:textSize="13sp" />
+
+        <ImageView
+            android:id="@+id/iv_check_default"
+            android:layout_width="9dp"
+            android:layout_height="9dp"
+            android:layout_marginStart="10dp"
+            android:src="@drawable/check"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/row_sort_favorite"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="4dp"
+        android:layout_marginBottom="4dp"
+        android:background="?attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="11dp">
+
+        <TextView
+            android:id="@+id/tv_sort_favorite"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/suit_medium"
+            android:text="즐겨찾기순"
+            android:textColor="#1A1A1A"
+            android:textSize="13sp" />
+
+        <ImageView
+            android:id="@+id/iv_check_favorite"
+            android:layout_width="9dp"
+            android:layout_height="9dp"
+            android:layout_marginStart="10dp"
+            android:src="@drawable/check"
+            android:visibility="gone" />
+    </LinearLayout>
+
+</LinearLayout>

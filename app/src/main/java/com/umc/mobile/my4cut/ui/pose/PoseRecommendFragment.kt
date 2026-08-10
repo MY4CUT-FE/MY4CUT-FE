@@ -7,13 +7,11 @@ import android.graphics.PorterDuff
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
-import android.view.ContextThemeWrapper
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.PopupMenu
+import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
@@ -24,6 +22,7 @@ import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.DialogPoseDetailBinding
 import com.umc.mobile.my4cut.databinding.FragmentPoseRecommendBinding
+import com.umc.mobile.my4cut.databinding.PopupPoseFilterBinding
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 import retrofit2.Call
@@ -126,6 +125,7 @@ class PoseRecommendFragment : Fragment() {
             .into(dialogBinding.ivDialogPose)
 
         dialogBinding.tvDialogPoseName.text = pose.title
+        dialogBinding.tvDialogPeopleCount.text = "${pose.peopleCount}인 추천 포즈"
         updateDialogStar(dialogBinding, pose.isFavorite)
 
         dialogBinding.ivDialogStar.setOnClickListener {
@@ -271,30 +271,44 @@ class PoseRecommendFragment : Fragment() {
             })
     }
 
-    // 팝업 메뉴
-    private fun showFilterPopup(view: View) {
-        val contextWrapper = ContextThemeWrapper(requireContext(), R.style.FilterMenuTheme)
-        val popup = PopupMenu(contextWrapper, view)
-        popup.gravity = Gravity.END
+    // 필터 정렬 선택 드롭다운
+    private fun showFilterPopup(anchor: View) {
+        val popupBinding = PopupPoseFilterBinding.inflate(LayoutInflater.from(requireContext()))
 
-        popup.menu.add(0, 0, 0, "기본순")
-        popup.menu.add(0, 1, 0, "즐겨찾기순")
-
-        popup.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                0 -> {
-                    isFavoriteFilterOn = false
-                    binding.tvFilterText.text = "기본순"
-                }
-                1 -> {
-                    isFavoriteFilterOn = true
-                    binding.tvFilterText.text = "즐겨찾기순"
-                }
-            }
-            loadPosesFromServer()
+        val popupWindow = PopupWindow(
+            popupBinding.root,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
             true
+        )
+        popupWindow.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        popupWindow.elevation = 8f
+
+        // 현재 선택된 정렬 기준 옆에 체크 표시
+        popupBinding.ivCheckDefault.visibility = if (!isFavoriteFilterOn) View.VISIBLE else View.GONE
+        popupBinding.ivCheckFavorite.visibility = if (isFavoriteFilterOn) View.VISIBLE else View.GONE
+
+        popupBinding.rowSortDefault.setOnClickListener {
+            isFavoriteFilterOn = false
+            binding.tvFilterText.text = "기본순"
+            loadPosesFromServer()
+            popupWindow.dismiss()
         }
-        popup.show()
+
+        popupBinding.rowSortFavorite.setOnClickListener {
+            isFavoriteFilterOn = true
+            binding.tvFilterText.text = "즐겨찾기순"
+            loadPosesFromServer()
+            popupWindow.dismiss()
+        }
+
+        popupBinding.root.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        val xOffset = anchor.width - popupBinding.root.measuredWidth
+        // 필터 버튼과 드롭다운 사이 간격
+        val yOffset = (8 * resources.displayMetrics.density).toInt()
+
+        // 필터 버튼 우측 하단에 맞춰 드롭다운 표시
+        popupWindow.showAsDropDown(anchor, xOffset, yOffset)
     }
 
     override fun onDestroyView() {
