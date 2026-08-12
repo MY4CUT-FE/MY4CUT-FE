@@ -69,21 +69,22 @@
             android:id="@+id/tvDateTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:fontFamily="@font/suit_regular"
             android:text="2025/11/04 20:45"
             android:textColor="#1A1A1A"
             android:textSize="10sp"
-            app:layout_constraintBottom_toBottomOf="@id/tvUserName"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/tvUserName" />
+            app:layout_constraintTop_toBottomOf="@id/layoutComment" />
 
         <LinearLayout
+            android:id="@+id/layoutComment"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
             android:gravity="center_vertical"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvDateTime">
+            app:layout_constraintTop_toTopOf="@id/tvUserName"
+            app:layout_constraintBottom_toBottomOf="@id/tvUserName">
 
             <ImageView
                 android:id="@+id/ivComment"
