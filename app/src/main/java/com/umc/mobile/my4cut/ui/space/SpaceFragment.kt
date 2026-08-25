@@ -160,6 +160,11 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         photoAdapter.showSkeleton()
         loadPhotosFromApi()
 
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            loadSpaceFromApi()
+            loadPhotosFromApi()
+        }
+
         photoAdapter.onItemClickListener = { photo ->
             showPhotoDialog(photo, isCommentExpanded = true)
         }
@@ -434,6 +439,8 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     photoAdapter.updatePhotos(newPhotos)
                     photoAdapter.hideSkeleton()
 
+                    binding.swipeRefreshLayout.isRefreshing = false
+
                     // 알림에서 특정 사진을 눌러 들어온 경우
                     // 서버에서 사진 목록을 다 받은 뒤 해당 사진 모달을 자동으로 연다.
                     targetPhotoId?.let { targetId ->
@@ -491,6 +498,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     t: Throwable
                 ) {
                     photoAdapter.hideSkeleton()
+                    binding.swipeRefreshLayout.isRefreshing = false
 
                     Log.e(
                         "SpaceFragment",
