@@ -63,6 +63,7 @@ class PhotoDialogFragment : DialogFragment() {
     private lateinit var ivToggleComment: ImageView
     private lateinit var ivToggleCommentTouchArea: View
     private lateinit var etComment: EditText
+    private lateinit var tvEmptyComments: TextView
 
     // 전달받을 값
     private var workspaceId: Long = -1L
@@ -209,6 +210,7 @@ class PhotoDialogFragment : DialogFragment() {
         tvUserName = view.findViewById(R.id.tvUserName)
         tvDate = view.findViewById(R.id.tvDate)
         tvChat = view.findViewById(R.id.tvChat)
+        tvEmptyComments = view.findViewById(R.id.tvEmptyComments)
 
         rvChatList = view.findViewById(R.id.rvChatList)
         ivToggleComment = view.findViewById(R.id.ivToggleComment)
@@ -480,12 +482,20 @@ class PhotoDialogFragment : DialogFragment() {
             isCommentExpanded = !isCommentExpanded
 
             if (isCommentExpanded) {
-                rvChatList.visibility = View.VISIBLE
+                val hasComments = commentAdapter.itemCount > 0
+
+                rvChatList.visibility =
+                    if (hasComments) View.VISIBLE else View.GONE
+
+                tvEmptyComments.visibility =
+                    if (hasComments) View.GONE else View.VISIBLE
+
                 etComment.visibility = View.VISIBLE
                 ivSend.visibility = View.VISIBLE
                 ivToggleComment.setImageResource(R.drawable.ic_space_down)
             } else {
                 rvChatList.visibility = View.GONE
+                tvEmptyComments.visibility = View.GONE
                 etComment.visibility = View.GONE
                 ivSend.visibility = View.GONE
                 ivToggleComment.setImageResource(R.drawable.ic_space_up)
@@ -698,6 +708,16 @@ class PhotoDialogFragment : DialogFragment() {
     fun updateComments(list: List<CommentData>) {
         commentAdapter.updateData(list)
         showCommentResult(list.size)
+
+        if (isCommentExpanded && list.isEmpty()) {
+            rvChatList.visibility = View.GONE
+            tvEmptyComments.visibility = View.VISIBLE
+        } else {
+            rvChatList.visibility =
+                if (isCommentExpanded) View.VISIBLE else View.GONE
+
+            tvEmptyComments.visibility = View.GONE
+        }
 
         // 마지막 댓글로 자동 스크롤
         if (list.isNotEmpty()) {
