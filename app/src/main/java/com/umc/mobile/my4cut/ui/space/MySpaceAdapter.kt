@@ -44,7 +44,7 @@ class MySpaceAdapter(
     fun submitList(list: List<Space>) {
         isLoading = false
         items.clear()
-        items.addAll(list)
+        items.addAll(list.sortedByDescending { it.createdAt })
         notifyDataSetChanged()
     }
 
