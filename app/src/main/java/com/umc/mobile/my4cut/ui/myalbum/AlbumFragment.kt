@@ -50,6 +50,11 @@ class AlbumFragment : Fragment() {
         }
 
         binding.btnCreateAlbum.setOnClickListener { showCreateDialog() }
+
+        // 당겨서 새로고침
+        binding.swipeRefresh.setOnRefreshListener {
+            fetchAlbumList()
+        }
     }
 
     // 앨범을 눌렀을 때, 상세 프래그먼트에 전달해주는 내용
@@ -76,6 +81,8 @@ class AlbumFragment : Fragment() {
                 binding.tvEmptyState.visibility = emptyVisibility
             } catch (e: Exception) {
                 Log.e("API_ERROR", "목록 조회 실패: ${e.message}")
+            } finally {
+                binding.swipeRefresh.isRefreshing = false
             }
         }
     }

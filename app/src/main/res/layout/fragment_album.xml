@@ -1,68 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/swipeRefresh"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#FFFCFC">
+    android:layout_height="match_parent">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_albums"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:padding="16dp"
-        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        app:spanCount="2" />
+        android:background="#FFFCFC">
 
-    <!-- 앨범이 하나도 없을 때만 화면 중앙에 표시 -->
-    <ImageView
-        android:id="@+id/iv_empty_state"
-        android:layout_width="101dp"
-        android:layout_height="62dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/img_empty_state_character"
-        android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/btn_create_album"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_albums"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:padding="16dp"
+            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+            app:spanCount="2"
+            tools:layout_editor_absoluteX="-40dp"
+            tools:layout_editor_absoluteY="-112dp" />
 
-    <TextView
-        android:id="@+id/tv_empty_state"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="아직 생성한 앨범이 없어요"
-        android:textSize="10sp"
-        android:textColor="#B6B6B6"
-        android:fontFamily="@font/suit_regular"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/iv_empty_state"
-        app:layout_constraintStart_toStartOf="@id/iv_empty_state"
-        app:layout_constraintEnd_toEndOf="@id/iv_empty_state" />
+        <!-- 앨범이 하나도 없을 때만 화면 중앙에 표시 -->
+        <ImageView
+            android:id="@+id/iv_empty_state"
+            android:layout_width="101dp"
+            android:layout_height="62dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/img_empty_state_character"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/cv_create_album"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-    <ImageView
-        android:id="@+id/btn_create_album"
-        android:layout_width="36dp"
-        android:layout_height="32dp"
-        android:layout_marginBottom="3dp"
-        android:src="@drawable/ic_album"
-        app:layout_constraintBottom_toTopOf="@id/tv_create_album"
-        app:layout_constraintStart_toStartOf="@id/tv_create_album"
-        app:layout_constraintEnd_toEndOf="@id/tv_create_album" />
+        <TextView
+            android:id="@+id/tv_empty_state"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="아직 생성한 앨범이 없어요"
+            android:textSize="10sp"
+            android:textColor="#B6B6B6"
+            android:fontFamily="@font/suit_regular"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/iv_empty_state"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-    <TextView
-        android:id="@+id/tv_create_album"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="10dp"
-        android:text="앨범 생성"
-        android:textSize="10sp"
-        android:textColor="#595959"
-        android:fontFamily="@font/suit_bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <!-- 아이콘 + "앨범 생성" 텍스트를 모두 포함한 원형 그림자 카드, 화면 오른쪽 아래 고정 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cv_create_album"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="38dp"
+            app:strokeWidth="0.5dp"
+            app:strokeColor="#FFEDEA"
+            app:cardElevation="1dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageView
+                    android:id="@+id/btn_create_album"
+                    android:layout_width="34dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/ic_album" />
+
+                <TextView
+                    android:id="@+id/tv_create_album"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="앨범 생성"
+                    android:textSize="9sp"
+                    android:textColor="#595959"
+                    android:fontFamily="@font/suit_bold" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

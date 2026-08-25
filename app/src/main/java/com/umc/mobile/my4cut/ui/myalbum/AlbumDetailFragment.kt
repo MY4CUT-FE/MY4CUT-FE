@@ -48,6 +48,8 @@ class AlbumDetailFragment : Fragment() {
     // 편집 모드 상태
     private var isEditMode = false
     private val pendingDeleteMediaIds = mutableSetOf<Int>()
+    private var pendingAlbumName: String? = null
+    private var originalAlbumTitle: String = ""
 
     private val galleryPickerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -100,6 +102,8 @@ class AlbumDetailFragment : Fragment() {
     private fun enterEditMode() {
         isEditMode = true
         pendingDeleteMediaIds.clear()
+        pendingAlbumName = null
+        originalAlbumTitle = binding.tvTitle.text.toString()
 
         binding.btnEdit.visibility = View.GONE
         binding.btnDelete.visibility = View.GONE
@@ -124,33 +128,49 @@ class AlbumDetailFragment : Fragment() {
 
         detailAdapter.setEditMode(false)
 
-        // 취소 시 삭제 표시했던 항목 복구 위해 서버에서 다시 불러옴
+        // 취소 시 삭제 표시했던 항목 + 변경했던 제목 모두 원래대로 복구
         if (discardChanges) {
+            binding.tvTitle.text = originalAlbumTitle
+            pendingAlbumName = null
             fetchAlbumDetail()
         }
     }
 
-    // 편집 모드에서 X 눌러 삭제 표시된 사진들을 실제 서버에 반영
+    // 편집 모드에서 저장 눌렀을 때 대기 중이던 변경사항(사진 삭제, 이름 변경)을 실제 서버에 반영
     private fun saveEditChanges() {
-        if (pendingDeleteMediaIds.isEmpty()) {
+        if (pendingDeleteMediaIds.isEmpty() && pendingAlbumName == null) {
             exitEditMode(discardChanges = false)
             return
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                RetrofitClient.albumService.deletePhotosFromAlbum(
-                    albumId,
-                    AlbumRequest(mediaIds = pendingDeleteMediaIds.toList())
-                )
+                pendingAlbumName?.let { newName ->
+                    val response = RetrofitClient.albumService.updateAlbumName(
+                        albumId,
+                        AlbumNameRequest(newName)
+                    )
+                    if (response.isSuccessful) {
+                        parentFragmentManager.setFragmentResult("album_changed", Bundle())
+                    } else {
+                        Log.e("API_ERROR", "이름 변경 실패: ${response.code()}")
+                    }
+                }
 
-                // 삭제 응답에 담긴 mediaList가 서버 처리 타이밍상 최신이 아닐 수 있어서,
-                // 응답을 그대로 쓰지 않고 성공 후 목록을 다시 새로 조회해서 반영
+                if (pendingDeleteMediaIds.isNotEmpty()) {
+                    RetrofitClient.albumService.deletePhotosFromAlbum(
+                        albumId,
+                        AlbumRequest(mediaIds = pendingDeleteMediaIds.toList())
+                    )
+                }
+
+                // 응답에 담긴 데이터를 그대로 쓰지 않고, 성공 후 목록을 다시 새로 조회해서 반영
                 pendingDeleteMediaIds.clear()
+                pendingAlbumName = null
                 exitEditMode(discardChanges = false)
                 fetchAlbumDetail()
             } catch (e: Exception) {
-                Log.e("API_ERROR", "사진 삭제 중 오류: ${e.message}")
+                Log.e("API_ERROR", "저장 중 오류: ${e.message}")
             }
         }
     }
@@ -312,28 +332,13 @@ class AlbumDetailFragment : Fragment() {
         val oldTitle = binding.tvTitle.text.toString()
         dialogBinding.etSpaceName.setText(oldTitle)
 
-        // 수정한 제목을 가져와 바꾸는 로직
+        // 수정한 제목을 로컬(대기 상태)로만 반영. 실제 서버 저장은 편집 화면의 "저장" 버튼에서 처리
         dialogBinding.btnNext.setOnClickListener {
             val newName = dialogBinding.etSpaceName.text.toString()
             if (newName.isNotEmpty()) {
-                viewLifecycleOwner.lifecycleScope.launch {
-                    try {
-                        val response = RetrofitClient.albumService.updateAlbumName(
-                            albumId,
-                            AlbumNameRequest(newName)
-                        )
-
-                        if (response.isSuccessful) { // 수정 성공 코드 (명세 확인 필요)
-                            binding.tvTitle.text = newName
-
-                            parentFragmentManager.setFragmentResult("album_changed", Bundle())
-
-                            dialog.dismiss()
-                        }
-                    } catch (e: Exception) {
-                        Log.e("API_ERROR", "수정 실패: ${e.message}")
-                    }
-                }
+                pendingAlbumName = newName
+                binding.tvTitle.text = newName
+                dialog.dismiss()
             }
         }
 

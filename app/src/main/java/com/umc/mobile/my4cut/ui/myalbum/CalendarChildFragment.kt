@@ -40,6 +40,13 @@ class CalendarChildFragment : Fragment() {
         fetchCalendarData(year, month)
 
         setupClickListeners()
+
+        // 당겨서 새로고침
+        binding.swipeRefresh.setOnRefreshListener {
+            val currentYear = binding.myCalendar.getCurrentYear()
+            val currentMonth = binding.myCalendar.getCurrentMonth()
+            fetchCalendarData(currentYear, currentMonth)
+        }
     }
 
     override fun onResume() {
@@ -75,6 +82,8 @@ class CalendarChildFragment : Fragment() {
                 }
             } catch (e: Exception) {
                 Log.e("CalendarChild", "Calendar load failed", e)
+            } finally {
+                binding.swipeRefresh.isRefreshing = false
             }
         }
     }

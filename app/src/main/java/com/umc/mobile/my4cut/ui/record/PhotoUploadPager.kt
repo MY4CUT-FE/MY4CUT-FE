@@ -59,10 +59,14 @@ import kotlin.math.absoluteValue
 
 private val CoralColor = Color(0xFFFF7E67)
 
+private const val MAX_PHOTO_COUNT = 3
+
 /**
  * 네컷 업로드 페이저
  * - 사진 없음: EmptyCard(page 0) + AddCard(page 1) → 우측에 + 카드뷰 peek
- * - 사진 있음: PhotoCards + AddCard(마지막) + 인디케이터 내부 오버레이
+ * - 사진 있음(최대치 미만): PhotoCards + AddCard(마지막)
+ * - 사진 있음(최대치=3장): PhotoCards만 (추가 슬롯 없음)
+ * - 인디케이터는 실제 페이지 개수(pageCount)만큼 표시
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -79,8 +83,13 @@ fun PhotoUploadPager(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // 사진 없음: EmptyCard + AddCard 2페이지 (우측 peek)
-        // 사진 있음: PhotoCards + AddCard (photos.size + 1)
-        val pageCount = if (photos.isEmpty()) 2 else photos.size + 1
+        // 사진 있음(최대치 미만): PhotoCards + AddCard (photos.size + 1)
+        // 사진이 최대치(3장)를 다 채우면 추가 슬롯 페이지 자체가 없어야 함
+        val pageCount = when {
+            photos.isEmpty() -> 2
+            photos.size >= MAX_PHOTO_COUNT -> photos.size
+            else -> photos.size + 1
+        }
         val pagerState = rememberPagerState(pageCount = { pageCount })
 
         // Box: 인디케이터를 카드뷰 내부 하단에 오버레이
@@ -133,7 +142,7 @@ fun PhotoUploadPager(
                         onThumbnailClick = { onThumbnailClick(page) },
                         modifier = scaledModifier
                     )
-                    // [사진 있음] 마지막 페이지 → + 추가 슬롯 (사진 추가 직접 연결)
+                    // [사진 있음, 최대치 미만] 마지막 페이지 → + 추가 슬롯 (사진 추가 직접 연결)
                     else -> AddPhotoCard(
                         onClick = onAddPhotoClick,
                         pageOffset = pageOffset,
@@ -143,10 +152,11 @@ fun PhotoUploadPager(
             }
 
             // 인디케이터: 사진이 있을 때만 카드뷰 내부 하단 정중앙 오버레이
+            // 실제 페이지 개수(pageCount) 기준으로 표시 (사진 1장 → 2개, 2장 이상 → 3개)
             if (photos.isNotEmpty()) {
                 PhotoPageIndicator(
                     currentPage = pagerState.currentPage,
-                    pageCount = photos.size,
+                    pageCount = pageCount,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 14.dp)
@@ -342,9 +352,11 @@ private fun AddPhotoCard(
 // ─── 페이지 인디케이터 ─────────────────────────────────────────────────────────
 
 /**
- * 업로드된 사진 장수(pageCount)만큼 점이 생성되는 인디케이터
+ * 실제 페이저 페이지 개수(pageCount)만큼 점이 생성되는 인디케이터
  * - currentPage에 맞춰 해당 인덱스의 점이 활성화되어 스와이프 시 함께 움직임
- * - "추가" 슬롯 페이지에서는 마지막 사진의 점이 활성 상태로 유지됨
+ * - "추가" 슬롯 페이지에서는 그 페이지 자신의 점이 활성 상태가 됨
+ *   (예: 사진 1장 → 점 2개[사진1, 추가], 사진 2장 → 점 3개[사진1, 사진2, 추가],
+ *        사진 3장(최대치, 추가 슬롯 없음) → 점 3개[사진1, 사진2, 사진3])
  */
 @Composable
 private fun PhotoPageIndicator(
@@ -352,7 +364,7 @@ private fun PhotoPageIndicator(
     pageCount: Int,
     modifier: Modifier = Modifier
 ) {
-    val activeIndex = currentPage.coerceIn(0, pageCount - 1)
+    val activeIndex = currentPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
 
     Box(
         modifier = modifier
