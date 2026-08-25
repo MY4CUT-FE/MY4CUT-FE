@@ -3,14 +3,21 @@ package com.umc.mobile.my4cut.ui.myalbum
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Rect
+import android.graphics.RectF
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.Editable
+import android.text.Spannable
+import android.text.SpannableStringBuilder
 import android.text.TextWatcher
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
@@ -29,6 +36,7 @@ import com.umc.mobile.my4cut.data.day4cut.remote.CreateDay4CutRequest
 import com.umc.mobile.my4cut.data.day4cut.remote.Day4CutImage
 import com.umc.mobile.my4cut.databinding.ActivityEntryRegister2Binding
 import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.ui.record.EntryRegisterTutorialPrefs
 import com.umc.mobile.my4cut.ui.record.PhotoUploadPager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -40,6 +48,21 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDate
+
+/**
+ * 네컷 업로드 화면 튜토리얼(일기 작성 카드 강조)의 위치를 조정하는 값 모음.
+ */
+private object EntryRegisterTutorialLayout {
+    const val SCROLL_TOP_PADDING_DP = 110  // 일기 카드를 스크롤로 보여줄 때 위쪽에 남길 여백(안내 텍스트 공간)
+
+    const val TEXT_GAP_DP = 8           // 안내 텍스트 ↔ 화살표 간격
+    const val ARROW_OFFSET_X_DP = -160     // 화살표의 카드 기준 가로 오프셋
+    const val ARROW_GAP_DP = 2          // 화살표 ↔ 카드 간격
+    const val ARROW_ROTATION = 0f       // 화살표 회전 각도
+
+    const val CLOSE_MARGIN_END_DP = 20  // 닫기 버튼 ↔ 화면 오른쪽 여백
+    const val CLOSE_MARGIN_BOTTOM_DP = 16 // 닫기 버튼 ↔ 화면 아래쪽 여백
+}
 
 class EntryRegisterActivity : AppCompatActivity() {
 
@@ -100,7 +123,132 @@ class EntryRegisterActivity : AppCompatActivity() {
 
         // ✅ isDiaryExpanded 초기값(true)에 맞춰 화면도 펼쳐진 상태로 시작
         applyDiaryExpandedState()
+
+        // 네컷 업로드 화면 최초 진입 시 1회만 표시되는 튜토리얼 (일기 작성 카드 안내)
+        binding.root.post {
+            showEntryRegisterTutorialIfNeeded()
+        }
     }
+
+    /**
+     * 네컷 업로드 화면 최초 진입 시 1회만 표시되는 코치마크 튜토리얼.
+     * 일기 작성 카드는 스크롤해야 보이는 위치에 있어서, 튜토리얼을 띄우기 전에 먼저
+     * NestedScrollView를 해당 위치까지 스크롤한 뒤 그 자리에 딤 구멍을 뚫는다.
+     */
+    private fun showEntryRegisterTutorialIfNeeded() {
+        if (EntryRegisterTutorialPrefs.hasSeenTutorial(this)) return
+
+        val overlay = binding.includeEntryRegisterTutorial
+
+        // 일기 카드가 화면에 들어오도록 미리 스크롤 (안내 텍스트 공간만큼 위쪽 여백을 남김)
+        val scrollTargetY = (binding.clDiaryHeader.top - dpToPx(EntryRegisterTutorialLayout.SCROLL_TOP_PADDING_DP))
+            .coerceAtLeast(0)
+        binding.nsvContent.scrollTo(0, scrollTargetY)
+
+        overlay.root.visibility = View.VISIBLE
+
+        fun boundsOf(target: View): Rect {
+            val rootLocation = IntArray(2)
+            binding.root.getLocationInWindow(rootLocation)
+            val loc = IntArray(2)
+            target.getLocationInWindow(loc)
+            val left = loc[0] - rootLocation[0]
+            val top = loc[1] - rootLocation[1]
+            return Rect(left, top, left + target.width, top + target.height)
+        }
+
+        fun positionOverlay() {
+            // 일기 헤더("하루 일기" 접기/펼치기 행) + 일기 내용(입력창·이모지) 카드를 한 덩어리로 강조
+            val headerBox = boundsOf(binding.clDiaryHeader)
+            val contentBox = boundsOf(binding.clDiaryContent)
+            val diaryBox = Rect(
+                minOf(headerBox.left, contentBox.left),
+                headerBox.top,
+                maxOf(headerBox.right, contentBox.right),
+                contentBox.bottom
+            ).apply { inset(-dpToPx(2), -dpToPx(2)) }
+
+            // 딤에 스포트라이트(완전 투명) 구멍을 뚫어 실제 일기 카드가 어둡게 가려지지 않도록 함
+            overlay.tutorialDimView.setHoles(
+                listOf(RectF(diaryBox) to dpToPx(12).toFloat())
+            )
+
+            placeHighlight(overlay.vHighlightDiary, diaryBox)
+
+            // 화살표(카드 바로 위)를 먼저 배치한 뒤, 그 위에 안내 텍스트를 배치
+            (overlay.ivTutorialArrowDiary.layoutParams as FrameLayout.LayoutParams).apply {
+                leftMargin = diaryBox.right - dpToPx(24) + dpToPx(EntryRegisterTutorialLayout.ARROW_OFFSET_X_DP)
+                topMargin = diaryBox.top - dpToPx(EntryRegisterTutorialLayout.ARROW_GAP_DP) - height
+            }
+            overlay.ivTutorialArrowDiary.rotation = EntryRegisterTutorialLayout.ARROW_ROTATION
+            overlay.ivTutorialArrowDiary.requestLayout()
+            val arrowTop = (overlay.ivTutorialArrowDiary.layoutParams as FrameLayout.LayoutParams).topMargin
+
+            // 안내 텍스트: 화살표 바로 위, 오른쪽 정렬
+            overlay.tvTutorialDiary.text = coralHighlightedText(
+                "포토리 이모티콘과 함께\n100자 이내로 하루를 기록해요.",
+                "하루를 기록"
+            )
+            val textWidth = (overlay.tvTutorialDiary.layoutParams as FrameLayout.LayoutParams).width
+            overlay.tvTutorialDiary.measure(
+                View.MeasureSpec.makeMeasureSpec(textWidth, View.MeasureSpec.AT_MOST),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+            val textHeight = overlay.tvTutorialDiary.measuredHeight
+            (overlay.tvTutorialDiary.layoutParams as FrameLayout.LayoutParams).apply {
+                leftMargin = diaryBox.right - textWidth
+                topMargin = arrowTop - dpToPx(EntryRegisterTutorialLayout.TEXT_GAP_DP) - textHeight
+            }
+            overlay.tvTutorialDiary.requestLayout()
+
+            // 닫기 버튼: 화면 우측 맨 아래에 명시적 좌표로 배치
+            overlay.llTutorialClose.bringToFront()
+            overlay.llTutorialClose.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+            val closeWidth = overlay.llTutorialClose.measuredWidth
+            val closeHeight = overlay.llTutorialClose.measuredHeight
+            overlay.llTutorialClose.x =
+                (overlay.root.width - closeWidth - dpToPx(EntryRegisterTutorialLayout.CLOSE_MARGIN_END_DP)).toFloat()
+            overlay.llTutorialClose.y =
+                (overlay.root.height - closeHeight - dpToPx(EntryRegisterTutorialLayout.CLOSE_MARGIN_BOTTOM_DP)).toFloat()
+        }
+
+        overlay.root.post { positionOverlay() }
+
+        overlay.llTutorialClose.setOnClickListener {
+            overlay.root.visibility = View.GONE
+            EntryRegisterTutorialPrefs.setTutorialSeen(this)
+        }
+    }
+
+    private fun placeHighlight(target: View, rect: Rect) {
+        (target.layoutParams as FrameLayout.LayoutParams).apply {
+            width = rect.width()
+            height = rect.height()
+            leftMargin = rect.left
+            topMargin = rect.top
+        }
+        target.requestLayout()
+    }
+
+    private fun coralHighlightedText(full: String, highlight: String): SpannableStringBuilder {
+        val spannable = SpannableStringBuilder(full)
+        val start = full.indexOf(highlight)
+        if (start >= 0) {
+            spannable.setSpan(
+                ForegroundColorSpan(Color.parseColor("#FF7E67")),
+                start,
+                start + highlight.length,
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        return spannable
+    }
+
+    private fun dpToPx(dp: Int): Int =
+        (dp * resources.displayMetrics.density).toInt()
 
     private fun setupDateData() {
         val dateString = intent.getStringExtra("SELECTED_DATE") ?: "2026-01-01"
