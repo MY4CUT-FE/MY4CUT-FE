@@ -20,6 +20,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- 홈 튜토리얼에서만 노출되는 마이페이지 아이콘 강조 배지 (평소엔 gone) -->
+    <View
+        android:id="@+id/v_mypage_badge"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="@drawable/bg_circle_coral_500"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/iv_mypage"
+        app:layout_constraintBottom_toBottomOf="@id/iv_mypage"
+        app:layout_constraintStart_toStartOf="@id/iv_mypage"
+        app:layout_constraintEnd_toEndOf="@id/iv_mypage" />
+
     <ImageView
         android:id="@+id/iv_mypage"
         android:layout_width="18dp"

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cl_date_select_tutorial_overlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clickable="true"
+    android:focusable="true"
+    android:visibility="gone">
+
+    <!-- 딤 배경 + 미니 달력 아이콘 영역 투명 구멍(spotlight) -->
+    <com.umc.mobile.my4cut.ui.home.TutorialDimView
+        android:id="@+id/tutorial_dim_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 미니 달력 아이콘 강조 링 (원형) -->
+    <View
+        android:id="@+id/v_highlight_minical"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_circle_ring_coral" />
+
+    <!-- "캘린더를 눌러 직접 날짜를 설정해요" 안내 텍스트 -->
+    <TextView
+        android:id="@+id/tv_tutorial_minical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/suit_bold"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp"
+        android:gravity="end"
+        android:lineSpacingExtra="2dp"
+        tools:ignore="HardcodedText" />
+
+    <!-- 미니 달력 아이콘을 가리키는 화살표 -->
+    <ImageView
+        android:id="@+id/iv_tutorial_arrow_minical"
+        android:layout_width="28dp"
+        android:layout_height="8dp"
+        android:src="@drawable/line_1"
+        android:scaleType="fitXY" />
+
+    <!-- 닫기 버튼 -->
+    <LinearLayout
+        android:id="@+id/ll_tutorial_close"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/close_tutorial" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:fontFamily="@font/suit_medium"
+            android:text="닫기"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp" />
+
+    </LinearLayout>
+
+</FrameLayout>

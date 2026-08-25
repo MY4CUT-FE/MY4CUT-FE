@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cl_home_tutorial_overlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clickable="true"
+    android:focusable="true"
+    android:visibility="gone">
+
+    <!-- 딤 배경 + 하이라이트 영역 투명 구멍(spotlight) -->
+    <com.umc.mobile.my4cut.ui.home.TutorialDimView
+        android:id="@+id/tutorial_dim_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 마이페이지 아이콘 강조 링 (원형) -->
+    <View
+        android:id="@+id/v_highlight_mypage"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_circle_ring_coral" />
+
+    <!-- 포즈 추천 카드 하이라이트 -->
+    <View
+        android:id="@+id/v_highlight_pose"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_dashed_highlight" />
+
+    <!-- "함께 찍는 인원수에 맞게 포즈 추천을 받아보세요" 안내 텍스트 -->
+    <TextView
+        android:id="@+id/tv_tutorial_pose"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/suit_bold"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp"
+        android:gravity="start"
+        android:lineSpacingExtra="2dp"
+        tools:ignore="HardcodedText" />
+
+    <!-- 포즈 추천 카드를 가리키는 화살표 -->
+    <ImageView
+        android:id="@+id/iv_tutorial_arrow_pose"
+        android:layout_width="16dp"
+        android:layout_height="27dp"
+        android:src="@drawable/line_2"
+        android:scaleType="fitXY" />
+
+    <!-- 네컷 기록 카드 하이라이트 -->
+    <View
+        android:id="@+id/v_highlight_record"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_dashed_highlight" />
+
+    <!-- "마이페이지에서 프로필을 관리해요" 안내 텍스트 -->
+    <TextView
+        android:id="@+id/tv_tutorial_mypage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/suit_bold"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp"
+        android:gravity="end"
+        tools:ignore="HardcodedText" />
+
+    <!-- 마이페이지 아이콘을 가리키는 화살표 -->
+    <ImageView
+        android:id="@+id/iv_tutorial_arrow_mypage"
+        android:layout_width="28dp"
+        android:layout_height="8dp"
+        android:src="@drawable/line_1"
+        android:scaleType="fitXY" />
+
+    <!-- 네컷 기록 카드를 가리키는 화살표 -->
+    <ImageView
+        android:id="@+id/iv_tutorial_arrow_record"
+        android:layout_width="16dp"
+        android:layout_height="27dp"
+        android:src="@drawable/line_3"
+        android:scaleType="fitXY" />
+
+    <!-- "네컷과 함께 하루를 기록해 보세요" 안내 텍스트 -->
+    <TextView
+        android:id="@+id/tv_tutorial_record"
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/suit_bold"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:gravity="end"
+        android:lineSpacingExtra="2dp"
+        tools:ignore="HardcodedText" />
+
+    <!-- 닫기 버튼: 화면 우측 하단, 다른 요소와 겹치지 않는 여백 확보 -->
+    <LinearLayout
+        android:id="@+id/ll_tutorial_close"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="123dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/close_tutorial" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:fontFamily="@font/suit_medium"
+            android:text="닫기"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp" />
+
+    </LinearLayout>
+
+</FrameLayout>

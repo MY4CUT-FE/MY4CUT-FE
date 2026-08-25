@@ -163,10 +163,13 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="24dp"
                     android:layout_marginTop="8dp"
+                    android:layout_marginEnd="8dp"
                     android:fontFamily="@font/suit_extrabold"
                     android:text="2026 January 2th"
                     android:textColor="#666666"
                     android:textSize="14sp"
+                    app:layout_constraintEnd_toStartOf="@id/iv_stats_illustration"
+                    app:layout_constraintHorizontal_bias="0.183"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
@@ -176,13 +179,15 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="24dp"
                     android:layout_marginTop="16dp"
+                    android:layout_marginEnd="8dp"
                     android:fontFamily="@font/suit_bold"
                     android:lineSpacingExtra="4dp"
                     android:text="이번 달 11장의 네컷을\n찍었어요!"
                     android:textColor="#1A1A1A"
                     android:textSize="19sp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/tv_today_date" />
+                    app:layout_constraintTop_toBottomOf="@id/tv_today_date"
+                    app:layout_constraintEnd_toStartOf="@id/iv_stats_illustration" />
 
                 <ImageView
                     android:id="@+id/iv_stats_illustration"

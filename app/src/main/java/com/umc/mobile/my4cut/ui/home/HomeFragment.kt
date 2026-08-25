@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import coil.load
+import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.day4cut.model.Day4CutDetailResponse
 import com.umc.mobile.my4cut.databinding.FragmentHomeBinding
@@ -117,6 +118,17 @@ class HomeFragment : Fragment() {
         updateNotificationIcon()
         // HomeFragment가 살아있는 동안 푸시 수신 이벤트를 감지
         registerNotificationReceiver()
+
+        // 홈 화면 최초 진입 시 1회만 표시되는 튜토리얼 (마이페이지 아이콘 / 포즈 추천 / 네컷 기록 카드 안내)
+        binding.root.post {
+            val safeBinding = _binding ?: return@post
+            (activity as? MainActivity)?.showHomeTutorialIfNeeded(
+                mypageBadge = safeBinding.vMypageBadge,
+                poseCard = safeBinding.clPoseRecommend,
+                recordCard = safeBinding.cvContentBox,
+                recordCharacter = safeBinding.ivEmptyChar
+            )
+        }
     }
 
     private fun setupDateBanner() {

@@ -49,6 +49,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- 홈 화면 튜토리얼에서만 노출되는 미니 달력 아이콘 강조 배지 (평소엔 gone) -->
+    <View
+        android:id="@+id/v_minical_badge"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_circle_coral_500"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/ivMiniCal"
+        app:layout_constraintBottom_toBottomOf="@id/ivMiniCal"
+        app:layout_constraintStart_toStartOf="@id/ivMiniCal"
+        app:layout_constraintEnd_toEndOf="@id/ivMiniCal" />
+
     <!-- 년/월 선택 바텀시트를 여는 미니 달력 아이콘 -->
     <!-- myCalendar 내부의 "< 2026년 8월 >" 월 이동 행과 수평이 되도록 myCalendar 위에 오버레이 배치 -->
     <ImageView
@@ -77,5 +89,15 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
+
+    <include
+        android:id="@+id/include_date_select_tutorial"
+        layout="@layout/layout_date_select_tutorial_overlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

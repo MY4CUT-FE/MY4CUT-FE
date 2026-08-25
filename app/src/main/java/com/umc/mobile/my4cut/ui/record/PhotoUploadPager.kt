@@ -146,6 +146,7 @@ fun PhotoUploadPager(
             if (photos.isNotEmpty()) {
                 PhotoPageIndicator(
                     currentPage = pagerState.currentPage,
+                    pageCount = photos.size,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 14.dp)
@@ -341,16 +342,17 @@ private fun AddPhotoCard(
 // ─── 페이지 인디케이터 ─────────────────────────────────────────────────────────
 
 /**
- * 최대 등록 장수(3장)에 맞춘 3개 점 인디케이터
+ * 업로드된 사진 장수(pageCount)만큼 점이 생성되는 인디케이터
  * - currentPage에 맞춰 해당 인덱스의 점이 활성화되어 스와이프 시 함께 움직임
+ * - "추가" 슬롯 페이지에서는 마지막 사진의 점이 활성 상태로 유지됨
  */
 @Composable
 private fun PhotoPageIndicator(
     currentPage: Int,
+    pageCount: Int,
     modifier: Modifier = Modifier
 ) {
-    val maxPhotoCount = 3
-    val activeIndex = currentPage.coerceIn(0, maxPhotoCount - 1)
+    val activeIndex = currentPage.coerceIn(0, pageCount - 1)
 
     Box(
         modifier = modifier
@@ -361,7 +363,7 @@ private fun PhotoPageIndicator(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            repeat(maxPhotoCount) { index ->
+            repeat(pageCount) { index ->
                 Box(
                     modifier = Modifier
                         .size(6.dp)

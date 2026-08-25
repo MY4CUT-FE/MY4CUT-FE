@@ -1,8 +1,16 @@
 package com.umc.mobile.my4cut.ui.myalbum
 
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.Rect
+import android.graphics.RectF
 import android.os.Bundle
+import android.text.Spannable
+import android.text.SpannableStringBuilder
+import android.text.style.ForegroundColorSpan
 import android.util.Log
+import android.view.View
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -13,6 +21,20 @@ import com.umc.mobile.my4cut.network.RetrofitClient
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+
+/**
+ * 날짜 선택 화면 튜토리얼(미니 달력 아이콘 강조)의 위치를 조정하는 값 모음.
+ */
+private object DateSelectTutorialLayout {
+    const val TEXT_GAP_X_DP = 12        // 안내 텍스트 ↔ 배지 원 가로 간격 (원 왼쪽)
+    const val TEXT_OFFSET_Y_DP = 8      // 안내 텍스트를 원 상단보다 얼마나 위로 올릴지
+    const val ARROW_OFFSET_X_DP = -20     // 화살표의 원 중앙 기준 가로 오프셋
+    const val ARROW_GAP_Y_DP = 2        // 배지 원 ↔ 화살표 세로 간격 (원 아래)
+    const val ARROW_ROTATION = 0f       // 화살표 회전 각도
+
+    const val CLOSE_MARGIN_END_DP = 20  // 닫기 버튼 ↔ 화면 오른쪽 여백
+    const val CLOSE_MARGIN_BOTTOM_DP = 16 // 닫기 버튼 ↔ 화면 아래쪽 여백
+}
 
 class CalendarPickerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityCalendarPicker2Binding
@@ -58,7 +80,120 @@ class CalendarPickerActivity : AppCompatActivity() {
         binding.myCalendar.post {
             binding.myCalendar.scrollToDate(initialDate)
         }
+
+        // 날짜 선택 화면 최초 진입 시 1회만 표시되는 튜토리얼 (미니 달력 아이콘 안내)
+        binding.root.post {
+            showDateSelectTutorialIfNeeded()
+        }
     }
+
+    /**
+     * 날짜 선택 화면 최초 진입 시 1회만 표시되는 코치마크 튜토리얼.
+     * 미니 달력 아이콘 영역은 딤에 투명 구멍을 뚫어(TutorialDimView) 어둡게 가려지지 않고
+     * 그대로 보이게 한다. 홈 화면 튜토리얼(MainActivity)과 동일한 방식.
+     */
+    private fun showDateSelectTutorialIfNeeded() {
+        if (DateSelectTutorialPrefs.hasSeenTutorial(this)) return
+
+        val overlay = binding.includeDateSelectTutorial
+        overlay.root.visibility = View.VISIBLE
+        binding.vMinicalBadge.visibility = View.VISIBLE
+
+        fun boundsOf(target: View): Rect {
+            val rootLocation = IntArray(2)
+            binding.root.getLocationInWindow(rootLocation)
+            val loc = IntArray(2)
+            target.getLocationInWindow(loc)
+            val left = loc[0] - rootLocation[0]
+            val top = loc[1] - rootLocation[1]
+            return Rect(left, top, left + target.width, top + target.height)
+        }
+
+        fun positionOverlay() {
+            val minicalBox = boundsOf(binding.vMinicalBadge)
+
+            // 딤에 스포트라이트(완전 투명) 구멍을 뚫어 실제 미니 달력 배지 원이 어둡게 가려지지 않도록 함
+            overlay.tutorialDimView.setHoles(
+                listOf(RectF(minicalBox) to minicalBox.width() / 2f)
+            )
+
+            placeHighlight(overlay.vHighlightMinical, minicalBox)
+
+            // 안내 텍스트: 배지 원 왼쪽, 살짝 위로 올려서 배치
+            overlay.tvTutorialMinical.text = coralHighlightedText(
+                "캘린더를 눌러\n직접 날짜를 설정해요.",
+                "직접 날짜를 설정"
+            )
+            overlay.tvTutorialMinical.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+            val textWidth = overlay.tvTutorialMinical.measuredWidth
+            val textLeft = minicalBox.left - dpToPx(DateSelectTutorialLayout.TEXT_GAP_X_DP) - textWidth
+            val textTop = minicalBox.top - dpToPx(DateSelectTutorialLayout.TEXT_OFFSET_Y_DP)
+            (overlay.tvTutorialMinical.layoutParams as FrameLayout.LayoutParams).apply {
+                leftMargin = textLeft
+                topMargin = textTop
+            }
+            overlay.tvTutorialMinical.requestLayout()
+
+            // 화살표: 배지 원 아래쪽에 배치
+            (overlay.ivTutorialArrowMinical.layoutParams as FrameLayout.LayoutParams).apply {
+                leftMargin = minicalBox.centerX() - width / 2 + dpToPx(DateSelectTutorialLayout.ARROW_OFFSET_X_DP)
+                topMargin = minicalBox.bottom + dpToPx(DateSelectTutorialLayout.ARROW_GAP_Y_DP)
+            }
+            overlay.ivTutorialArrowMinical.rotation = DateSelectTutorialLayout.ARROW_ROTATION
+            overlay.ivTutorialArrowMinical.requestLayout()
+
+            // 닫기 버튼: 화면 우측 맨 아래에 명시적 좌표로 배치
+            overlay.llTutorialClose.bringToFront()
+            overlay.llTutorialClose.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+            val closeWidth = overlay.llTutorialClose.measuredWidth
+            val closeHeight = overlay.llTutorialClose.measuredHeight
+            overlay.llTutorialClose.x =
+                (overlay.root.width - closeWidth - dpToPx(DateSelectTutorialLayout.CLOSE_MARGIN_END_DP)).toFloat()
+            overlay.llTutorialClose.y =
+                (overlay.root.height - closeHeight - dpToPx(DateSelectTutorialLayout.CLOSE_MARGIN_BOTTOM_DP)).toFloat()
+        }
+
+        overlay.root.post { positionOverlay() }
+
+        overlay.llTutorialClose.setOnClickListener {
+            overlay.root.visibility = View.GONE
+            binding.vMinicalBadge.visibility = View.GONE
+            DateSelectTutorialPrefs.setTutorialSeen(this)
+        }
+    }
+
+    private fun placeHighlight(target: View, rect: Rect) {
+        (target.layoutParams as FrameLayout.LayoutParams).apply {
+            width = rect.width()
+            height = rect.height()
+            leftMargin = rect.left
+            topMargin = rect.top
+        }
+        target.requestLayout()
+    }
+
+    private fun coralHighlightedText(full: String, highlight: String): SpannableStringBuilder {
+        val spannable = SpannableStringBuilder(full)
+        val start = full.indexOf(highlight)
+        if (start >= 0) {
+            spannable.setSpan(
+                ForegroundColorSpan(Color.parseColor("#FF7E67")),
+                start,
+                start + highlight.length,
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        return spannable
+    }
+
+    private fun dpToPx(dp: Int): Int =
+        (dp * resources.displayMetrics.density).toInt()
 
     private fun setupCalendar(year: Int, month: Int) {
         // ✅ API 호출하여 등록된 날짜 가져오기
