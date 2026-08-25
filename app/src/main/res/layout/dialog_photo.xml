@@ -195,6 +195,20 @@
                 tools:itemCount="2"
                 tools:listitem="@layout/item_comment" />
 
+            <TextView
+                android:id="@+id/tvEmptyComments"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:fontFamily="@font/suit_regular"
+                android:text="첫 댓글을 추가해 보세요"
+                android:textColor="#B6B6B6"
+                android:textSize="11sp"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@id/ivChat"
+                app:layout_constraintStart_toStartOf="@id/ivMainPhoto"
+                app:layout_constraintEnd_toEndOf="@id/ivMainPhoto" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>
 

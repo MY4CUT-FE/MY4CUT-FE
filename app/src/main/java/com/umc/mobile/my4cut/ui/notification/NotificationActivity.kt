@@ -124,7 +124,8 @@ class NotificationActivity : AppCompatActivity() {
                                 "WORKSPACE_INVITE", "WORKSPACE_ACCEPTED" -> R.drawable.ic_noti_invite
                                 "FRIEND_REQUEST" -> R.drawable.ic_noti_friend_add
                                 "FRIEND_ACCEPTED" -> R.drawable.ic_noti_people
-                                "MEDIA_COMMENT", "MEDIA_UPLOADED" -> R.drawable.ic_noti_comment
+                                "MEDIA_COMMENT" -> R.drawable.ic_noti_comment
+                                "MEDIA_UPLOADED" -> R.drawable.ic_noti_photo
                                 else -> R.drawable.ic_noti_people
                             },
                             category = when (dto.type) {
@@ -141,6 +142,11 @@ class NotificationActivity : AppCompatActivity() {
                                     "${sender}님이 ${workspace}에 초대했습니다."
                                 }
                                 "FRIEND_REQUEST" -> dto.message ?: "친구 요청이 도착했습니다."
+                                "MEDIA_UPLOADED" -> {
+                                    val sender = dto.senderNickname ?: "누군가"
+                                    val workspace = dto.workspaceName ?: "워크스페이스"
+                                    "${sender}님이 ${workspace}에 사진을 업로드했습니다."
+                                }
                                 else -> dto.message ?: "알림이 도착했습니다."
                             },
                             time = dto.createdAt?.let { formatTimeAgo(it) } ?: "방금 전",
@@ -304,7 +310,8 @@ class NotificationActivity : AppCompatActivity() {
                                                 "WORKSPACE_INVITE", "WORKSPACE_ACCEPTED" -> R.drawable.ic_noti_invite
                                                 "FRIEND_REQUEST" -> R.drawable.ic_noti_friend_add
                                                 "FRIEND_ACCEPTED" -> R.drawable.ic_noti_people
-                                                "MEDIA_COMMENT", "MEDIA_UPLOADED" -> R.drawable.ic_noti_comment
+                                                "MEDIA_COMMENT" -> R.drawable.ic_noti_comment
+                                                "MEDIA_UPLOADED" -> R.drawable.ic_noti_photo
                                                 else -> R.drawable.ic_noti_people
                                             },
                                             category = when (dto.type) {
@@ -321,6 +328,11 @@ class NotificationActivity : AppCompatActivity() {
                                                     "${sender}님이 ${workspace}에 초대했습니다."
                                                 }
                                                 "FRIEND_REQUEST" -> dto.message ?: "친구 요청이 도착했습니다."
+                                                "MEDIA_UPLOADED" -> {
+                                                    val sender = dto.senderNickname ?: "누군가"
+                                                    val workspace = dto.workspaceName ?: "워크스페이스"
+                                                    "${sender}님이 ${workspace}에 사진을 업로드했습니다."
+                                                }
                                                 else -> dto.message ?: "알림이 도착했습니다."
                                             },
                                             time = dto.createdAt?.let { formatTimeAgo(it) } ?: "방금 전",
