@@ -844,6 +844,7 @@ class EntryDetailFragment : Fragment() {
 
         private val TYPE_PHOTO = 0
         private val TYPE_ADD = 1
+        private val MAX_PHOTO_COUNT = 3
 
         inner class PhotoViewHolder(val binding: ItemPhotoSlider2Binding) : RecyclerView.ViewHolder(binding.root)
         inner class AddViewHolder(val binding: ItemPhotoAddBinding) : RecyclerView.ViewHolder(binding.root)
@@ -904,12 +905,15 @@ class EntryDetailFragment : Fragment() {
             }
         }
 
+        // 수정 모드라도 사진이 최대치(3장)를 다 채웠으면 추가(+) 페이지를 붙이지 않음
+        private fun hasAddPage(): Boolean = isEditMode && items.size < MAX_PHOTO_COUNT
+
         override fun getItemCount(): Int {
-            return if (isEditMode) items.size + 1 else items.size
+            return if (hasAddPage()) items.size + 1 else items.size
         }
 
         override fun getItemViewType(position: Int): Int {
-            return if (isEditMode && position == items.size) TYPE_ADD else TYPE_PHOTO
+            return if (hasAddPage() && position == items.size) TYPE_ADD else TYPE_PHOTO
         }
     }
 }

@@ -57,6 +57,17 @@ class AlbumFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        fetchAlbumList()
+    }
+
+    // 부모(CalendarMainFragment)가 화면 재진입 시 직접 호출하는 새로고침 진입점.
+    fun refresh() {
+        if (!isAdded) return
+        fetchAlbumList()
+    }
+
     // 앨범을 눌렀을 때, 상세 프래그먼트에 전달해주는 내용
     private fun setupRecyclerView() {
         albumAdapter = AlbumRVAdapter(albumList) { selected ->
@@ -73,6 +84,11 @@ class AlbumFragment : Fragment() {
                 val response = RetrofitClient.albumService.getAlbums()
                 albumList.clear()
                 response.data?.let { albumList.addAll(it) }
+
+                // 🔍 진단용: 서버가 실제로 돌려준 이름들을 그대로 찍음
+                // (여기 찍히는 이름이 아직 옛날 이름이면 → 서버/캐시 문제, 새 이름이면 → UI 바인딩 문제)
+                Log.d("ALBUM_DEBUG", "받아온 앨범 목록: ${albumList.map { it.id to it.name }}")
+
                 albumAdapter.notifyDataSetChanged()
 
                 // 앨범이 하나도 없을 때만 빈 상태 캐릭터+텍스트 표시
