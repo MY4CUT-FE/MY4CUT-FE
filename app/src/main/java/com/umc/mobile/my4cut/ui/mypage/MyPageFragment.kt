@@ -304,6 +304,15 @@ class MyPageFragment : Fragment() {
         // 포즈 북마크 삭제
         requireContext().getSharedPreferences("pose_bookmarks", Context.MODE_PRIVATE)
             .edit().clear().apply()
+        // 홈 튜토리얼 노출 여부 삭제 (다음 계정 최초 진입 시 다시 보이도록)
+        requireContext().getSharedPreferences("home_tutorial", Context.MODE_PRIVATE)
+            .edit().clear().apply()
+        // 네컷 업로드 튜토리얼 노출 여부 삭제
+        requireContext().getSharedPreferences("entry_register_tutorial", Context.MODE_PRIVATE)
+            .edit().clear().apply()
+        // 날짜 선택(캘린더) 튜토리얼 노출 여부 삭제
+        requireContext().getSharedPreferences("date_select_tutorial", Context.MODE_PRIVATE)
+            .edit().clear().apply()
     }
 
     override fun onDestroyView() {
