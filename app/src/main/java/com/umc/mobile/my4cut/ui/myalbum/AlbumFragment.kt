@@ -49,7 +49,8 @@ class AlbumFragment : Fragment() {
             fetchAlbumList()
         }
 
-        binding.btnCreateAlbum.setOnClickListener { showCreateDialog() }
+        // 아이콘뿐 아니라 원형 카드 전체(텍스트 포함) 어디를 눌러도 모달이 뜨도록 카드 자체에 연결
+        binding.cvCreateAlbum.setOnClickListener { showCreateDialog() }
 
         // 당겨서 새로고침
         binding.swipeRefresh.setOnRefreshListener {
@@ -84,11 +85,6 @@ class AlbumFragment : Fragment() {
                 val response = RetrofitClient.albumService.getAlbums()
                 albumList.clear()
                 response.data?.let { albumList.addAll(it) }
-
-                // 🔍 진단용: 서버가 실제로 돌려준 이름들을 그대로 찍음
-                // (여기 찍히는 이름이 아직 옛날 이름이면 → 서버/캐시 문제, 새 이름이면 → UI 바인딩 문제)
-                Log.d("ALBUM_DEBUG", "받아온 앨범 목록: ${albumList.map { it.id to it.name }}")
-
                 albumAdapter.notifyDataSetChanged()
 
                 // 앨범이 하나도 없을 때만 빈 상태 캐릭터+텍스트 표시
