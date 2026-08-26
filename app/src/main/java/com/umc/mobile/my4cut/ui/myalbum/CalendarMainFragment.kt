@@ -1,4 +1,3 @@
-
 package com.umc.mobile.my4cut.ui.myalbum
 import androidx.lifecycle.lifecycleScope
 import com.umc.mobile.my4cut.R
@@ -77,6 +76,18 @@ class CalendarMainFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         updateNotificationIcon()
+
+        // 앨범 상세 화면 등에서 뒤로가기로 돌아왔을 때, ViewPager 안의 AlbumFragment가
+        // 자체 onResume()으로 최신화되는 타이밍이 보장되지 않을 수 있어 여기서 직접 강제 새로고침
+        refreshAlbumTabIfPresent()
+    }
+
+    private fun refreshAlbumTabIfPresent() {
+        childFragmentManager.fragments.forEach { fragment ->
+            if (fragment is AlbumFragment) {
+                fragment.refresh()
+            }
+        }
     }
 
     // FCM 수신 브로드캐스트 Receiver 등록

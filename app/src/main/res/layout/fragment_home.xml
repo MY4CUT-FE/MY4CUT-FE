@@ -89,256 +89,263 @@
         app:layout_constraintTop_toTopOf="@id/tv_date_banner"
         app:layout_constraintVertical_bias="0.607" />
 
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/nsv_home"
-        android:layout_width="match_parent"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="24dp"
-        android:background="@drawable/bg_home_bottom_sheet"
-        android:fillViewport="true"
-        android:overScrollMode="never"
         app:layout_constraintTop_toBottomOf="@id/tv_welcome_banner"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/nsv_home"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clipChildren="false"
-            android:clipToPadding="false"
-            android:paddingBottom="12dp">
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_home_bottom_sheet"
+            android:fillViewport="true"
+            android:overScrollMode="never">
 
             <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/cl_pose_recommend"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_pose_box"
-                android:padding="16dp"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="20dp"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
-
-                <TextView
-                    android:id="@+id/tv_pose_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="어떤 포즈로 찍을지 고민이라면?"
-                    android:fontFamily="@font/suit_bold"
-                    android:textColor="#1A1A1A"
-                    android:textSize="14sp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"/>
-
-                <TextView
-                    android:text="포즈 추천 보러가기 >"
-                    android:fontFamily="@font/suit_medium"
-                    android:textSize="12sp"
-                    android:textColor="#626262"
-                    android:layout_marginTop="4dp"
-                    app:layout_constraintTop_toBottomOf="@id/tv_pose_title"
-                    app:layout_constraintStart_toStartOf="parent"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-
-                <ImageView
-                    android:layout_width="37dp"
-                    android:layout_height="37dp"
-                    android:src="@drawable/ic_banner_camera"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <TextView
-                android:id="@+id/tv_record_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="오늘의 네컷 기록"
-                android:fontFamily="@font/suit_bold"
-                android:textSize="21sp"
-                android:textColor="#1A1A1A"
-                android:layout_marginTop="24dp"
-                android:layout_marginStart="20dp"
-                app:layout_constraintTop_toBottomOf="@id/cl_pose_recommend"
-                app:layout_constraintStart_toStartOf="parent"/>
-
-            <ImageView
-                android:id="@+id/iv_calendar_back"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:src="@drawable/ic_calendar_left"
-                android:layout_marginStart="10dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="@id/ll_week_calendar"
-                app:layout_constraintBottom_toBottomOf="@id/ll_week_calendar"/>
-
-            <com.umc.mobile.my4cut.ui.home.SwipeCalendarLayout
-                android:id="@+id/ll_week_calendar"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:weightSum="7"
-                android:layout_marginTop="16dp"
-                android:layout_marginHorizontal="4dp"
-                app:layout_constraintTop_toBottomOf="@id/tv_record_title"
-                app:layout_constraintStart_toEndOf="@id/iv_calendar_back"
-                app:layout_constraintEnd_toStartOf="@id/iv_calendar_next">
-            </com.umc.mobile.my4cut.ui.home.SwipeCalendarLayout>
-
-            <ImageView
-                android:id="@+id/iv_calendar_next"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:src="@drawable/ic_calendar_right"
-                android:layout_marginEnd="10dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@id/ll_week_calendar"
-                app:layout_constraintBottom_toBottomOf="@id/ll_week_calendar"/>
-
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cv_content_box"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="8dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="8dp"
-                app:cardUseCompatPadding="true"
-                app:cardBackgroundColor="#FFFFFF"
-                app:layout_constraintTop_toBottomOf="@id/ll_week_calendar"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent">
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:paddingBottom="12dp">
 
                 <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
+                    android:id="@+id/cl_pose_recommend"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:padding="20dp">
+                    android:background="@drawable/bg_pose_box"
+                    android:padding="16dp"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="20dp"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
 
-                    <View
-                        android:id="@+id/v_date_line"
-                        android:layout_width="4dp"
-                        android:layout_height="20dp"
-                        android:background="#FF7E67"
+                    <TextView
+                        android:id="@+id/tv_pose_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="어떤 포즈로 찍을지 고민이라면?"
+                        android:fontFamily="@font/suit_bold"
+                        android:textColor="#1A1A1A"
+                        android:textSize="14sp"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent"/>
 
                     <TextView
-                        android:id="@+id/tv_content_date"
+                        android:text="포즈 추천 보러가기 >"
+                        android:fontFamily="@font/suit_medium"
+                        android:textSize="12sp"
+                        android:textColor="#626262"
+                        android:layout_marginTop="4dp"
+                        app:layout_constraintTop_toBottomOf="@id/tv_pose_title"
+                        app:layout_constraintStart_toStartOf="parent"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        tools:text="2026.01.02"
-                        android:textColor="#FF7E67"
-                        android:textSize="18sp"
-                        android:fontFamily="@font/suit_bold"
-                        android:layout_marginStart="8dp"
-                        app:layout_constraintStart_toEndOf="@id/v_date_line"
-                        app:layout_constraintTop_toTopOf="@id/v_date_line"
-                        app:layout_constraintBottom_toBottomOf="@id/v_date_line"/>
+                        android:layout_height="wrap_content"/>
 
-                    <!-- 빈 상태: 기록 없음 -->
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:id="@+id/cl_empty_state"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:paddingVertical="10dp"
-                        app:layout_constraintTop_toBottomOf="@id/v_date_line"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent">
-
-                        <ImageView
-                            android:id="@+id/iv_empty_char"
-                            android:layout_width="98dp"
-                            android:layout_height="66dp"
-                            android:src="@drawable/img_empty_state_character"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            android:fontFamily="@font/suit_medium"
-                            android:text="아직 업로드된 네컷이 없어요"
-                            android:textColor="#D1D1D1"
-                            android:textSize="14sp"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/iv_empty_char" />
-
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-
-                    <!-- 기록 있음: 사진 + (일기/이모지) -->
-                    <LinearLayout
-                        android:id="@+id/ll_filled_state"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginTop="20dp"
-                        android:visibility="gone"
-                        tools:visibility="visible"
-                        app:layout_constraintTop_toBottomOf="@id/v_date_line"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent">
-
-                        <!-- 사진 영역: 항상 표시 -->
-                        <ImageView
-                            android:id="@+id/iv_home_photo"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:adjustViewBounds="true"
-                            android:scaleType="fitCenter"
-                            android:src="@drawable/img_ex_photo"
-                            android:minHeight="350dp"/>
-
-                        <!-- [핵심] 일기+이모지 영역: content가 있을 때만 표시 -->
-                        <androidx.constraintlayout.widget.ConstraintLayout
-                            android:id="@+id/cl_diary_emoji_section"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:visibility="gone"
-                            tools:visibility="visible">
-
-                            <!-- 이모지 아이콘: emojiType 없으면 코드에서 배경 원만 표시 -->
-                            <ImageView
-                                android:id="@+id/iv_mood_icon"
-                                android:layout_width="48dp"
-                                android:layout_height="48dp"
-                                android:padding="8dp"
-                                android:src="@drawable/img_mood_happy"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintBottom_toBottomOf="parent"
-                                app:layout_constraintTop_toTopOf="parent"/>
-
-                            <!-- 일기 줄 영역: 코드에서 동적으로 채워짐 -->
-                            <LinearLayout
-                                android:id="@+id/ll_diary_lines"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:layout_marginEnd="12dp"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintEnd_toStartOf="@id/iv_mood_icon"
-                                app:layout_constraintTop_toTopOf="parent"
-                                app:layout_constraintBottom_toBottomOf="parent" />
-
-                        </androidx.constraintlayout.widget.ConstraintLayout>
-
-                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="37dp"
+                        android:layout_height="37dp"
+                        android:src="@drawable/ic_banner_camera"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
-            </androidx.cardview.widget.CardView>
+                <TextView
+                    android:id="@+id/tv_record_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="오늘의 네컷 기록"
+                    android:fontFamily="@font/suit_bold"
+                    android:textSize="21sp"
+                    android:textColor="#1A1A1A"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginStart="20dp"
+                    app:layout_constraintTop_toBottomOf="@id/cl_pose_recommend"
+                    app:layout_constraintStart_toStartOf="parent"/>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </androidx.core.widget.NestedScrollView>
+                <ImageView
+                    android:id="@+id/iv_calendar_back"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_calendar_left"
+                    android:layout_marginStart="10dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/ll_week_calendar"
+                    app:layout_constraintBottom_toBottomOf="@id/ll_week_calendar"/>
+
+                <com.umc.mobile.my4cut.ui.home.SwipeCalendarLayout
+                    android:id="@+id/ll_week_calendar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="7"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginHorizontal="4dp"
+                    app:layout_constraintTop_toBottomOf="@id/tv_record_title"
+                    app:layout_constraintStart_toEndOf="@id/iv_calendar_back"
+                    app:layout_constraintEnd_toStartOf="@id/iv_calendar_next">
+                </com.umc.mobile.my4cut.ui.home.SwipeCalendarLayout>
+
+                <ImageView
+                    android:id="@+id/iv_calendar_next"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_calendar_right"
+                    android:layout_marginEnd="10dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/ll_week_calendar"
+                    app:layout_constraintBottom_toBottomOf="@id/ll_week_calendar"/>
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cv_content_box"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="8dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:cardUseCompatPadding="true"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:layout_constraintTop_toBottomOf="@id/ll_week_calendar"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent">
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="20dp">
+
+                        <View
+                            android:id="@+id/v_date_line"
+                            android:layout_width="4dp"
+                            android:layout_height="20dp"
+                            android:background="#FF7E67"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"/>
+
+                        <TextView
+                            android:id="@+id/tv_content_date"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            tools:text="2026.01.02"
+                            android:textColor="#FF7E67"
+                            android:textSize="18sp"
+                            android:fontFamily="@font/suit_bold"
+                            android:layout_marginStart="8dp"
+                            app:layout_constraintStart_toEndOf="@id/v_date_line"
+                            app:layout_constraintTop_toTopOf="@id/v_date_line"
+                            app:layout_constraintBottom_toBottomOf="@id/v_date_line"/>
+
+                        <!-- 빈 상태: 기록 없음 -->
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:id="@+id/cl_empty_state"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:paddingVertical="10dp"
+                            app:layout_constraintTop_toBottomOf="@id/v_date_line"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent">
+
+                            <ImageView
+                                android:id="@+id/iv_empty_char"
+                                android:layout_width="98dp"
+                                android:layout_height="66dp"
+                                android:src="@drawable/img_empty_state_character"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:fontFamily="@font/suit_medium"
+                                android:text="아직 업로드된 네컷이 없어요"
+                                android:textColor="#D1D1D1"
+                                android:textSize="14sp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/iv_empty_char" />
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+
+                        <!-- 기록 있음: 사진 + (일기/이모지) -->
+                        <LinearLayout
+                            android:id="@+id/ll_filled_state"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginTop="20dp"
+                            android:visibility="gone"
+                            tools:visibility="visible"
+                            app:layout_constraintTop_toBottomOf="@id/v_date_line"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent">
+
+                            <!-- 사진 영역: 항상 표시 -->
+                            <ImageView
+                                android:id="@+id/iv_home_photo"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:adjustViewBounds="true"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/img_ex_photo"
+                                android:minHeight="350dp"/>
+
+                            <!-- [핵심] 일기+이모지 영역: content가 있을 때만 표시 -->
+                            <androidx.constraintlayout.widget.ConstraintLayout
+                                android:id="@+id/cl_diary_emoji_section"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:visibility="gone"
+                                tools:visibility="visible">
+
+                                <!-- 이모지 아이콘: emojiType 없으면 코드에서 배경 원만 표시 -->
+                                <ImageView
+                                    android:id="@+id/iv_mood_icon"
+                                    android:layout_width="48dp"
+                                    android:layout_height="48dp"
+                                    android:padding="8dp"
+                                    android:src="@drawable/img_mood_happy"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintBottom_toBottomOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent"/>
+
+                                <!-- 일기 줄 영역: 코드에서 동적으로 채워짐 -->
+                                <LinearLayout
+                                    android:id="@+id/ll_diary_lines"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical"
+                                    android:layout_marginEnd="12dp"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintEnd_toStartOf="@id/iv_mood_icon"
+                                    app:layout_constraintTop_toTopOf="parent"
+                                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                            </androidx.constraintlayout.widget.ConstraintLayout>
+
+                        </LinearLayout>
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                </androidx.cardview.widget.CardView>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.core.widget.NestedScrollView>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
