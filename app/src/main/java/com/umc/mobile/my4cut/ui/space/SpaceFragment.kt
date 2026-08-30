@@ -49,6 +49,7 @@ import android.util.Log
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.view.doOnNextLayout
 import androidx.exifinterface.media.ExifInterface
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.user.model.UserMeResponse
@@ -80,6 +81,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     private val memberItems = ArrayList<MemberItem>()
 
     private var retouchSpaceTutorialView: View? = null
+    private var retouchPhotoTutorialView: View? = null
 
     private var spaceId: Long = -1L
     // 알림에서 특정 사진을 눌러 들어온 경우
@@ -205,8 +207,12 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         retouchSpaceTutorialView?.let { view ->
             (view.parent as? ViewGroup)?.removeView(view)
         }
-
         retouchSpaceTutorialView = null
+
+        retouchPhotoTutorialView?.let { view ->
+            (view.parent as? ViewGroup)?.removeView(view)
+        }
+        retouchPhotoTutorialView = null
 
         super.onDestroyView()
     }
@@ -260,7 +266,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                         binding.btnChange.visibility = View.VISIBLE
 
                         binding.btnChange.post {
-                            showRetouchSpaceTutorial()
+                            // showRetouchSpaceTutorial()
                         }
 
                         updateMemberUi(data.memberProfiles)
@@ -462,6 +468,18 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     photoDatas.addAll(newPhotos)
                     photoAdapter.updatePhotos(newPhotos)
                     photoAdapter.hideSkeleton()
+
+                    // RETOUCH_PHOTO는 실제 첫 번째 사진 ViewHolder가 만들어진 뒤에 표시
+                    if (newPhotos.isNotEmpty()) {
+                        binding.rvPhotoList.doOnNextLayout {
+                            val firstViewHolder =
+                                binding.rvPhotoList.findViewHolderForAdapterPosition(0)
+
+                            if (firstViewHolder != null) {
+                                showRetouchPhotoTutorial()
+                            }
+                        }
+                    }
 
                     binding.swipeRefreshLayout.isRefreshing = false
 
@@ -1182,6 +1200,186 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     }
 
     private fun setRetouchSpaceTutorialText(
+        textView: TextView,
+        text: String,
+        highlight: String
+    ) {
+        val spannable =
+            SpannableString(text)
+
+        val start =
+            text.indexOf(highlight)
+
+        if (start >= 0) {
+            spannable.setSpan(
+                ForegroundColorSpan(
+                    Color.parseColor("#FF7E67")
+                ),
+                start,
+                start + highlight.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+
+        textView.text = spannable
+    }
+
+    private fun showRetouchPhotoTutorial() {
+        if (retouchPhotoTutorialView != null) return
+
+        val root = requireActivity()
+            .findViewById<ViewGroup>(android.R.id.content)
+
+        val overlay = layoutInflater.inflate(
+            R.layout.view_tutorial_photo,
+            root,
+            false
+        )
+
+        retouchPhotoTutorialView = overlay
+        root.addView(overlay)
+
+        overlay.findViewById<View>(
+            R.id.ll_tutorial_close
+        ).setOnClickListener {
+
+            // API 연결할 때
+            // completeRetouchPhotoTutorial()
+
+            // 지금은 UI 확인
+            hideRetouchPhotoTutorial()
+        }
+
+        overlay.post {
+            setupRetouchPhotoTutorial()
+        }
+    }
+
+    private fun hideRetouchPhotoTutorial() {
+        retouchPhotoTutorialView?.let { view ->
+            (view.parent as? ViewGroup)?.removeView(view)
+        }
+
+        retouchPhotoTutorialView = null
+    }
+
+    private fun setupRetouchPhotoTutorial() {
+        val overlay =
+            retouchPhotoTutorialView ?: return
+
+        val dimView =
+            overlay.findViewById<TutorialDimView>(
+                R.id.tutorial_dim_view
+            )
+
+        val firstPhotoItem =
+            binding.rvPhotoList
+                .findViewHolderForAdapterPosition(0)
+                ?.itemView
+                ?: return
+
+        val finalToggle =
+            firstPhotoItem.findViewById<View>(
+                R.id.ivFinalToggle
+            )
+
+        if (
+            finalToggle.width == 0 ||
+            finalToggle.height == 0
+        ) {
+            return
+        }
+
+        val baseFinalRect =
+            getRectInOverlay(
+                finalToggle,
+                overlay
+            )
+
+        val finalRect = RectF(
+            baseFinalRect.left - dp(3f),
+            baseFinalRect.top + dp(1f),
+            baseFinalRect.right + dp(3f),
+            baseFinalRect.bottom - dp(1f)
+        )
+
+        dimView.clearHighlights()
+
+        // pill 형태
+        dimView.addHighlight(
+            finalRect,
+            finalRect.height() / 2f
+        )
+
+        positionTutorialHighlight(
+            overlay.findViewById(
+                R.id.v_highlight_final
+            ),
+            finalRect
+        )
+
+        setupRetouchPhotoPosition(
+            overlay,
+            finalRect
+        )
+
+        setupRetouchPhotoText(
+            overlay
+        )
+    }
+
+    private fun setupRetouchPhotoPosition(
+        overlay: View,
+        finalRect: RectF
+    ) {
+        val finalText =
+            overlay.findViewById<TextView>(
+                R.id.tv_tutorial_final
+            )
+
+        val finalArrow =
+            overlay.findViewById<ImageView>(
+                R.id.iv_arrow_final
+            )
+
+        // 설명: 최종본 버튼 오른쪽 아래
+        val finalTextX =
+            (finalRect.right + dp(8f))
+                .coerceAtMost(
+                    overlay.width.toFloat() -
+                            finalText.width -
+                            dp(8f)
+                )
+
+        positionTutorialView(
+            finalText,
+            finalTextX + dp(193f),
+            finalRect.bottom + dp(2f)
+        )
+
+        // 화살표: 버튼과 설명 사이
+        positionTutorialView(
+            finalArrow,
+            finalRect.right -
+                    finalArrow.width * 0.25f - dp(47f),
+            finalRect.bottom -
+                    finalArrow.height * 0.15f - dp(3f)
+        )
+    }
+
+    private fun setupRetouchPhotoText(
+        overlay: View
+    ) {
+        setRetouchPhotoTutorialText(
+            overlay.findViewById(
+                R.id.tv_tutorial_final
+            ),
+            "다음 사람이 어떤 사진을 보정하면\n되는지 표시할 수 있어요.",
+            "어떤 사진을 보정하면\n되는지"
+        )
+    }
+
+    private fun setRetouchPhotoTutorialText(
         textView: TextView,
         text: String,
         highlight: String
