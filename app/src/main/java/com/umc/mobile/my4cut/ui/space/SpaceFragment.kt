@@ -14,7 +14,9 @@ import com.google.android.flexbox.JustifyContent
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.RectF
 import com.umc.mobile.my4cut.data.photo.model.WorkspacePhotoUploadRequestDto
 
 import com.umc.mobile.my4cut.data.photo.remote.WorkspacePhotoService
@@ -28,6 +30,9 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
@@ -41,12 +46,15 @@ import com.umc.mobile.my4cut.databinding.FragmentSpaceBinding
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import android.util.Log
+import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.exifinterface.media.ExifInterface
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 import com.umc.mobile.my4cut.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.photo.PhotoDialogFragment
+import com.umc.mobile.my4cut.ui.tutorial.TutorialDimView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.Call
@@ -70,6 +78,8 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
 
     private lateinit var memberAdapter: MemberAdapter
     private val memberItems = ArrayList<MemberItem>()
+
+    private var retouchSpaceTutorialView: View? = null
 
     private var spaceId: Long = -1L
     // 알림에서 특정 사진을 눌러 들어온 경우
@@ -191,6 +201,16 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         }
     }
 
+    override fun onDestroyView() {
+        retouchSpaceTutorialView?.let { view ->
+            (view.parent as? ViewGroup)?.removeView(view)
+        }
+
+        retouchSpaceTutorialView = null
+
+        super.onDestroyView()
+    }
+
     private fun loadSpaceFromApi() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -238,6 +258,10 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                         myProfileImageUrl = userData?.profileImageViewUrl
 
                         binding.btnChange.visibility = View.VISIBLE
+
+                        binding.btnChange.post {
+                            showRetouchSpaceTutorial()
+                        }
 
                         updateMemberUi(data.memberProfiles)
                         updatePhotoUploaderProfiles()
@@ -822,5 +846,363 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                 }
             }
         }
+    }
+
+    private fun showRetouchSpaceTutorial() {
+        if (retouchSpaceTutorialView != null) return
+
+        val root = requireActivity()
+            .findViewById<ViewGroup>(android.R.id.content)
+
+        val overlay = layoutInflater.inflate(
+            R.layout.view_tutorial_space,
+            root,
+            false
+        )
+
+        retouchSpaceTutorialView = overlay
+        root.addView(overlay)
+
+        overlay.findViewById<View>(
+            R.id.ll_tutorial_close
+        ).setOnClickListener {
+
+            // API 연결 후
+            // completeRetouchSpaceTutorial()
+
+            // 지금은 UI 확인
+            hideRetouchSpaceTutorial()
+        }
+
+        overlay.post {
+            setupRetouchSpaceTutorial()
+        }
+    }
+
+    private fun hideRetouchSpaceTutorial() {
+        retouchSpaceTutorialView?.let { view ->
+            (view.parent as? ViewGroup)?.removeView(view)
+        }
+
+        retouchSpaceTutorialView = null
+    }
+
+    private fun dp(value: Float): Float {
+        return value * resources.displayMetrics.density
+    }
+
+    private fun getRectInOverlay(
+        target: View,
+        overlay: View,
+        padding: Float = 0f
+    ): RectF {
+
+        val targetLocation = IntArray(2)
+        val overlayLocation = IntArray(2)
+
+        target.getLocationOnScreen(targetLocation)
+        overlay.getLocationOnScreen(overlayLocation)
+
+        val left =
+            targetLocation[0] -
+                    overlayLocation[0] -
+                    padding
+
+        val top =
+            targetLocation[1] -
+                    overlayLocation[1] -
+                    padding
+
+        return RectF(
+            left,
+            top,
+            left + target.width + padding * 2,
+            top + target.height + padding * 2
+        )
+    }
+
+    private fun positionTutorialView(
+        view: View,
+        x: Float,
+        y: Float
+    ) {
+        view.x = x
+        view.y = y
+    }
+
+    private fun positionTutorialHighlight(
+        view: View,
+        rect: RectF
+    ) {
+        val params =
+            view.layoutParams as FrameLayout.LayoutParams
+
+        params.width = rect.width().toInt()
+        params.height = rect.height().toInt()
+
+        view.layoutParams = params
+        view.x = rect.left
+        view.y = rect.top
+        view.visibility = View.VISIBLE
+    }
+
+    private fun setupRetouchSpaceTutorial() {
+        val overlay =
+            retouchSpaceTutorialView ?: return
+
+        val dimView =
+            overlay.findViewById<TutorialDimView>(
+                R.id.tutorial_dim_view
+            )
+
+        // 실제 SpaceFragment View
+        val changeView = binding.btnChange
+        val exitView = binding.btnExitMenu
+        val uploadView = binding.btnUpload
+
+        if (
+            changeView.width == 0 ||
+            exitView.width == 0 ||
+            uploadView.width == 0
+        ) {
+            return
+        }
+
+        val baseChangeRect =
+            getRectInOverlay(
+                changeView,
+                overlay
+            )
+
+        val changeRect = RectF(
+            baseChangeRect.left - dp(9f),
+            baseChangeRect.top - dp(10f),
+            baseChangeRect.right + dp(9f),
+            baseChangeRect.bottom + dp(10f)
+        )
+
+        val baseExitRect =
+            getRectInOverlay(
+                exitView,
+                overlay
+            )
+
+        val exitRect = RectF(
+            baseExitRect.left - dp(10f),
+            baseExitRect.top - dp(10f),
+            baseExitRect.right + dp(9f),
+            baseExitRect.bottom + dp(10f)
+        )
+
+        val baseUploadRect =
+            getRectInOverlay(
+                uploadView,
+                overlay
+            )
+
+        val uploadDiameter =
+            maxOf(
+                baseUploadRect.width(),
+                baseUploadRect.height()
+            ) + dp(10f)
+
+        val uploadRect = RectF(
+            baseUploadRect.centerX() - uploadDiameter / 2f + dp(6f),
+            baseUploadRect.centerY() - uploadDiameter / 2f + dp(6f),
+            baseUploadRect.centerX() + uploadDiameter / 2f - dp(6f),
+            baseUploadRect.centerY() + uploadDiameter / 2f - dp(6f)
+        )
+
+        dimView.clearHighlights()
+
+        dimView.addHighlight(
+            changeRect,
+            changeRect.width() / 2f
+        )
+
+        dimView.addHighlight(
+            exitRect,
+            exitRect.width() / 2f
+        )
+
+        dimView.addHighlight(
+            uploadRect,
+            uploadRect.width() / 2f
+        )
+
+        positionTutorialHighlight(
+            overlay.findViewById(
+                R.id.v_highlight_change
+            ),
+            changeRect
+        )
+
+        positionTutorialHighlight(
+            overlay.findViewById(
+                R.id.v_highlight_exit
+            ),
+            exitRect
+        )
+
+        positionTutorialHighlight(
+            overlay.findViewById(
+                R.id.v_highlight_upload
+            ),
+            uploadRect
+        )
+
+        setupRetouchSpacePositions(
+            overlay,
+            changeRect,
+            exitRect,
+            uploadRect
+        )
+
+        setupRetouchSpaceTexts(overlay)
+    }
+
+    private fun setupRetouchSpacePositions(
+        overlay: View,
+        changeRect: RectF,
+        exitRect: RectF,
+        uploadRect: RectF
+    ) {
+        val changeText =
+            overlay.findViewById<TextView>(
+                R.id.tv_tutorial_change
+            )
+
+        val changeArrow =
+            overlay.findViewById<ImageView>(
+                R.id.iv_arrow_change
+            )
+
+        val exitText =
+            overlay.findViewById<TextView>(
+                R.id.tv_tutorial_exit
+            )
+
+        val exitArrow =
+            overlay.findViewById<ImageView>(
+                R.id.iv_arrow_exit
+            )
+
+        val uploadText =
+            overlay.findViewById<TextView>(
+                R.id.tv_tutorial_upload
+            )
+
+        val uploadArrow =
+            overlay.findViewById<ImageView>(
+                R.id.iv_arrow_upload
+            )
+
+        // 수정 설명
+        positionTutorialView(
+            changeText,
+            changeRect.right -
+                    changeText.width -
+                    dp(50f),
+            changeRect.bottom + dp(5f)
+        )
+
+        // 수정 화살표
+        positionTutorialView(
+            changeArrow,
+            changeRect.left -
+                    changeArrow.width * 0.45f + dp(1f),
+            changeRect.bottom -
+                    changeArrow.height * 0.15f + dp(3f)
+        )
+
+        // 나가기 설명
+        positionTutorialView(
+            exitText,
+            exitRect.centerX() -
+                    exitText.width / 2f -
+                    dp(195f),
+            exitRect.bottom + dp(65f)
+        )
+
+        // 나가기 화살표
+        positionTutorialView(
+            exitArrow,
+            exitRect.centerX() -
+                    exitArrow.width / 2f - dp(13f),
+            exitRect.bottom
+        )
+
+        // 업로드 설명
+        positionTutorialView(
+            uploadText,
+            uploadRect.left -
+                    uploadText.width -
+                    dp(12f),
+            uploadRect.centerY() -
+                    uploadText.height / 2f -
+                    dp (12f)
+        )
+
+        // 업로드 화살표
+        positionTutorialView(
+            uploadArrow,
+            uploadRect.left -
+                    uploadArrow.width * 0.7f + dp(1f),
+            uploadRect.centerY() -
+                    uploadArrow.height / 2f + dp(27f)
+        )
+    }
+
+    private fun setupRetouchSpaceTexts(
+        overlay: View
+    ) {
+        setRetouchSpaceTutorialText(
+            overlay.findViewById(
+                R.id.tv_tutorial_change
+            ),
+            "스페이스 이름을 수정하고,\n새로운 친구를 초대해요.",
+            "이름을 수정"
+        )
+
+        setRetouchSpaceTutorialText(
+            overlay.findViewById(
+                R.id.tv_tutorial_exit
+            ),
+            "버튼을 누르면 스페이스에서 나갈 수 있어요.\n혼자 이용 중인 스페이스를 나갈 경우 사라져요.",
+            "스페이스에서 나갈 수 있어요"
+        )
+
+        setRetouchSpaceTutorialText(
+            overlay.findViewById(
+                R.id.tv_tutorial_upload
+            ),
+            "네컷 업로드 버튼을 눌러 \n함께 보정할 네컷을 업로드해보세요.",
+            "네컷을 업로드"
+        )
+    }
+
+    private fun setRetouchSpaceTutorialText(
+        textView: TextView,
+        text: String,
+        highlight: String
+    ) {
+        val spannable =
+            SpannableString(text)
+
+        val start =
+            text.indexOf(highlight)
+
+        if (start >= 0) {
+            spannable.setSpan(
+                ForegroundColorSpan(
+                    Color.parseColor("#FF7E67")
+                ),
+                start,
+                start + highlight.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+
+        textView.text = spannable
     }
 }
