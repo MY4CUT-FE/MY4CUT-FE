@@ -39,7 +39,7 @@
         android:id="@+id/iv_tutorial_arrow_minical"
         android:layout_width="28dp"
         android:layout_height="8dp"
-        android:src="@drawable/line_1"
+        android:src="@drawable/ic_tutorial_arrow_home_left"
         android:scaleType="fitXY" />
 
     <!-- 닫기 버튼 -->
