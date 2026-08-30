@@ -141,4 +141,7 @@ dependencies {
 
     // 스켈레톤
     implementation("com.facebook.shimmer:shimmer:0.5.0")
+
+    // DataStore
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
 }
