@@ -7,7 +7,7 @@
     android:layout_height="190dp"
     android:layout_marginEnd="20dp"
     app:cardBackgroundColor="#FCECE7"
-    app:cardCornerRadius="23dp"
+    app:cardCornerRadius="20dp"
     app:cardUseCompatPadding="false"
     app:cardPreventCornerOverlap="true"
     app:cardElevation="2dp"
