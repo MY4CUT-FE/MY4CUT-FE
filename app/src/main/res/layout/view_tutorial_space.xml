@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cl_retouch_space_tutorial_overlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clickable="true"
+    android:focusable="true">
+
+    <com.umc.mobile.my4cut.ui.tutorial.TutorialDimView
+        android:id="@+id/tutorial_dim_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 수정 버튼 -->
+    <View
+        android:id="@+id/v_highlight_change"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_dashed_highlight_circle" />
+
+    <!-- 나가기 버튼 -->
+    <View
+        android:id="@+id/v_highlight_exit"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_dashed_highlight_circle" />
+
+    <!-- 네컷 업로드 -->
+    <View
+        android:id="@+id/v_highlight_upload"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_dashed_highlight_circle" />
+
+    <!-- 수정 설명 -->
+    <TextView
+        android:id="@+id/tv_tutorial_change"
+        android:layout_width="260dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/suit_bold"
+        android:gravity="end"
+        android:lineSpacingExtra="2dp"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        tools:ignore="HardcodedText" />
+
+    <ImageView
+        android:id="@+id/iv_arrow_change"
+        android:layout_width="30dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_tutorial_arrow_space_down"
+        android:scaleType="fitCenter" />
+
+    <!-- 나가기 설명 -->
+    <TextView
+        android:id="@+id/tv_tutorial_exit"
+        android:layout_width="330dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/suit_bold"
+        android:gravity="end"
+        android:lineSpacingExtra="2dp"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        tools:ignore="HardcodedText" />
+
+    <ImageView
+        android:id="@+id/iv_arrow_exit"
+        android:layout_width="30dp"
+        android:layout_height="72dp"
+        android:src="@drawable/ic_tutorial_arrow_space_down_long"
+        android:scaleType="fitCenter" />
+
+    <!-- 업로드 설명 -->
+    <TextView
+        android:id="@+id/tv_tutorial_upload"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/suit_bold"
+        android:gravity="end"
+        android:lineSpacingExtra="2dp"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        tools:ignore="HardcodedText" />
+
+    <ImageView
+        android:id="@+id/iv_arrow_upload"
+        android:layout_width="30dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_tutorial_arrow_space_left"
+        android:scaleType="fitCenter" />
+
+    <!-- 닫기 -->
+    <LinearLayout
+        android:id="@+id/ll_tutorial_close"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="28dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/close_tutorial" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:fontFamily="@font/suit_medium"
+            android:text="닫기"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+</FrameLayout>

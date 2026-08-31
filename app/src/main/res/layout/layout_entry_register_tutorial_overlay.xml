@@ -20,7 +20,7 @@
         android:id="@+id/v_highlight_diary"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@drawable/bg_dashed_highlight" />
+        android:background="@drawable/bg_dashed_highlight_radius_12" />
 
     <!-- "포토리 이모티콘과 함께 100자 이내로 하루를 기록해요" 안내 텍스트 -->
     <TextView
@@ -39,7 +39,7 @@
         android:id="@+id/iv_tutorial_arrow_diary"
         android:layout_width="16dp"
         android:layout_height="27dp"
-        android:src="@drawable/line_4"
+        android:src="@drawable/ic_tutorial_arrow_home_up"
         android:scaleType="fitXY" />
 
     <!-- 닫기 버튼 -->

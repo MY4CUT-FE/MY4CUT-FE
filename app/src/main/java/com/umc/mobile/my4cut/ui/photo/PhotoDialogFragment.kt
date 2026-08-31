@@ -1,8 +1,10 @@
 package com.umc.mobile.my4cut.ui.photo
 
+import android.app.Dialog
 import android.app.DownloadManager
 import android.content.Context
 import android.graphics.Color
+import android.graphics.RectF
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Environment
@@ -17,6 +19,10 @@ import android.widget.Button
 import android.util.Log
 import android.util.TypedValue
 import android.graphics.drawable.Drawable
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.widget.FrameLayout
 
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -34,6 +40,7 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import com.umc.mobile.my4cut.ui.tutorial.TutorialDimView
 
 import java.time.Duration
 import java.time.LocalDateTime
@@ -47,6 +54,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class PhotoDialogFragment : DialogFragment() {
+
+    private var retouchDetailTutorialView: View? = null
+    private var retouchDetailTutorialDialog: Dialog? = null
 
     private lateinit var ivClose: ImageView
     private lateinit var ivDelete: ImageView
@@ -64,6 +74,7 @@ class PhotoDialogFragment : DialogFragment() {
     private lateinit var ivToggleCommentTouchArea: View
     private lateinit var etComment: EditText
     private lateinit var tvEmptyComments: TextView
+    private lateinit var ivChat: ImageView
 
     // 전달받을 값
     private var workspaceId: Long = -1L
@@ -197,6 +208,14 @@ class PhotoDialogFragment : DialogFragment() {
         return view
     }
 
+    override fun onDestroyView() {
+        retouchDetailTutorialDialog?.dismiss()
+        retouchDetailTutorialDialog = null
+        retouchDetailTutorialView = null
+
+        super.onDestroyView()
+    }
+
     private fun initViews(view: View) {
         ivClose = view.findViewById(R.id.ivClose)
         ivDelete = view.findViewById(R.id.ivDelete)
@@ -213,6 +232,7 @@ class PhotoDialogFragment : DialogFragment() {
         tvEmptyComments = view.findViewById(R.id.tvEmptyComments)
 
         rvChatList = view.findViewById(R.id.rvChatList)
+        ivChat = view.findViewById(R.id.ivChat)
         ivToggleComment = view.findViewById(R.id.ivToggleComment)
         ivToggleCommentTouchArea = view.findViewById(R.id.ivToggleCommentTouchArea)
         etComment = view.findViewById(R.id.etText)
@@ -741,6 +761,10 @@ class PhotoDialogFragment : DialogFragment() {
                 (resources.displayMetrics.heightPixels * 0.85).toInt()
             )
         }
+
+        view?.post {
+            showRetouchDetailTutorial()
+        }
     }
 
     companion object {
@@ -772,5 +796,429 @@ class PhotoDialogFragment : DialogFragment() {
                 }
             }
         }
+    }
+
+    private fun showRetouchDetailTutorial() {
+        if (retouchDetailTutorialDialog != null) return
+
+        val overlay =
+            layoutInflater.inflate(
+                R.layout.view_tutorial_detail,
+                null,
+                false
+            )
+
+        val tutorialDialog =
+            Dialog(requireContext()).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                setContentView(overlay)
+
+                window?.apply {
+                    setBackgroundDrawable(
+                        ColorDrawable(Color.TRANSPARENT)
+                    )
+
+                    setLayout(
+                        WindowManager.LayoutParams.MATCH_PARENT,
+                        WindowManager.LayoutParams.MATCH_PARENT
+                    )
+
+                    clearFlags(
+                        WindowManager.LayoutParams.FLAG_DIM_BEHIND
+                    )
+                }
+
+                setCancelable(false)
+            }
+
+        retouchDetailTutorialView = overlay
+        retouchDetailTutorialDialog = tutorialDialog
+
+        overlay.findViewById<View>(
+            R.id.ll_tutorial_close
+        ).setOnClickListener {
+            // API 연결 후
+            // completeRetouchDetailTutorial()
+
+            hideRetouchDetailTutorial()
+        }
+
+        tutorialDialog.setOnShowListener {
+            tutorialDialog.window?.setLayout(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT
+            )
+
+            overlay.post {
+                setupRetouchDetailTutorial()
+            }
+        }
+
+        tutorialDialog.show()
+    }
+
+    private fun hideRetouchDetailTutorial() {
+        retouchDetailTutorialDialog?.dismiss()
+        retouchDetailTutorialDialog = null
+        retouchDetailTutorialView = null
+    }
+
+    private fun tutorialDp(
+        value: Float
+    ): Float {
+        return value *
+                resources.displayMetrics.density
+    }
+
+    private fun getTutorialRect(
+        target: View,
+        overlay: View
+    ): RectF {
+
+        val targetLocation = IntArray(2)
+        val overlayLocation = IntArray(2)
+
+        target.getLocationOnScreen(
+            targetLocation
+        )
+
+        overlay.getLocationOnScreen(
+            overlayLocation
+        )
+
+        val left =
+            targetLocation[0] -
+                    overlayLocation[0]
+
+        val top =
+            targetLocation[1] -
+                    overlayLocation[1]
+
+        return RectF(
+            left.toFloat(),
+            top.toFloat(),
+            left + target.width.toFloat(),
+            top + target.height.toFloat()
+        )
+    }
+
+    private fun positionTutorialView(
+        view: View,
+        x: Float,
+        y: Float
+    ) {
+        view.x = x
+        view.y = y
+    }
+
+    private fun positionTutorialHighlight(
+        view: View,
+        rect: RectF
+    ) {
+        val params =
+            view.layoutParams as
+                    FrameLayout.LayoutParams
+
+        params.width =
+            rect.width().toInt()
+
+        params.height =
+            rect.height().toInt()
+
+        view.layoutParams = params
+
+        view.x = rect.left
+        view.y = rect.top
+
+        view.visibility = View.VISIBLE
+    }
+
+    private fun setupRetouchDetailTutorial() {
+        val overlay =
+            retouchDetailTutorialView ?: return
+
+        val dimView =
+            overlay.findViewById<TutorialDimView>(
+                R.id.tutorial_dim_view
+            )
+
+        if (
+            ivSaveTouchArea.width == 0 ||
+            tvChat.width == 0
+        ) {
+            return
+        }
+
+        val baseSaveRect =
+            getTutorialRect(
+                ivSaveTouchArea,
+                overlay
+            )
+
+        val saveRect = RectF(
+            baseSaveRect.left + tutorialDp(6f),
+            baseSaveRect.top + tutorialDp(6f),
+            baseSaveRect.right - tutorialDp(6f),
+            baseSaveRect.bottom - tutorialDp(6f)
+        )
+
+        val deleteRect =
+            if (
+                ivDeleteTouchArea.visibility == View.VISIBLE &&
+                ivDeleteTouchArea.width > 0
+            ) {
+                val baseDeleteRect =
+                    getTutorialRect(
+                        ivDeleteTouchArea,
+                        overlay
+                    )
+
+                RectF(
+                    baseDeleteRect.left + tutorialDp(6f),
+                    baseDeleteRect.top + tutorialDp(6f),
+                    baseDeleteRect.right - tutorialDp(6f),
+                    baseDeleteRect.bottom - tutorialDp(6f)
+                )
+            } else {
+                null
+            }
+
+        val baseCommentIconRect =
+            getTutorialRect(
+                ivChat,
+                overlay
+            )
+
+        val baseCommentTextRect =
+            getTutorialRect(
+                tvChat,
+                overlay
+            )
+
+        val baseCommentRect =
+            getTutorialRect(
+                tvChat,
+                overlay
+            )
+
+        val commentRect = RectF(
+            minOf(baseCommentIconRect.left, baseCommentTextRect.left) - tutorialDp(7f),
+            minOf(baseCommentIconRect.top, baseCommentTextRect.top) - tutorialDp(2f),
+            maxOf(baseCommentRect.right, baseCommentTextRect.right) - tutorialDp(24f),
+            maxOf(baseCommentIconRect.bottom, baseCommentTextRect.bottom) + tutorialDp(2f)
+        )
+
+        dimView.clearHighlights()
+
+        dimView.addHighlight(
+            saveRect,
+            saveRect.height() / 2f
+        )
+
+        deleteRect?.let {
+            dimView.addHighlight(
+                it,
+                it.height() / 2f
+            )
+        }
+
+        dimView.addHighlight(
+            commentRect,
+            21f
+        )
+
+        positionTutorialHighlight(
+            overlay.findViewById(
+                R.id.v_highlight_save
+            ),
+            saveRect
+        )
+
+        val deleteHighlight =
+            overlay.findViewById<View>(
+                R.id.v_highlight_delete
+            )
+
+        if (deleteRect != null) {
+            positionTutorialHighlight(
+                deleteHighlight,
+                deleteRect
+            )
+        } else {
+            deleteHighlight.visibility = View.GONE
+        }
+
+        positionTutorialHighlight(
+            overlay.findViewById(
+                R.id.v_highlight_comment
+            ),
+            commentRect
+        )
+
+        setupRetouchDetailPositions(
+            overlay,
+            saveRect,
+            deleteRect,
+            commentRect
+        )
+
+        setupRetouchDetailTexts(
+            overlay
+        )
+    }
+
+    private fun setupRetouchDetailPositions(
+        overlay: View,
+        saveRect: RectF,
+        deleteRect: RectF?,
+        commentRect: RectF
+    ) {
+        val saveText =
+            overlay.findViewById<TextView>(
+                R.id.tv_tutorial_save
+            )
+
+        val saveArrow =
+            overlay.findViewById<ImageView>(
+                R.id.iv_arrow_save
+            )
+
+        val deleteText =
+            overlay.findViewById<TextView>(
+                R.id.tv_tutorial_delete
+            )
+
+        val deleteArrow =
+            overlay.findViewById<ImageView>(
+                R.id.iv_arrow_delete
+            )
+
+        val commentText =
+            overlay.findViewById<TextView>(
+                R.id.tv_tutorial_comment
+            )
+
+        val commentArrow =
+            overlay.findViewById<ImageView>(
+                R.id.iv_arrow_comment
+            )
+
+        // 다운로드 설명
+        positionTutorialView(
+            saveText,
+            saveRect.centerX() -
+                    saveText.width / 2f -
+                    tutorialDp(100f),
+            saveRect.top -
+                    saveText.height -
+                    tutorialDp(49f)
+        )
+
+        positionTutorialView(
+            saveArrow,
+            saveRect.centerX() -
+                    saveArrow.width / 2f,
+            saveRect.top -
+                    saveArrow.height -
+                    tutorialDp(2f)
+        )
+
+        // 삭제 설명
+        if (deleteRect != null) {
+            deleteText.visibility = View.VISIBLE
+            deleteArrow.visibility = View.VISIBLE
+
+            positionTutorialView(
+                deleteText,
+                deleteRect.centerX() -
+                        deleteText.width / 2f -
+                        tutorialDp(103f),
+                deleteRect.bottom +
+                        tutorialDp(23f)
+            )
+
+            positionTutorialView(
+                deleteArrow,
+                deleteRect.centerX() -
+                        deleteArrow.width / 2f,
+                deleteRect.bottom +
+                        tutorialDp(4f)
+            )
+        } else {
+            deleteText.visibility = View.GONE
+            deleteArrow.visibility = View.GONE
+        }
+
+        // 댓글 설명
+        positionTutorialView(
+            commentText,
+            commentRect.right -
+                    tutorialDp(29f),
+            commentRect.bottom +
+                    tutorialDp(6f)
+        )
+
+        positionTutorialView(
+            commentArrow,
+            commentRect.left +
+                    tutorialDp(4f),
+            commentRect.bottom +
+                    tutorialDp(2f)
+        )
+    }
+
+    private fun setupRetouchDetailTexts(
+        overlay: View
+    ) {
+        setRetouchDetailText(
+            overlay.findViewById(
+                R.id.tv_tutorial_save
+            ),
+            "친구가 올린 사진을 다운로드 받아\n이어서 보정할 수 있어요.",
+            "이어서 보정"
+        )
+
+        setRetouchDetailText(
+            overlay.findViewById(
+                R.id.tv_tutorial_delete
+            ),
+            "내가 올린 사진은 언제든 삭제할 수 있어요.",
+            "언제든 삭제"
+        )
+
+        setRetouchDetailText(
+            overlay.findViewById(
+                R.id.tv_tutorial_comment
+            ),
+            "댓글로 스페이스 친구와 소통해요.\n포토리의 TIP: 댓글에 SNS 업로드 시\n가리고 싶은 것을 말하거나 보정 순서를 정해보세요:)",
+            "포토리의 TIP:"
+        )
+    }
+
+    private fun setRetouchDetailText(
+        textView: TextView,
+        text: String,
+        vararg highlights: String
+    ) {
+        val spannable =
+            SpannableString(text)
+
+        highlights.forEach { highlight ->
+            val start =
+                text.indexOf(highlight)
+
+            if (start >= 0) {
+                spannable.setSpan(
+                    ForegroundColorSpan(
+                        Color.parseColor("#FF7E67")
+                    ),
+                    start,
+                    start + highlight.length,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+        }
+
+        textView.text = spannable
     }
 }

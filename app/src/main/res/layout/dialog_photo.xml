@@ -72,8 +72,8 @@
 
             <ImageView
                 android:id="@+id/ivSave"
-                android:layout_width="10dp"
-                android:layout_height="9dp"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
                 android:adjustViewBounds="true"
                 android:src="@drawable/ic_save"
                 app:layout_constraintEnd_toStartOf="@id/ivDelete"

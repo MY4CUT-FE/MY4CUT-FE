@@ -27,7 +27,7 @@
         android:id="@+id/v_highlight_pose"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@drawable/bg_dashed_highlight" />
+        android:background="@drawable/bg_dashed_highlight_radius_12" />
 
     <!-- "함께 찍는 인원수에 맞게 포즈 추천을 받아보세요" 안내 텍스트 -->
     <TextView
@@ -46,7 +46,7 @@
         android:id="@+id/iv_tutorial_arrow_pose"
         android:layout_width="16dp"
         android:layout_height="27dp"
-        android:src="@drawable/line_2"
+        android:src="@drawable/ic_tutorial_arrow_content_up"
         android:scaleType="fitXY" />
 
     <!-- 네컷 기록 카드 하이라이트 -->
@@ -54,7 +54,7 @@
         android:id="@+id/v_highlight_record"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@drawable/bg_dashed_highlight" />
+        android:background="@drawable/bg_dashed_highlight_radius_12" />
 
     <!-- "마이페이지에서 프로필을 관리해요" 안내 텍스트 -->
     <TextView
@@ -72,7 +72,7 @@
         android:id="@+id/iv_tutorial_arrow_mypage"
         android:layout_width="28dp"
         android:layout_height="8dp"
-        android:src="@drawable/line_1"
+        android:src="@drawable/ic_tutorial_arrow_home_left"
         android:scaleType="fitXY" />
 
     <!-- 네컷 기록 카드를 가리키는 화살표 -->
@@ -80,7 +80,7 @@
         android:id="@+id/iv_tutorial_arrow_record"
         android:layout_width="16dp"
         android:layout_height="27dp"
-        android:src="@drawable/line_3"
+        android:src="@drawable/ic_tutorial_arrow_home_down"
         android:scaleType="fitXY" />
 
     <!-- "네컷과 함께 하루를 기록해 보세요" 안내 텍스트 -->
