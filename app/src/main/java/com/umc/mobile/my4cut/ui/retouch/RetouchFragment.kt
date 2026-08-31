@@ -28,7 +28,7 @@ import com.umc.mobile.my4cut.databinding.FragmentRetouchBinding
 import com.umc.mobile.my4cut.ui.friend.FriendsFragment
 import com.umc.mobile.my4cut.ui.space.MySpaceFragment
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.ActivityResultLauncher
 import androidx.recyclerview.widget.RecyclerView
@@ -85,8 +85,7 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
         // RetouchFragment가 살아있는 동안 푸시 수신 이벤트를 감지
         registerNotificationReceiver()
 
-        // checkRetouchMainTutorial()
-        showRetouchMainTutorial()
+        checkRetouchMainTutorial()
     }
 
     private fun loadChildFragments() {
@@ -151,37 +150,50 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
     }
 
     private fun checkRetouchMainTutorial() {
-        val userId = TokenManager.getUserId(requireContext()) ?: return
+        val userId =
+            TokenManager.getUserId(
+                requireContext()
+            ) ?: return
 
         viewLifecycleOwner.lifecycleScope.launch {
-            when (
+
+            val synced =
+                TutorialManager.isSynced(
+                    requireContext(),
+                    userId
+                )
+
+            if (!synced) {
+                syncTutorialStatus(userId)
+                return@launch
+            }
+
+            val completed =
                 TutorialManager.isCompleted(
                     requireContext(),
                     userId,
                     TutorialType.RETOUCH_MAIN
                 )
-            ) {
-                true -> {
-                    // 이미 완료 → 아무것도 안 함
-                }
 
-                false -> {
+            if (completed == false) {
+                binding.root.post {
                     showRetouchMainTutorial()
-                }
-
-                null -> {
-                    syncTutorialStatus(userId)
                 }
             }
         }
     }
 
-    private suspend fun syncTutorialStatus(userId: Long) {
+    private suspend fun syncTutorialStatus(
+        userId: Long
+    ) {
         try {
             val response =
-                RetrofitClient.tutorialService.getTutorialStatus()
+                RetrofitClient.tutorialService
+                    .getTutorialStatus()
 
-            val tutorials = response.data?.tutorials ?: return
+            val tutorials =
+                response.data?.tutorials
+                    ?: return
 
             TutorialManager.saveStatuses(
                 requireContext(),
@@ -189,16 +201,26 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
                 tutorials
             )
 
-            val completed = tutorials
-                .find { it.type == TutorialType.RETOUCH_MAIN }
-                ?.completed
+            val completed =
+                tutorials
+                    .find {
+                        it.type ==
+                                TutorialType.RETOUCH_MAIN
+                    }
+                    ?.completed
 
             if (completed == false) {
-                showRetouchMainTutorial()
+                binding.root.post {
+                    showRetouchMainTutorial()
+                }
             }
 
         } catch (e: Exception) {
-            Log.e("Tutorial", "튜토리얼 상태 조회 실패", e)
+            Log.e(
+                "Tutorial",
+                "튜토리얼 상태 조회 실패",
+                e
+            )
         }
     }
 
@@ -245,11 +267,7 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
         overlay.findViewById<View>(
             R.id.ll_tutorial_close
         ).setOnClickListener {
-            // API 연결할 때:
-            // completeRetouchMainTutorial()
-
-            // 지금은 UI 확인만
-            hideRetouchMainTutorial()
+            completeRetouchMainTutorial()
         }
 
         overlay.post {
@@ -350,6 +368,16 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
         val friendsView =
             friendsFragment?.view ?: return
 
+        if (
+            mySpaceView.width == 0 ||
+            friendsView.width == 0
+        ) {
+            overlay.post {
+                setupRetouchMainTutorial()
+            }
+            return
+        }
+
         // 실제 화면에서 강조할 View
         val addSpaceView =
             mySpaceView.findViewById<View>(
@@ -369,6 +397,16 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
             friendsView.findViewById<View>(
                 R.id.tvFriendsAdd
             )
+
+        if (
+            addSpaceView.width == 0 ||
+            addFriendView.width == 0
+        ) {
+            overlay.post {
+                setupRetouchMainTutorial()
+            }
+            return
+        }
 
         // 좌표 계산
         val baseAddSpaceRect =
@@ -431,11 +469,11 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
         )
 
         // 첫 번째 Space 카드
-        firstSpaceCard?.let { card ->
+        if (firstSpaceCard != null) {
 
             val cardRect =
                 getRectInOverlay(
-                    card,
+                    firstSpaceCard,
                     overlay,
                     dp(8f)
                 )
@@ -456,6 +494,36 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
                 overlay,
                 cardRect
             )
+
+        } else {
+
+            overlay.findViewById<View>(
+                R.id.v_highlight_space_card
+            ).visibility = View.GONE
+
+            overlay.findViewById<View>(
+                R.id.tv_tutorial_expire
+            ).visibility = View.GONE
+
+            overlay.findViewById<View>(
+                R.id.iv_arrow_expire
+            ).visibility = View.GONE
+
+            overlay.findViewById<View>(
+                R.id.tv_tutorial_news
+            ).visibility = View.GONE
+
+            overlay.findViewById<View>(
+                R.id.iv_arrow_news
+            ).visibility = View.GONE
+
+            overlay.findViewById<View>(
+                R.id.tv_tutorial_members
+            ).visibility = View.GONE
+
+            overlay.findViewById<View>(
+                R.id.iv_arrow_members
+            ).visibility = View.GONE
         }
 
         // 추가 버튼 관련 설명 위치

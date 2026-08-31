@@ -51,9 +51,12 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.doOnNextLayout
 import androidx.exifinterface.media.ExifInterface
+import com.umc.mobile.my4cut.data.auth.local.TokenManager
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.user.model.UserMeResponse
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
+import com.umc.mobile.my4cut.data.tutorial.TutorialManager
+import com.umc.mobile.my4cut.data.tutorial.model.TutorialType
 import com.umc.mobile.my4cut.ui.photo.PhotoDialogFragment
 import com.umc.mobile.my4cut.ui.tutorial.TutorialDimView
 import kotlinx.coroutines.Dispatchers
@@ -266,7 +269,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                         binding.btnChange.visibility = View.VISIBLE
 
                         binding.btnChange.post {
-                            // showRetouchSpaceTutorial()
+                            checkRetouchSpaceTutorial()
                         }
 
                         updateMemberUi(data.memberProfiles)
@@ -476,7 +479,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                                 binding.rvPhotoList.findViewHolderForAdapterPosition(0)
 
                             if (firstViewHolder != null) {
-                                showRetouchPhotoTutorial()
+                                checkRetouchPhotoTutorial()
                             }
                         }
                     }
@@ -866,6 +869,75 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         }
     }
 
+    private fun checkRetouchPhotoTutorial() {
+        val userId =
+            TokenManager.getUserId(requireContext())
+                ?: return
+
+        viewLifecycleOwner.lifecycleScope.launch {
+
+            // SPACE 튜토리얼이 아직 안 끝났으면
+            // PHOTO는 띄우지 않음
+            val spaceCompleted =
+                TutorialManager.isCompleted(
+                    requireContext(),
+                    userId,
+                    TutorialType.RETOUCH_SPACE
+                )
+
+            if (spaceCompleted != true) {
+                return@launch
+            }
+
+            val photoCompleted =
+                TutorialManager.isCompleted(
+                    requireContext(),
+                    userId,
+                    TutorialType.RETOUCH_PHOTO
+                )
+
+            if (photoCompleted == false) {
+                val firstViewHolder =
+                    binding.rvPhotoList
+                        .findViewHolderForAdapterPosition(0)
+
+                if (firstViewHolder != null) {
+                    showRetouchPhotoTutorial()
+                }
+            }
+        }
+    }
+
+    private fun completeRetouchPhotoTutorial() {
+        val userId =
+            TokenManager.getUserId(requireContext())
+                ?: return
+
+        hideRetouchPhotoTutorial()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                RetrofitClient.tutorialService
+                    .completeTutorial(
+                        TutorialType.RETOUCH_PHOTO
+                    )
+
+                TutorialManager.setCompleted(
+                    requireContext(),
+                    userId,
+                    TutorialType.RETOUCH_PHOTO
+                )
+
+            } catch (e: Exception) {
+                Log.e(
+                    "Tutorial",
+                    "RETOUCH_PHOTO 튜토리얼 완료 처리 실패",
+                    e
+                )
+            }
+        }
+    }
+
     private fun showRetouchSpaceTutorial() {
         if (retouchSpaceTutorialView != null) return
 
@@ -884,16 +956,63 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         overlay.findViewById<View>(
             R.id.ll_tutorial_close
         ).setOnClickListener {
-
-            // API 연결 후
-            // completeRetouchSpaceTutorial()
-
-            // 지금은 UI 확인
-            hideRetouchSpaceTutorial()
+            completeRetouchSpaceTutorial()
         }
 
         overlay.post {
             setupRetouchSpaceTutorial()
+        }
+    }
+
+    private fun checkRetouchSpaceTutorial() {
+        val userId =
+            TokenManager.getUserId(requireContext())
+                ?: return
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val completed =
+                TutorialManager.isCompleted(
+                    requireContext(),
+                    userId,
+                    TutorialType.RETOUCH_SPACE
+                )
+
+            if (completed == false) {
+                showRetouchSpaceTutorial()
+            }
+        }
+    }
+
+    private fun completeRetouchSpaceTutorial() {
+        val userId =
+            TokenManager.getUserId(requireContext())
+                ?: return
+
+        hideRetouchSpaceTutorial()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                RetrofitClient.tutorialService
+                    .completeTutorial(
+                        TutorialType.RETOUCH_SPACE
+                    )
+
+                TutorialManager.setCompleted(
+                    requireContext(),
+                    userId,
+                    TutorialType.RETOUCH_SPACE
+                )
+
+                // SPACE가 끝났으면 PHOTO 튜토리얼 확인
+                checkRetouchPhotoTutorial()
+
+            } catch (e: Exception) {
+                Log.e(
+                    "Tutorial",
+                    "RETOUCH_SPACE 튜토리얼 완료 처리 실패",
+                    e
+                )
+            }
         }
     }
 
@@ -1242,12 +1361,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         overlay.findViewById<View>(
             R.id.ll_tutorial_close
         ).setOnClickListener {
-
-            // API 연결할 때
-            // completeRetouchPhotoTutorial()
-
-            // 지금은 UI 확인
-            hideRetouchPhotoTutorial()
+            completeRetouchPhotoTutorial()
         }
 
         overlay.post {
@@ -1353,7 +1467,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
 
         positionTutorialView(
             finalText,
-            finalTextX + dp(193f),
+            finalTextX + dp(20f),
             finalRect.bottom + dp(2f)
         )
 

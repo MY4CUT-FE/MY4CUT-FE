@@ -21,6 +21,24 @@ object TutorialManager {
         "tutorial_${userId}_${type.name}"
     )
 
+    private fun getSyncedKey(
+        userId: Long
+    ) = booleanPreferencesKey(
+        "tutorial_${userId}_synced"
+    )
+
+    suspend fun isSynced(
+        context: Context,
+        userId: Long
+    ): Boolean {
+        val preferences =
+            context.tutorialDataStore.data.first()
+
+        return preferences[
+            getSyncedKey(userId)
+        ] ?: false
+    }
+
     suspend fun isCompleted(
         context: Context,
         userId: Long,
@@ -47,10 +65,19 @@ object TutorialManager {
         tutorials: List<TutorialStatus>
     ) {
         context.tutorialDataStore.edit { preferences ->
+
             tutorials.forEach { tutorial ->
-                preferences[getKey(userId, tutorial.type)] =
-                    tutorial.completed
+                preferences[
+                    getKey(
+                        userId,
+                        tutorial.type
+                    )
+                ] = tutorial.completed
             }
+
+            preferences[
+                getSyncedKey(userId)
+            ] = true
         }
     }
 }
