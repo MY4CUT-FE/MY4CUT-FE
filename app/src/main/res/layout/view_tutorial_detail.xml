@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cl_retouch_detail_tutorial_overlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clickable="true"
+    android:focusable="true">
+
+    <com.umc.mobile.my4cut.ui.tutorial.TutorialDimView
+        android:id="@+id/tutorial_dim_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 저장 버튼 -->
+    <View
+        android:id="@+id/v_highlight_save"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_dashed_highlight_radius_12" />
+
+    <!-- 삭제 버튼 -->
+    <View
+        android:id="@+id/v_highlight_delete"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_dashed_highlight_radius_12" />
+
+    <!-- 댓글 영역 -->
+    <View
+        android:id="@+id/v_highlight_comment"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_dashed_highlight_radius_6" />
+
+    <TextView
+        android:id="@+id/tv_tutorial_save"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/suit_bold"
+        android:gravity="end"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:lineSpacingExtra="2dp"
+        tools:ignore="HardcodedText" />
+
+    <ImageView
+        android:id="@+id/iv_arrow_save"
+        android:layout_width="33dp"
+        android:layout_height="17dp"
+        android:src="@drawable/ic_tutorial_arrow_detail_up"
+        android:scaleType="fitCenter" />
+
+    <TextView
+        android:id="@+id/tv_tutorial_delete"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/suit_bold"
+        android:gravity="end"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:lineSpacingExtra="2dp"
+        tools:ignore="HardcodedText" />
+
+    <ImageView
+        android:id="@+id/iv_arrow_delete"
+        android:layout_width="33dp"
+        android:layout_height="17dp"
+        android:src="@drawable/ic_tutorial_arrow_detail_down"
+        android:scaleType="fitCenter" />
+
+    <TextView
+        android:id="@+id/tv_tutorial_comment"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/suit_bold"
+        android:gravity="start"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:lineSpacingExtra="2dp"
+        tools:ignore="HardcodedText" />
+
+    <ImageView
+        android:id="@+id/iv_arrow_comment"
+        android:layout_width="33dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_tutorial_arrow_detail_right"
+        android:scaleType="fitCenter" />
+
+    <LinearLayout
+        android:id="@+id/ll_tutorial_close"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="28dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/close_tutorial" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:fontFamily="@font/suit_medium"
+            android:text="닫기"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+</FrameLayout>
