@@ -186,9 +186,9 @@ class MySpaceAdapter(
 
             Glide.with(imageView)
                 .load(imageUrl)
-                .placeholder(R.drawable.ic_profile_cat)
-                .error(R.drawable.ic_profile_cat)
-                .fallback(R.drawable.ic_profile_cat)
+                .placeholder(R.drawable.img_profile_default)
+                .error(R.drawable.img_profile_default)
+                .fallback(R.drawable.img_profile_default)
                 .circleCrop()
                 .into(imageView)
         }

@@ -32,10 +32,9 @@ import com.umc.mobile.my4cut.data.auth.local.TokenManager
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 import com.umc.mobile.my4cut.databinding.FragmentMyPageBinding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.onboarding.OnboardingActivity
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
-import kotlinx.coroutines.runBlocking
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -108,7 +107,7 @@ class MyPageFragment : Fragment() {
     }
 
     private fun showMyPageLoadingState() {
-        binding.ivProfile.setImageResource(R.drawable.loading_profile)
+        binding.ivProfile.setImageResource(R.drawable.img_profile_default)
 
         // 닉네임/로그인방식 영역: F0F0F0
         applySkeleton(binding.tvNickname, 100, R.drawable.bg_skeleton_bar_light)
@@ -163,7 +162,7 @@ class MyPageFragment : Fragment() {
         Log.d("MyPageFragment", "🖼️ Loading profile image: ${data.profileImageViewUrl?.take(80)}")
         Glide.with(binding.ivProfile)
             .load(data.profileImageViewUrl)
-            .placeholder(R.drawable.loading_profile)
+            .placeholder(R.drawable.img_profile_default)
             .error(R.drawable.img_profile_default)
             .circleCrop()
             .into(binding.ivProfile)

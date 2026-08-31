@@ -19,7 +19,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.umc.mobile.my4cut.databinding.FragmentCalendarMainBinding
 import com.umc.mobile.my4cut.databinding.ViewTabCustomBinding
 import com.google.android.material.tabs.TabLayoutMediator
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 
 class CalendarMainFragment : Fragment() {

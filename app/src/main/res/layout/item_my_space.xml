@@ -117,7 +117,7 @@
                     android:background="@drawable/bg_member_profile_border"
                     android:padding="1dp"
                     android:layout_gravity="start|center_vertical"
-                    android:src="@drawable/ic_profile_cat" />
+                    android:src="@drawable/img_profile_default" />
 
                 <ImageView
                     android:id="@+id/ivMember2"
@@ -127,7 +127,7 @@
                     android:padding="1dp"
                     android:layout_gravity="start|center_vertical"
                     android:layout_marginStart="28dp"
-                    android:src="@drawable/ic_profile_cat" />
+                    android:src="@drawable/img_profile_default" />
 
                 <ImageView
                     android:id="@+id/ivMember3"
@@ -137,7 +137,7 @@
                     android:padding="1dp"
                     android:layout_gravity="start|center_vertical"
                     android:layout_marginStart="56dp"
-                    android:src="@drawable/ic_profile_cat" />
+                    android:src="@drawable/img_profile_default" />
 
                 <TextView
                     android:id="@+id/tvExtraMemberCount"

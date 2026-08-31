@@ -32,7 +32,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.core.graphics.toColorInt
 
 import com.umc.mobile.my4cut.R
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.data.photo.model.CommentCreateRequest
 import com.umc.mobile.my4cut.data.photo.model.CommentDto
 import com.bumptech.glide.Glide
@@ -40,6 +40,9 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import com.umc.mobile.my4cut.data.auth.local.TokenManager
+import com.umc.mobile.my4cut.data.tutorial.TutorialManager
+import com.umc.mobile.my4cut.data.tutorial.model.TutorialType
 import com.umc.mobile.my4cut.ui.tutorial.TutorialDimView
 
 import java.time.Duration
@@ -272,7 +275,7 @@ class PhotoDialogFragment : DialogFragment() {
             R.drawable.bg_skeleton_text_light
         )
 
-        ivProfile.setImageResource(R.drawable.ic_profile_cat)
+        ivProfile.setImageResource(R.drawable.img_profile_default)
 
         ivMainPhoto.setBackgroundResource(
             R.drawable.bg_skeleton_img
@@ -339,12 +342,12 @@ class PhotoDialogFragment : DialogFragment() {
         if (!uploaderProfileUrl.isNullOrEmpty()) {
             Glide.with(this)
                 .load(uploaderProfileUrl)
-                .placeholder(R.drawable.ic_profile_cat)
-                .error(R.drawable.ic_profile_cat)
+                .placeholder(R.drawable.img_profile_default)
+                .error(R.drawable.img_profile_default)
                 .circleCrop()
                 .into(ivProfile)
         } else {
-            ivProfile.setImageResource(R.drawable.ic_profile_cat)
+            ivProfile.setImageResource(R.drawable.img_profile_default)
         }
 
         // 메인 사진만 로딩 스켈레톤 적용
@@ -669,6 +672,10 @@ class PhotoDialogFragment : DialogFragment() {
         if (workspaceId == -1L || photoId == -1L) {
             showCommentResult(0)
 
+            tvChat.post {
+                checkRetouchDetailTutorial()
+            }
+
             Log.e(
                 "PhotoDialog",
                 "workspaceId 또는 photoId가 없음"
@@ -715,6 +722,10 @@ class PhotoDialogFragment : DialogFragment() {
             } catch (e: Exception) {
                 showCommentResult(0)
 
+                tvChat.post {
+                    checkRetouchDetailTutorial()
+                }
+
                 Log.e(
                     "PhotoDialog",
                     "댓글 목록 조회 실패",
@@ -728,6 +739,10 @@ class PhotoDialogFragment : DialogFragment() {
     fun updateComments(list: List<CommentData>) {
         commentAdapter.updateData(list)
         showCommentResult(list.size)
+
+        tvChat.post {
+            checkRetouchDetailTutorial()
+        }
 
         if (isCommentExpanded && list.isEmpty()) {
             rvChatList.visibility = View.GONE
@@ -761,10 +776,6 @@ class PhotoDialogFragment : DialogFragment() {
                 (resources.displayMetrics.heightPixels * 0.85).toInt()
             )
         }
-
-        view?.post {
-            showRetouchDetailTutorial()
-        }
     }
 
     companion object {
@@ -794,6 +805,67 @@ class PhotoDialogFragment : DialogFragment() {
                     putString("createdAt", createdAt)
                     putLong("myUserId", myUserId)
                 }
+            }
+        }
+    }
+
+    private fun checkRetouchDetailTutorial() {
+        val userId =
+            TokenManager.getUserId(requireContext())
+                ?: return
+
+        viewLifecycleOwner.lifecycleScope.launch {
+
+            val photoCompleted =
+                TutorialManager.isCompleted(
+                    requireContext(),
+                    userId,
+                    TutorialType.RETOUCH_PHOTO
+                )
+
+            if (photoCompleted != true) {
+                return@launch
+            }
+
+            val detailCompleted =
+                TutorialManager.isCompleted(
+                    requireContext(),
+                    userId,
+                    TutorialType.RETOUCH_DETAIL
+                )
+
+            if (detailCompleted == false) {
+                showRetouchDetailTutorial()
+            }
+        }
+    }
+
+    private fun completeRetouchDetailTutorial() {
+        val userId =
+            TokenManager.getUserId(requireContext())
+                ?: return
+
+        hideRetouchDetailTutorial()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                RetrofitClient.tutorialService
+                    .completeTutorial(
+                        TutorialType.RETOUCH_DETAIL
+                    )
+
+                TutorialManager.setCompleted(
+                    requireContext(),
+                    userId,
+                    TutorialType.RETOUCH_DETAIL
+                )
+
+            } catch (e: Exception) {
+                Log.e(
+                    "Tutorial",
+                    "RETOUCH_DETAIL 튜토리얼 완료 처리 실패",
+                    e
+                )
             }
         }
     }
@@ -837,10 +909,7 @@ class PhotoDialogFragment : DialogFragment() {
         overlay.findViewById<View>(
             R.id.ll_tutorial_close
         ).setOnClickListener {
-            // API 연결 후
-            // completeRetouchDetailTutorial()
-
-            hideRetouchDetailTutorial()
+            completeRetouchDetailTutorial()
         }
 
         tutorialDialog.setOnShowListener {
@@ -944,8 +1013,12 @@ class PhotoDialogFragment : DialogFragment() {
 
         if (
             ivSaveTouchArea.width == 0 ||
-            tvChat.width == 0
+            tvChat.width == 0 ||
+            ivChat.width == 0
         ) {
+            overlay.post {
+                setupRetouchDetailTutorial()
+            }
             return
         }
 
@@ -1002,10 +1075,25 @@ class PhotoDialogFragment : DialogFragment() {
             )
 
         val commentRect = RectF(
-            minOf(baseCommentIconRect.left, baseCommentTextRect.left) - tutorialDp(7f),
-            minOf(baseCommentIconRect.top, baseCommentTextRect.top) - tutorialDp(2f),
-            maxOf(baseCommentRect.right, baseCommentTextRect.right) - tutorialDp(24f),
-            maxOf(baseCommentIconRect.bottom, baseCommentTextRect.bottom) + tutorialDp(2f)
+            minOf(
+                baseCommentIconRect.left,
+                baseCommentTextRect.left
+            ) - tutorialDp(7f),
+
+            minOf(
+                baseCommentIconRect.top,
+                baseCommentTextRect.top
+            ) - tutorialDp(2f),
+
+            maxOf(
+                baseCommentIconRect.right,
+                baseCommentTextRect.right
+            ) + tutorialDp(7f),
+
+            maxOf(
+                baseCommentIconRect.bottom,
+                baseCommentTextRect.bottom
+            ) + tutorialDp(2f)
         )
 
         dimView.clearHighlights()

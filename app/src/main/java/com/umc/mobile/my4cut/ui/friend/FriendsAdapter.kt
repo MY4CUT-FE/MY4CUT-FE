@@ -8,7 +8,6 @@ import android.view.TouchDelegate
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
-import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.ItemFriendBinding
@@ -193,8 +192,8 @@ class FriendsAdapter(
                 if (imageUrl.startsWith("content://")) {
                     Glide.with(binding.root.context)
                         .load(imageUrl)
-                        .placeholder(R.drawable.ic_profile_cat)
-                        .error(R.drawable.ic_profile_cat)
+                        .placeholder(R.drawable.img_profile_default)
+                        .error(R.drawable.img_profile_default)
                         .circleCrop()
                         .into(binding.ivProfile)
                 } else {
@@ -202,8 +201,8 @@ class FriendsAdapter(
                                    else "https://api.my4cut.shop/$imageUrl"
                     Glide.with(binding.root.context)
                         .load(finalUrl)
-                        .placeholder(R.drawable.ic_profile_cat)
-                        .error(R.drawable.ic_profile_cat)
+                        .placeholder(R.drawable.img_profile_default)
+                        .error(R.drawable.img_profile_default)
                         .override(120, 120)
                         .circleCrop()
                         .thumbnail(0.25f)
@@ -211,7 +210,7 @@ class FriendsAdapter(
                         .into(binding.ivProfile)
                 }
             } else {
-                binding.ivProfile.setImageResource(R.drawable.ic_profile_cat)
+                binding.ivProfile.setImageResource(R.drawable.img_profile_default)
             }
 
             // 즐겨찾기 별

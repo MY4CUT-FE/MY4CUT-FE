@@ -7,9 +7,8 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.data.friend.model.FriendRequestCreateDto
-import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -176,8 +175,8 @@ class AddFriendDialogFragment : DialogFragment() {
 
         Glide.with(this)
             .load(profileImageUrl)
-            .placeholder(R.drawable.ic_profile_cat)
-            .error(R.drawable.ic_profile_cat)
+            .placeholder(R.drawable.img_profile_default)
+            .error(R.drawable.img_profile_default)
             .circleCrop()
             .into(binding.ivProfile)
 

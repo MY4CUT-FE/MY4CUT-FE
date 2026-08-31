@@ -61,7 +61,7 @@ class PhotoRVAdapter(
 
             // 프로필은 기존 기본 프로필 유지
             binding.ivUserIcon.setImageResource(
-                R.drawable.ic_profile_cat
+                R.drawable.img_profile_default
             )
 
             // 닉네임
@@ -178,8 +178,8 @@ class PhotoRVAdapter(
             Glide.with(binding.ivUserIcon.context)
                 .load(photo.userProfileUrl)
                 .circleCrop()
-                .placeholder(com.umc.mobile.my4cut.R.drawable.ic_profile_cat)
-                .error(com.umc.mobile.my4cut.R.drawable.ic_profile_cat)
+                .placeholder(com.umc.mobile.my4cut.R.drawable.img_profile_default)
+                .error(com.umc.mobile.my4cut.R.drawable.img_profile_default)
                 .into(binding.ivUserIcon)
 
             binding.tvUserName.text = photo.userName

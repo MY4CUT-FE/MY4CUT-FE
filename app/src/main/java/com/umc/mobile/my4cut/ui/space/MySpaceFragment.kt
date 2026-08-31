@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.FragmentMySpaceBinding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.space.model.Space
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime

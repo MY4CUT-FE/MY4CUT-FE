@@ -22,7 +22,7 @@ import com.umc.mobile.my4cut.data.auth.model.PasswordResetRequest
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.ActivityForgotPasswordBinding
 import com.umc.mobile.my4cut.databinding.DialogChangePasswordBinding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response

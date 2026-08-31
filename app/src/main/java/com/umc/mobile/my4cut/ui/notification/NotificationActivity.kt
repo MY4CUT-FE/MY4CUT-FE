@@ -8,13 +8,12 @@ import com.umc.mobile.my4cut.databinding.ActivityNotificationBinding
 import android.widget.Toast
 import android.util.Log
 import androidx.lifecycle.lifecycleScope
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import kotlinx.coroutines.launch
 import android.view.View
 import android.app.Dialog
 import android.content.Intent
 import android.view.Window
-import android.view.WindowManager
 import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.data.notification.model.NotificationMarkReadByIdsDto
 import com.umc.mobile.my4cut.databinding.DialogDeleteNotiAllBinding

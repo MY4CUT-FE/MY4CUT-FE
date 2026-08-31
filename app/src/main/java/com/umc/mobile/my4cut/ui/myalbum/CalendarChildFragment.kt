@@ -8,9 +8,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.R
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.databinding.FragmentCalendarChildBinding
 import kotlinx.coroutines.launch
 import java.time.LocalDate

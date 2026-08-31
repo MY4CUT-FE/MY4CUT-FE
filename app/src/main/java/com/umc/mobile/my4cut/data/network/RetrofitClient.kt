@@ -1,10 +1,7 @@
-package com.umc.mobile.my4cut.network
+package com.umc.mobile.my4cut.data.network
 
 import android.content.Context
-import android.content.Intent
-import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import com.umc.mobile.my4cut.data.album.remote.AlbumService
 import com.umc.mobile.my4cut.data.album.remote.ImageService
 import com.umc.mobile.my4cut.data.auth.local.TokenManager

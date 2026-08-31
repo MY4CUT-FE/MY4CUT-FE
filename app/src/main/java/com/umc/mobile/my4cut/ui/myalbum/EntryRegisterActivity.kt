@@ -35,7 +35,7 @@ import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.day4cut.remote.CreateDay4CutRequest
 import com.umc.mobile.my4cut.data.day4cut.remote.Day4CutImage
 import com.umc.mobile.my4cut.databinding.ActivityEntryRegister2Binding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.record.EntryRegisterTutorialPrefs
 import com.umc.mobile.my4cut.ui.record.PhotoUploadPager
 import kotlinx.coroutines.Dispatchers
