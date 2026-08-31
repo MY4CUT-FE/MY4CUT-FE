@@ -17,6 +17,7 @@ import android.view.Window
 import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.data.notification.model.NotificationMarkReadByIdsDto
 import com.umc.mobile.my4cut.databinding.DialogDeleteNotiAllBinding
+import retrofit2.HttpException
 
 class NotificationActivity : AppCompatActivity() {
 
@@ -225,8 +226,31 @@ class NotificationActivity : AppCompatActivity() {
                                         binding.rvNotification.adapter?.notifyItemRemoved(index)
                                         binding.btnMore.visibility = View.VISIBLE
                                     }
+                                } catch (e: HttpException) {
+                                    val errorBody = e.response()?.errorBody()?.string()
+
+                                    if (
+                                        errorBody?.contains("\"code\":\"W4004\"") == true ||
+                                        errorBody?.contains("\"code\": \"W4004\"") == true
+                                    ) {
+                                        Toast.makeText(
+                                            this@NotificationActivity,
+                                            "해당 스페이스 구성원이 꽉 찼어요",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        Toast.makeText(
+                                            this@NotificationActivity,
+                                            "수락 실패: ${e.message()}",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
                                 } catch (e: Exception) {
-                                    Toast.makeText(this@NotificationActivity, "수락 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        this@NotificationActivity,
+                                        "수락 실패: ${e.message}",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                         },
