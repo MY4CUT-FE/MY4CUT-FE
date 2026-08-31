@@ -41,7 +41,7 @@
                 android:id="@+id/ivProfile"
                 android:layout_width="29dp"
                 android:layout_height="29dp"
-                android:src="@drawable/ic_profile_cat"
+                android:src="@drawable/img_profile_default"
                 style="@style/CircleImage"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />

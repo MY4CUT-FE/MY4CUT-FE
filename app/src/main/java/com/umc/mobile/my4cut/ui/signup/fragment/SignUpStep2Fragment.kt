@@ -20,7 +20,7 @@ import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.auth.model.EmailVerifyResult
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.FragmentSignUpStep2Binding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.signup.AuthViewModel
 import com.umc.mobile.my4cut.ui.signup.SignUpActivity
 import retrofit2.Call

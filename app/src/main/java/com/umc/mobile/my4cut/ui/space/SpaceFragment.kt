@@ -837,7 +837,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     val vertical = 3.toDp()
                     setMargins(horizontal, vertical, horizontal, vertical)
                 }
-                setImageResource(R.drawable.ic_profile_cat)
+                setImageResource(R.drawable.img_profile_default)
                 scaleType = ImageView.ScaleType.CENTER_CROP
                 setPadding(0)
             }
@@ -856,12 +856,12 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
 
             fun bind(item: MemberItem) {
                 if (item.profileImageUrl.isNullOrBlank()) {
-                    imageView.setImageResource(R.drawable.ic_profile_cat)
+                    imageView.setImageResource(R.drawable.img_profile_default)
                 } else {
                     Glide.with(imageView)
                         .load(item.profileImageUrl)
-                        .placeholder(R.drawable.ic_profile_cat)
-                        .error(R.drawable.ic_profile_cat)
+                        .placeholder(R.drawable.img_profile_default)
+                        .error(R.drawable.img_profile_default)
                         .circleCrop()
                         .into(imageView)
                 }

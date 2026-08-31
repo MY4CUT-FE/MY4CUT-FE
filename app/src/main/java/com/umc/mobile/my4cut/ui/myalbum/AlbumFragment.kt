@@ -1,6 +1,5 @@
 package com.umc.mobile.my4cut.ui.myalbum
 
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -13,15 +12,9 @@ import com.umc.mobile.my4cut.databinding.DialogChangeBinding
 import com.umc.mobile.my4cut.databinding.FragmentAlbumBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.umc.mobile.my4cut.data.album.model.AlbumNameRequest
-import com.umc.mobile.my4cut.data.album.model.AlbumRequest
 import com.umc.mobile.my4cut.data.album.model.AlbumResponse
-import com.umc.mobile.my4cut.data.auth.local.TokenManager
-import com.umc.mobile.my4cut.data.base.BaseResponse
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 class AlbumFragment : Fragment() {
     lateinit var binding: FragmentAlbumBinding

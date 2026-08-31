@@ -16,7 +16,7 @@ import com.umc.mobile.my4cut.data.auth.local.TokenManager
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.auth.model.TokenResult
 import com.umc.mobile.my4cut.databinding.ActivityOnboardingBinding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.login.LoginActivity
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 import retrofit2.Call

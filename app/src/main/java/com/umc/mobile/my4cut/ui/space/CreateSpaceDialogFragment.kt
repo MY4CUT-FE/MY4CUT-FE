@@ -21,10 +21,9 @@ import com.umc.mobile.my4cut.databinding.DialogSpaceCreateBinding
 import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
 
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.internal.ViewUtils.hideKeyboard
 import kotlinx.coroutines.launch
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceCreateRequestDto
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
 import com.umc.mobile.my4cut.ui.friend.FriendsMode
 import com.umc.mobile.my4cut.ui.space.model.CreateSpaceResult

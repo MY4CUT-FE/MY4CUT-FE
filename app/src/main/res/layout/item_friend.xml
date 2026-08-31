@@ -42,7 +42,7 @@
             android:layout_width="37dp"
             android:layout_height="37dp"
             android:layout_marginStart="10dp"
-            android:src="@drawable/ic_profile_cat"
+            android:src="@drawable/img_profile_default"
             style="@style/CircleImage"
             app:layout_constraintStart_toEndOf="@id/ivStar"
             app:layout_constraintTop_toTopOf="parent"

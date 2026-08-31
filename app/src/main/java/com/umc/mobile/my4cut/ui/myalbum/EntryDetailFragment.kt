@@ -41,7 +41,7 @@ import com.umc.mobile.my4cut.databinding.DialogExit2Binding
 import com.umc.mobile.my4cut.databinding.FragmentEntryDetailBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoAddBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoSlider2Binding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.theme.loadWithSkeleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

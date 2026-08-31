@@ -24,7 +24,7 @@
                 android:layout_width="9dp"
                 android:layout_height="17dp"
                 android:layout_marginStart="20dp"
-                android:src="@drawable/ic_back"
+                android:src="@drawable/ic_arrow_back_24"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -73,7 +73,7 @@
             app:layout_constraintTop_toBottomOf="@id/layoutHeader"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            tools:listitem="@drawable/ic_profile_cat" />
+            tools:listitem="@drawable/img_profile_default" />
 
         <TextView
             android:id="@+id/tvExpire"

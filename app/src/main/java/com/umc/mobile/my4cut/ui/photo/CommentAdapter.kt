@@ -44,12 +44,12 @@ class CommentAdapter(
         val item = items[position]
 
         if (item.profileImgUrl.isNullOrBlank()) {
-            holder.ivProfile.setImageResource(R.drawable.ic_profile_cat)
+            holder.ivProfile.setImageResource(R.drawable.img_profile_default)
         } else {
             Glide.with(holder.ivProfile)
                 .load(item.profileImgUrl)
-                .placeholder(R.drawable.ic_profile_cat)
-                .error(R.drawable.ic_profile_cat)
+                .placeholder(R.drawable.img_profile_default)
+                .error(R.drawable.img_profile_default)
                 .circleCrop()
                 .into(holder.ivProfile)
         }

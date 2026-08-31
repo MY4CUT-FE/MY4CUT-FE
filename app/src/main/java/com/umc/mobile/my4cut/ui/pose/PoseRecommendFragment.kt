@@ -23,7 +23,7 @@ import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.DialogPoseDetailBinding
 import com.umc.mobile.my4cut.databinding.FragmentPoseRecommendBinding
 import com.umc.mobile.my4cut.databinding.PopupPoseFilterBinding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
 import retrofit2.Call
 import retrofit2.Callback

@@ -47,12 +47,12 @@ class MemberAdapter : RecyclerView.Adapter<MemberAdapter.MemberViewHolder>() {
 
         fun bind(item: MemberUiModel) {
             if (item.profileImageUrl.isNullOrBlank()) {
-                imageView.setImageResource(R.drawable.ic_profile_cat)
+                imageView.setImageResource(R.drawable.img_profile_default)
             } else {
                 Glide.with(imageView)
                     .load(item.profileImageUrl)
-                    .placeholder(R.drawable.ic_profile_cat)
-                    .error(R.drawable.ic_profile_cat)
+                    .placeholder(R.drawable.img_profile_default)
+                    .error(R.drawable.img_profile_default)
                     .circleCrop()
                     .into(imageView)
             }

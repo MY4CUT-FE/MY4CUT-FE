@@ -49,8 +49,8 @@ class ChatRVAdapter(
 
         Glide.with(holder.itemView)
             .load(imageUrl)
-            .placeholder(R.drawable.ic_profile_cat)
-            .error(R.drawable.ic_profile_cat)
+            .placeholder(R.drawable.img_profile_default)
+            .error(R.drawable.img_profile_default)
             .circleCrop()
             .into(holder.ivProfile)
 
