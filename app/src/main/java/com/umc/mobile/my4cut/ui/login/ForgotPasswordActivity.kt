@@ -93,8 +93,12 @@ class ForgotPasswordActivity : AppCompatActivity() {
                         verificationToken = ""
                         showSendGuide(email)
                     } else {
-                        val msg = extractErrorMessage(errorBody)
-                            ?: "인증코드 발송에 실패했습니다. (${response.code()})"
+                        val serverMsg = extractErrorMessage(errorBody)
+                        val msg = if (serverMsg != null && serverMsg.contains("계정을 찾을 수 없")) {
+                            "존재하지 않는 계정입니다."
+                        } else {
+                            serverMsg ?: "인증코드 발송에 실패했습니다. (${response.code()})"
+                        }
                         showEmailError(msg)
                     }
                 }

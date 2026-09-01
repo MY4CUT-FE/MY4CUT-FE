@@ -16,6 +16,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.umc.mobile.my4cut.data.auth.local.TokenManager
+import com.umc.mobile.my4cut.data.tutorial.TutorialManager
+import com.umc.mobile.my4cut.data.tutorial.model.TutorialType
 import com.umc.mobile.my4cut.databinding.ActivityCalendarPicker2Binding
 import com.umc.mobile.my4cut.data.network.RetrofitClient
 import kotlinx.coroutines.launch
@@ -93,8 +96,16 @@ class CalendarPickerActivity : AppCompatActivity() {
      * 그대로 보이게 한다. 홈 화면 튜토리얼(MainActivity)과 동일한 방식.
      */
     private fun showDateSelectTutorialIfNeeded() {
-        if (DateSelectTutorialPrefs.hasSeenTutorial(this)) return
+        val userId = TokenManager.getUserId(this) ?: return
 
+        lifecycleScope.launch {
+            if (TutorialManager.isTutorialCompleted(this@CalendarPickerActivity, userId, TutorialType.UPLOAD_DATE)) return@launch
+
+            showDateSelectTutorialOverlay(userId)
+        }
+    }
+
+    private fun showDateSelectTutorialOverlay(userId: Long) {
         val overlay = binding.includeDateSelectTutorial
         overlay.root.visibility = View.VISIBLE
         binding.vMinicalBadge.visibility = View.VISIBLE
@@ -164,7 +175,9 @@ class CalendarPickerActivity : AppCompatActivity() {
         overlay.llTutorialClose.setOnClickListener {
             overlay.root.visibility = View.GONE
             binding.vMinicalBadge.visibility = View.GONE
-            DateSelectTutorialPrefs.setTutorialSeen(this)
+            lifecycleScope.launch {
+                TutorialManager.completeTutorial(this@CalendarPickerActivity, userId, TutorialType.UPLOAD_DATE)
+            }
         }
     }
 
