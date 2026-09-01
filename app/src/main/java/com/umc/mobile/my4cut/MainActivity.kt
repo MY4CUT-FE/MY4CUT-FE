@@ -22,16 +22,19 @@ import androidx.cardview.widget.CardView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.umc.mobile.my4cut.data.auth.local.TokenManager
+import com.umc.mobile.my4cut.data.tutorial.TutorialManager
+import com.umc.mobile.my4cut.data.tutorial.model.TutorialType
 import com.umc.mobile.my4cut.databinding.ActivityMainBinding
-import com.umc.mobile.my4cut.ui.booth.BoothFragment
 import com.umc.mobile.my4cut.ui.home.HomeFragment
-import com.umc.mobile.my4cut.ui.home.HomeTutorialPrefs
 import com.umc.mobile.my4cut.ui.myalbum.CalendarData
 import com.umc.mobile.my4cut.ui.myalbum.CalendarMainFragment
 import com.umc.mobile.my4cut.ui.myalbum.EntryDetailFragment
 import com.umc.mobile.my4cut.ui.mypage.MyPageFragment
 import com.umc.mobile.my4cut.ui.photo.PhotoDialogFragment
 import com.umc.mobile.my4cut.ui.retouch.RetouchFragment
+import kotlinx.coroutines.launch
 
 private object HomeTutorialLayout {
     const val MYPAGE_TEXT_GAP_DP = 12          // 마이페이지 안내 텍스트 ↔ 아이콘 간격
@@ -43,8 +46,7 @@ private object HomeTutorialLayout {
     const val POSE_ARROW_OFFSET_X_DP = 130       // 포즈 추천 화살표의 텍스트 기준 가로 오프셋
     const val POSE_ARROW_OFFSET_Y_DP = -13       // 포즈 추천 화살표의 텍스트 기준 세로 오프셋
 
-    const val RECORD_ARROW_GAP_DP = 2          // 네컷 기록 카드 ↔ 화살표 간격
-    const val RECORD_TEXT_GAP_DP = -15          // 네컷 기록 화살표 ↔ 안내 텍스트 간격
+    const val RECORD_TEXT_RIGHT_SHIFT_DP = 30  // 네컷 기록 안내 텍스트를 화살표와 안 겹치게 오른쪽으로 미는 정도
 
     const val CLOSE_MARGIN_END_DP = 20         // 닫기 버튼 ↔ 화면 오른쪽 여백
     const val CLOSE_MARGIN_BOTTOM_DP = 16      // 닫기 버튼 ↔ 화면 아래쪽 여백
@@ -241,10 +243,6 @@ class MainActivity : AppCompatActivity() {
                     changeFragment(CalendarMainFragment())
                     true
                 }
-                R.id.menu_photo -> {
-                    changeFragment(BoothFragment())
-                    true
-                }
                 R.id.menu_pose -> {
                     changeFragment(PoseRecommendFragment())
                     true
@@ -303,12 +301,33 @@ class MainActivity : AppCompatActivity() {
         recordCard: CardView,
         recordCharacter: View
     ) {
-        if (HomeTutorialPrefs.hasSeenTutorial(this)) return
+        val userId = TokenManager.getUserId(this) ?: return
 
+        lifecycleScope.launch {
+            if (TutorialManager.isTutorialCompleted(this@MainActivity, userId, TutorialType.HOME)) return@launch
+
+            showHomeTutorialOverlay(userId, mypageBadge, poseCard, recordCard, recordCharacter)
+        }
+    }
+
+    private fun showHomeTutorialOverlay(
+        userId: Long,
+        mypageBadge: View,
+        poseCard: View,
+        recordCard: CardView,
+        recordCharacter: View
+    ) {
         val overlay = binding.includeHomeTutorial
         overlay.root.elevation = dpToPx(20).toFloat()
         overlay.root.visibility = View.VISIBLE
         mypageBadge.visibility = View.VISIBLE
+
+        // bnv_main(하단 네비게이션 바)에는 elevation="10dp"가 붙어 있는데, 일부 실기기의 하드웨어
+        // 가속 렌더링에서는 이 elevation 차이로 인한 Z-순서 처리가 오버레이(20dp)보다 위로 나오는
+        // 경우가 있어(에뮬레이터에서는 재현되지 않음), 튜토리얼이 떠 있는 동안은 네비게이션 바의
+        // elevation을 임시로 0으로 낮춰 Z-순서 모호함을 없앤다. 닫을 때 원래 값(10dp)으로 복원한다.
+        val bnvOriginalElevation = binding.bnvMain.elevation
+        binding.bnvMain.elevation = 0f
 
         fun boundsOf(target: View): Rect {
             val rootLocation = IntArray(2)
@@ -321,6 +340,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun positionOverlay() {
+            val bnvTop = boundsOf(binding.bnvMain).top
+
             val mypageBox = boundsOf(mypageBadge)
             val poseBox = boundsOf(poseCard).apply { inset(-dpToPx(2), -dpToPx(2)) }
 
@@ -333,9 +354,9 @@ class MainActivity : AppCompatActivity() {
                 recordRaw.right - recordCard.contentPaddingRight,
                 recordRaw.bottom - recordCard.contentPaddingBottom
             ).apply { inset(-dpToPx(2), -dpToPx(2)) }
-            val charBounds = boundsOf(recordCharacter)
 
             // 딤에 스포트라이트(완전 투명) 구멍을 뚫어 실제 홈 화면 요소가 어둡게 가려지지 않도록 함
+            // (카드 강조 영역은 실제 카드 크기 그대로 유지 — 절대 줄이지 않는다)
             overlay.tutorialDimView.setHoles(
                 listOf(
                     RectF(mypageBox) to mypageBox.width() / 2f,
@@ -400,27 +421,50 @@ class MainActivity : AppCompatActivity() {
             }
             overlay.ivTutorialArrowPose.requestLayout()
 
-            // 네컷 기록 화살표: 카드 바로 아래, 캐릭터 쪽 (line_3, 세로형)
-            (overlay.ivTutorialArrowRecord.layoutParams as FrameLayout.LayoutParams).apply {
-                leftMargin = charBounds.centerX() - width / 2
-                topMargin = recordBox.bottom + dpToPx(HomeTutorialLayout.RECORD_ARROW_GAP_DP)
-            }
-            overlay.ivTutorialArrowRecord.requestLayout()
-            val recordArrowBottom = (overlay.ivTutorialArrowRecord.layoutParams as FrameLayout.LayoutParams).run { topMargin + height }
-
-            // 네컷 기록 안내 텍스트: 화살표 아래, 오른쪽 정렬
+            // 네컷 기록 화살표 + 안내 텍스트: "카드 아래"가 아니라 "카드 위쪽"(포즈 카드~네컷 기록
+            // 카드 사이의 안정적인 공간)에 배치한다. 카드 아래쪽~네비게이션 바 사이 여유 공간은
+            // 카드 높이·화면 비율·기기 화면 설정에 따라 편차가 커서(예: 갤럭시 S24 실기기에서 확인됨)
+            // 어떤 값으로 튜닝해도 특정 기기에서 화면 밖으로 밀려날 위험이 있다. 반면 카드 위쪽 공간은
+            // 이미 포즈 추천 안내(위쪽 배치)가 모든 기기에서 안정적으로 동작하고 있는 영역이라
+            // 같은 패턴을 재사용해 기기 의존성을 없앤다.
+            val recordArrowHeight = (overlay.ivTutorialArrowRecord.layoutParams as FrameLayout.LayoutParams).height
             overlay.tvTutorialRecord.text = coralHighlightedText(
                 "울고 있는 포토리를 눌러\n네컷과 함께 하루를 기록해 보세요.",
                 "네컷과 함께 하루를 기록"
             )
+            overlay.tvTutorialRecord.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+            val recordTextHeight = overlay.tvTutorialRecord.measuredHeight
+
+            // 화살표(카드를 가리키며 아래를 향함)를 카드 바로 위에 붙이고, 텍스트는 그 화살표 위에 배치
+            val recordArrowBottom = recordBox.top - dpToPx(2)
+            val recordArrowTop = recordArrowBottom - recordArrowHeight
+            val recordTextBottom = recordArrowTop - dpToPx(4)
+            val recordTextTop = recordTextBottom - recordTextHeight
+
+            // 화살표 가로 위치는 카드 자체의 가로 중심을 기준으로 한다. recordCharacter(카드 안
+            // 캐릭터 아이콘)의 측정값을 쓰면, 실기기에서 그 뷰가 아직 측정되기 전에 이 계산이
+            // 먼저 실행될 경우 좌표가 0으로 잡혀 화살표가 화면 왼쪽 끝으로 밀려나는 문제가 있었다.
+            // recordBox는 이미 안정적으로 측정된 값이라 이를 기준으로 삼는다.
+            val recordCenterX = (recordBox.left + recordBox.right) / 2
+            (overlay.ivTutorialArrowRecord.layoutParams as FrameLayout.LayoutParams).apply {
+                leftMargin = recordCenterX - width / 2
+                topMargin = recordArrowTop
+            }
+            overlay.ivTutorialArrowRecord.requestLayout()
+
+            // 텍스트 박스가 카드 우측 끝에 딱 맞춰져 있으면 카드 중앙쯤에 있는 화살표와 겹치므로,
+            // 화살표와 겹치지 않도록 텍스트를 오른쪽으로 조금 더 밀어 배치한다.
             (overlay.tvTutorialRecord.layoutParams as FrameLayout.LayoutParams).apply {
-                leftMargin = recordBox.right - width
-                topMargin = recordArrowBottom + dpToPx(HomeTutorialLayout.RECORD_TEXT_GAP_DP)
+                leftMargin = recordBox.right - width + dpToPx(HomeTutorialLayout.RECORD_TEXT_RIGHT_SHIFT_DP)
+                topMargin = recordTextTop
             }
             overlay.tvTutorialRecord.requestLayout()
 
-            // 닫기 버튼: LayoutParams 마진 대신 View.x/y로 화면 우측 맨 아래에 직접 배치
-            // (margin/gravity 조합에서 원인 불명의 렌더링 누락이 있어 더 단순한 API로 우회)
+            // 닫기 버튼: 하단 네비게이션 바의 실제 top 좌표 바로 위 (텍스트/화살표가 더 이상
+            // 화면 아래쪽에 있지 않으므로 별도 회피 계산 없이 항상 이 위치로 고정)
             overlay.llTutorialClose.bringToFront()
             overlay.llTutorialClose.measure(
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
@@ -429,7 +473,7 @@ class MainActivity : AppCompatActivity() {
             val closeWidth = overlay.llTutorialClose.measuredWidth
             val closeHeight = overlay.llTutorialClose.measuredHeight
             overlay.llTutorialClose.x = (overlay.root.width - closeWidth - dpToPx(HomeTutorialLayout.CLOSE_MARGIN_END_DP)).toFloat()
-            overlay.llTutorialClose.y = (overlay.root.height - closeHeight - dpToPx(HomeTutorialLayout.CLOSE_MARGIN_BOTTOM_DP)).toFloat()
+            overlay.llTutorialClose.y = (bnvTop - closeHeight - dpToPx(HomeTutorialLayout.CLOSE_MARGIN_BOTTOM_DP)).toFloat()
         }
 
         overlay.root.post { positionOverlay() }
@@ -443,7 +487,10 @@ class MainActivity : AppCompatActivity() {
             recordCard.viewTreeObserver.removeOnGlobalLayoutListener(layoutListener)
             overlay.root.visibility = View.GONE
             mypageBadge.visibility = View.GONE
-            HomeTutorialPrefs.setTutorialSeen(this)
+            binding.bnvMain.elevation = bnvOriginalElevation
+            lifecycleScope.launch {
+                TutorialManager.completeTutorial(this@MainActivity, userId, TutorialType.HOME)
+            }
         }
     }
 

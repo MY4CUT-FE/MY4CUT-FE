@@ -32,11 +32,13 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.lifecycleScope
 import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.auth.local.TokenManager
 import com.umc.mobile.my4cut.data.day4cut.remote.CreateDay4CutRequest
 import com.umc.mobile.my4cut.data.day4cut.remote.Day4CutImage
+import com.umc.mobile.my4cut.data.tutorial.TutorialManager
+import com.umc.mobile.my4cut.data.tutorial.model.TutorialType
 import com.umc.mobile.my4cut.databinding.ActivityEntryRegister2Binding
 import com.umc.mobile.my4cut.data.network.RetrofitClient
-import com.umc.mobile.my4cut.ui.record.EntryRegisterTutorialPrefs
 import com.umc.mobile.my4cut.ui.record.PhotoUploadPager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -136,8 +138,16 @@ class EntryRegisterActivity : AppCompatActivity() {
      * NestedScrollView를 해당 위치까지 스크롤한 뒤 그 자리에 딤 구멍을 뚫는다.
      */
     private fun showEntryRegisterTutorialIfNeeded() {
-        if (EntryRegisterTutorialPrefs.hasSeenTutorial(this)) return
+        val userId = TokenManager.getUserId(this) ?: return
 
+        lifecycleScope.launch {
+            if (TutorialManager.isTutorialCompleted(this@EntryRegisterActivity, userId, TutorialType.UPLOAD_CONTENT)) return@launch
+
+            showEntryRegisterTutorialOverlay(userId)
+        }
+    }
+
+    private fun showEntryRegisterTutorialOverlay(userId: Long) {
         val overlay = binding.includeEntryRegisterTutorial
 
         // 일기 카드가 화면에 들어오도록 미리 스크롤 (안내 텍스트 공간만큼 위쪽 여백을 남김)
@@ -219,7 +229,9 @@ class EntryRegisterActivity : AppCompatActivity() {
 
         overlay.llTutorialClose.setOnClickListener {
             overlay.root.visibility = View.GONE
-            EntryRegisterTutorialPrefs.setTutorialSeen(this)
+            lifecycleScope.launch {
+                TutorialManager.completeTutorial(this@EntryRegisterActivity, userId, TutorialType.UPLOAD_CONTENT)
+            }
         }
     }
 
