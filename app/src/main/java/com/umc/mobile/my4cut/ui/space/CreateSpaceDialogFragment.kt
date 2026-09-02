@@ -193,18 +193,33 @@ class CreateSpaceDialogFragment : DialogFragment() {
                 } catch (e: retrofit2.HttpException) {
                     Log.e("CreateSpace", "스페이스 생성 또는 초대 실패", e)
 
-                    if (e.code() == 400) {
-                        Toast.makeText(
-                            requireContext(),
-                            "스페이스 이름은 영어, 한글, 숫자만 가능하며 15자까지 입력할 수 있어요.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        Toast.makeText(
-                            requireContext(),
-                            "스페이스 생성 또는 초대 실패에 실패했습니다",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    val errorBody = e.response()?.errorBody()?.string()
+
+                    when {
+                        errorBody?.contains("\"code\":\"W4003\"") == true ||
+                                errorBody?.contains("\"code\": \"W4003\"") == true -> {
+                            Toast.makeText(
+                                requireContext(),
+                                "한 번에 최대 9명까지만 초대할 수 있어요.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        e.code() == 400 -> {
+                            Toast.makeText(
+                                requireContext(),
+                                "스페이스 이름은 영어, 한글, 숫자만 가능하며 15자까지 입력할 수 있어요.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        else -> {
+                            Toast.makeText(
+                                requireContext(),
+                                "스페이스 생성 또는 초대에 실패했습니다",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 } catch (e: Exception) {
                     Log.e("CreateSpace", "스페이스 생성 또는 초대 실패 실패", e)
