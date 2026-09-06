@@ -85,7 +85,7 @@ object TutorialManager {
         }
     }
 
-    /** 서버와 동기화된 완료 여부를 반환한다. 최초 1회는 서버 상태를 가져와 로컬에 캐싱한다. */
+    /** 서버와 동기화된 완료 여부를 반환. 최초 1회는 서버 상태를 가져와 로컬에 캐싱 */
     suspend fun isTutorialCompleted(
         context: Context,
         userId: Long,
@@ -98,7 +98,7 @@ object TutorialManager {
         return isCompleted(context, userId, type) ?: false
     }
 
-    /** 튜토리얼 완료를 서버에 반영하고 로컬 캐시도 갱신한다. */
+    /** 튜토리얼 완료를 서버에 반영하고 로컬 캐시도 갱신 */
     suspend fun completeTutorial(
         context: Context,
         userId: Long,

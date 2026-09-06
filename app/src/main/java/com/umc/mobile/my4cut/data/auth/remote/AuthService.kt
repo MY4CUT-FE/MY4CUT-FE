@@ -23,7 +23,7 @@ interface AuthService {
     ): Call<BaseResponse<Any>>
 
     /**
-     * ✅ 이메일 중복 체크 (POST 방식)
+     * 이메일 중복 체크 (POST 방식)
      * POST /auth/check-email
      */
     @Headers(
@@ -36,7 +36,7 @@ interface AuthService {
     ): Call<BaseResponse<EmailCheckResponse>>
 
     /**
-     * ✅ 이메일 중복 체크 (GET 방식)
+     * 이메일 중복 체크 (GET 방식)
      * GET /auth/check-email?email={email}
      */
     @GET("auth/check-email")

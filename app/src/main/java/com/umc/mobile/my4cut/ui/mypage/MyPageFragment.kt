@@ -60,7 +60,7 @@ class MyPageFragment : Fragment() {
     private val editProfileLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
-                // ✅ onResume에서 자동으로 새로고침되므로 여기서는 생략
+                //  onResume에서 자동으로 새로고침되므로 여기서는 생략
                 Log.d("MyPageFragment", "Profile edit completed")
             }
         }
@@ -85,7 +85,7 @@ class MyPageFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         Log.d("MyPageFragment", "📱 onResume - refreshing profile")
-        // ✅ 화면이 보일 때마다 프로필 새로고침
+        // 화면이 보일 때마다 프로필 새로고침
         loadMyPage()
         updateNotificationIcon()
     }
@@ -137,8 +137,8 @@ class MyPageFragment : Fragment() {
                         Log.d("MyPageFragment", "✅ Profile loaded: ${data.nickname}, imageUrl=${data.profileImageViewUrl?.take(50)}")
                         bindMyPage(data)
                         saveUserPrefs(data)
-                        // ✅ 이번 달 사진 총 개수 계산
-                        loadMonthlyPhotoCount()
+                        // 서버가 이미 계산해서 내려주는 이번 달 촬영 수를 그대로 사용
+                        setupUsageText(data.thisMonthDay4CutCount)
                     } else {
                         Log.e("MyPageFragment", "❌ Failed to load profile")
                         Toast.makeText(requireContext(), "정보를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
@@ -167,7 +167,7 @@ class MyPageFragment : Fragment() {
             .circleCrop()
             .into(binding.ivProfile)
 
-        // ✅ 통계 카드(날짜/이번 달 개수/삽화)는 loadMonthlyPhotoCount 완료 후 setupUsageText에서 한 번에 표시
+        // 통계 카드(날짜/이번 달 개수/삽화)는 loadMyPage()에서 서버 값을 받은 직후 setupUsageText에서 한 번에 표시
     }
 
     private fun saveUserPrefs(data: UserMeResponse) {
@@ -300,9 +300,6 @@ class MyPageFragment : Fragment() {
         // FCM 토큰 캐시 삭제
         requireContext().getSharedPreferences("my4cut_prefs", Context.MODE_PRIVATE)
             .edit().clear().apply()
-        // 포즈 북마크 삭제
-        requireContext().getSharedPreferences("pose_bookmarks", Context.MODE_PRIVATE)
-            .edit().clear().apply()
         // 홈 튜토리얼 노출 여부 삭제 (다음 계정 최초 진입 시 다시 보이도록)
         requireContext().getSharedPreferences("home_tutorial", Context.MODE_PRIVATE)
             .edit().clear().apply()
@@ -319,75 +316,6 @@ class MyPageFragment : Fragment() {
         unregisterNotificationReceiver()
         super.onDestroyView()
         _binding = null
-    }
-
-    /**
-     * ✅ 이번 달 사진 총 개수 계산 (각 날짜별 상세 조회)
-     */
-    private fun loadMonthlyPhotoCount() {
-        val now = java.time.LocalDate.now()
-        val year = now.year
-        val month = now.monthValue
-
-        Log.d("MyPageFragment", "📊 Loading monthly photo count for $year-$month")
-
-        Thread {
-            try {
-                kotlinx.coroutines.runBlocking {
-                    // 1. GET /day4cut/calendar - 기록된 날짜 목록 가져오기
-                    val calendarResponse = RetrofitClient.day4CutService.getCalendarStatus(year, month)
-
-                    if (calendarResponse.code == "C2001" && calendarResponse.data != null) {
-                        val recordedDates = calendarResponse.data.dates
-
-                        if (recordedDates.isEmpty()) {
-                            Log.d("MyPageFragment", "✅ No photos this month")
-                            updatePhotoCount(0)
-                            return@runBlocking
-                        }
-
-                        Log.d("MyPageFragment", "📅 Found ${recordedDates.size} recorded dates")
-
-                        // 2. 각 날짜별로 GET /day4cut?date=yyyy-MM-dd 호출
-                        var totalPhotoCount = 0
-
-                        for (dayItem in recordedDates) {
-                            val dateString = String.format("%04d-%02d-%02d", year, month, dayItem.day)
-
-                            try {
-                                val detailResponse = RetrofitClient.day4CutService.getDay4CutDetail(dateString)
-
-                                if (detailResponse.code == "C2001" && detailResponse.data != null) {
-                                    val photoCount = detailResponse.data.viewUrls?.size ?: 0
-                                    totalPhotoCount += photoCount
-                                    Log.d("MyPageFragment", "  📸 $dateString: $photoCount photos")
-                                }
-                            } catch (e: Exception) {
-                                Log.e("MyPageFragment", "❌ Failed to load $dateString", e)
-                            }
-                        }
-
-                        Log.d("MyPageFragment", "✅ Total photos this month: $totalPhotoCount")
-                        updatePhotoCount(totalPhotoCount)
-                    } else {
-                        Log.e("MyPageFragment", "❌ Failed to load calendar")
-                        updatePhotoCount(0)
-                    }
-                }
-
-            } catch (e: Exception) {
-                Log.e("MyPageFragment", "💥 Failed to calculate photo count", e)
-                updatePhotoCount(0)
-            }
-        }.start()
-    }
-
-    private fun updatePhotoCount(count: Int) {
-        requireActivity().runOnUiThread {
-            if (_binding != null) {
-                this@MyPageFragment.setupUsageText(count)
-            }
-        }
     }
 
     // FCM 수신 브로드캐스트 Receiver 등록

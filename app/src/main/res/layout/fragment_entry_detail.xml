@@ -313,7 +313,7 @@
                     <ImageView
                         android:id="@+id/iv_mood_select_1"
                         android:layout_width="0dp"
-                        android:layout_height="45dp"
+                        android:layout_height="0dp"
                         android:scaleType="centerInside"
                         android:src="@drawable/img_mood_calm"
                         app:layout_constraintDimensionRatio="1:1"
@@ -326,7 +326,7 @@
                     <ImageView
                         android:id="@+id/iv_mood_select_2"
                         android:layout_width="0dp"
-                        android:layout_height="45dp"
+                        android:layout_height="0dp"
                         android:scaleType="centerInside"
                         android:src="@drawable/img_mood_happy"
                         app:layout_constraintDimensionRatio="1:1"
@@ -338,7 +338,7 @@
                     <ImageView
                         android:id="@+id/iv_mood_select_3"
                         android:layout_width="0dp"
-                        android:layout_height="45dp"
+                        android:layout_height="0dp"
                         android:scaleType="centerInside"
                         android:src="@drawable/img_mood_tired"
                         app:layout_constraintDimensionRatio="1:1"
@@ -350,7 +350,7 @@
                     <ImageView
                         android:id="@+id/iv_mood_select_4"
                         android:layout_width="0dp"
-                        android:layout_height="45dp"
+                        android:layout_height="0dp"
                         android:scaleType="centerInside"
                         android:src="@drawable/img_mood_angry"
                         app:layout_constraintDimensionRatio="1:1"
@@ -362,7 +362,7 @@
                     <ImageView
                         android:id="@+id/iv_mood_select_5"
                         android:layout_width="0dp"
-                        android:layout_height="45dp"
+                        android:layout_height="0dp"
                         android:scaleType="centerInside"
                         android:src="@drawable/img_mood_sad"
                         app:layout_constraintDimensionRatio="1:1"

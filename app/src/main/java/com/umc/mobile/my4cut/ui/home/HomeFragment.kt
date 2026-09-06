@@ -140,7 +140,8 @@ class HomeFragment : Fragment() {
                 mypageBadge = safeBinding.vMypageBadge,
                 poseCard = safeBinding.clPoseRecommend,
                 recordCard = safeBinding.cvContentBox,
-                recordCharacter = safeBinding.ivEmptyChar
+                recordCharacter = safeBinding.ivEmptyChar,
+                contentScrollView = safeBinding.nsvHome
             )
         }
     }
