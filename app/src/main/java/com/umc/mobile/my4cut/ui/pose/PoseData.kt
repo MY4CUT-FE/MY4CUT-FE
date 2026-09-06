@@ -7,5 +7,5 @@ data class PoseData(
     @SerializedName("title") val title: String,
     @SerializedName("viewUrl") val imageUrl: String,
     @SerializedName("peopleCount") val peopleCount: Int,
-    @SerializedName("isFavorite") var isFavorite: Boolean = false  // ✅ 서버에서 받아오기
+    @SerializedName("bookmarked") var isFavorite: Boolean = false  // 서버에서 받아오기
 )

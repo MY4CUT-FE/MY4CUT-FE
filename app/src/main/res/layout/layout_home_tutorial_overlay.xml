@@ -95,7 +95,7 @@
         android:lineSpacingExtra="2dp"
         tools:ignore="HardcodedText" />
 
-    <!-- 닫기 버튼: 화면 우측 하단, 다른 요소와 겹치지 않는 여백 확보 -->
+    <!-- 닫기 버튼: 네컷 기록 카드 바로 아래 딤 영역에 위치 (MainActivity에서 좌표 계산) -->
     <LinearLayout
         android:id="@+id/ll_tutorial_close"
         android:layout_width="wrap_content"

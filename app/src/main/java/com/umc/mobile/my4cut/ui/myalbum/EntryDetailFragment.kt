@@ -75,6 +75,7 @@ class EntryDetailFragment : Fragment() {
     private var originalEmojiType: String? = null
     private var typicalImageIndex: Int = 0
     private var heightFixListener: ViewTreeObserver.OnGlobalLayoutListener? = null
+    private var diaryHintText: CharSequence? = null
 
     private val pickMultipleMedia = registerForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(3)
@@ -98,6 +99,7 @@ class EntryDetailFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentEntryDetailBinding.inflate(inflater, container, false)
+        diaryHintText = binding.etDiary.hint
         return binding.root
     }
 
@@ -381,6 +383,10 @@ class EntryDetailFragment : Fragment() {
         binding.etDiary.isEnabled = isEditing
         binding.etDiary.isFocusable = isEditing
         binding.etDiary.isFocusableInTouchMode = isEditing
+
+        // 읽기 모드에서는 내용이 비어있어도 안내 힌트("오늘의 네컷을 기록해보세요.")가 뜨지 않도록 함
+        // (수정 모드에 진입할 때만 다시 안내 힌트를 보여준다)
+        binding.etDiary.hint = if (isEditing) diaryHintText else null
 
         // 읽기 모드: 선택된 이모지 하나만 / 수정 모드: 5개 이모지 선택 박스 (원래 선택값으로 채워서 시작)
         binding.ivMoodDisplay.visibility = if (isEditing) View.GONE else View.VISIBLE

@@ -66,7 +66,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun initClickListener() {
-        // [수정] 뒤로가기 버튼 삭제로 클릭 리스너 제거
 
         binding.btnSignup.setOnClickListener {
             startActivity(Intent(this, SignUpActivity::class.java))
@@ -108,6 +107,8 @@ class LoginActivity : AppCompatActivity() {
                                     } else {
                                         Toast.makeText(this@LoginActivity, "토큰 정보를 받아오지 못했습니다.", Toast.LENGTH_SHORT).show()
                                     }
+                                } else {
+                                    Toast.makeText(this@LoginActivity, resp?.message ?: "로그인에 실패했습니다.", Toast.LENGTH_SHORT).show()
                                 }
                             }
                             401 -> {
@@ -140,7 +141,6 @@ class LoginActivity : AppCompatActivity() {
         val color = ContextCompat.getColor(this, R.color.modal_red)
         binding.tvEmailError.compoundDrawables[0]?.setTint(color)
         binding.tvPwError.visibility = View.GONE
-        // [수정] 로그인 실패 시 토스트 메시지 표시
         Toast.makeText(this, "로그인 실패", Toast.LENGTH_SHORT).show()
     }
 
@@ -218,15 +218,32 @@ class LoginActivity : AppCompatActivity() {
                             if (tokenResult != null) {
                                 TokenManager.saveTokens(this@LoginActivity, tokenResult.accessToken, tokenResult.refreshToken)
                                 saveUserInfo(tokenResult.userId, "KAKAO")
-                                Toast.makeText(this@LoginActivity, "카카오 로그인 성공", Toast.LENGTH_SHORT).show()
-                                val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                startActivity(intent)
+                                // 이메일 로그인과 동일하게 탈퇴 계정 여부를 서버에서 재확인한 뒤 메인으로 이동
+                                // (성공 토스트·FCM 등록·화면 전환은 checkIfAccountIsActive()에서 일괄 처리)
+                                checkIfAccountIsActive()
                             } else {
                                 val intent = Intent(this@LoginActivity, SignUpActivity::class.java)
                                 intent.putExtra("loginType", "KAKAO")
                                 startActivity(intent)
                             }
+                        } else {
+                            Toast.makeText(this@LoginActivity, responseBody.message, Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        // 서버가 실패 응답(4xx/5xx)을 준 경우 — 이전에는 아무 처리 없이 조용히 무시되던 부분
+                        val errorBody = try { response.errorBody()?.string() } catch (e: Exception) { null }
+                        Log.e("KakaoLogin", "Server error: http=${response.code()}, body=$errorBody")
+
+                        val isWithdrawn = response.code() == 401 &&
+                            (errorBody?.contains("탈퇴") == true || errorBody?.contains("C4011") == true)
+
+                        if (isWithdrawn) {
+                            Toast.makeText(this@LoginActivity, "탈퇴한 계정입니다. 로그인할 수 없습니다.", Toast.LENGTH_LONG).show()
+                        } else {
+                            val serverMessage = try {
+                                errorBody?.let { com.google.gson.JsonParser.parseString(it).asJsonObject.get("message")?.asString }
+                            } catch (e: Exception) { null }
+                            Toast.makeText(this@LoginActivity, serverMessage ?: "카카오 로그인에 실패했습니다.", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }

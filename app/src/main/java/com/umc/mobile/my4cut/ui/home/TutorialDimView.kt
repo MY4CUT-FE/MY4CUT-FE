@@ -11,8 +11,8 @@ import android.util.AttributeSet
 import android.view.View
 
 /**
- * 반투명 딤 배경 위에 지정된 영역만 완전히 투명하게 뚫어(spotlight),
- * 그 영역의 실제 홈 화면 콘텐츠가 딤 없이 원래 밝기 그대로 보이도록 그리는 뷰.
+ * 반투명 딤 배경 위에 지정된 영역만 완전히 투명하게 뚫어,
+ * 그 영역의 실제 홈 화면 콘텐츠가 딤 없이 원래 밝기 그대로 보이도록 그리는 뷰로 구현함.
  */
 class TutorialDimView @JvmOverloads constructor(
     context: Context,

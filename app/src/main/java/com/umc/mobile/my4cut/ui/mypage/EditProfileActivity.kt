@@ -41,7 +41,6 @@ class EditProfileActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             if (uri != null) {
                 selectedImageUri = uri
-                // ✅ Glide 사용 (기존 코드와 동일)
                 com.bumptech.glide.Glide.with(this)
                     .load(uri)
                     .circleCrop()
@@ -131,7 +130,7 @@ class EditProfileActivity : AppCompatActivity() {
     }
 
     /**
-     * ✅ 프로필 이미지 업로드 (multipart/form-data로 직접 업로드)
+     *  프로필 이미지 업로드 (multipart/form-data로 직접 업로드)
      */
     private fun updateProfileImage(uri: Uri, onSuccess: () -> Unit) {
         lifecycleScope.launch {
@@ -281,7 +280,7 @@ class EditProfileActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     val intent = Intent().apply {
                         putExtra("nickname", nickname)
-                        // ✅ 프로필 이미지도 함께 전달
+                        // 프로필 이미지도 함께 전달
                         selectedImageUri?.let {
                             putExtra("profile_image", it.toString())
                         }

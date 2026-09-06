@@ -41,11 +41,6 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
-/**
- * 네컷 업로드 화면 튜토리얼(일기 작성 카드 강조)의 위치를 조정하는 값 모음.
- * 다른 화면 요소의 런타임 좌표를 읽어서 위치를 계산하기 때문에 Android Studio 미리보기에는
- * 나타나지 않습니다. 값을 바꾼 뒤 에뮬레이터/실기기에서 앱을 다시 실행해서 확인하세요.
- */
 private object EntryRegisterTutorialLayout {
     const val SCROLL_TOP_PADDING_DP = 110  // 일기 카드를 스크롤로 보여줄 때 위쪽에 남길 여백(안내 텍스트 공간)
 
@@ -66,7 +61,7 @@ class EntryRegisterActivity : AppCompatActivity() {
     private val selectedImageUris = mutableStateListOf<Uri>()
     private var isDiaryExpanded = false
 
-    // 💡 Calm 이모지의 값(1)을 기본값으로 선언합니다.
+    // Calm 이모지의 값(1)을 기본값으로 선언
     private var selectedMoodIndex = 1
 
     private val uploadedMediaIds = mutableListOf<Int>()
@@ -113,9 +108,9 @@ class EntryRegisterActivity : AppCompatActivity() {
     }
 
     /**
-     * 네컷 업로드 화면 최초 진입 시 1회만 표시되는 코치마크 튜토리얼.
+     * 네컷 업로드 화면 최초 진입 시 1회만 표시되는 튜토리얼.
      * 일기 작성 카드는 스크롤해야 보이는 위치에 있어서, 튜토리얼을 띄우기 전에 먼저
-     * NestedScrollView를 해당 위치까지 스크롤한 뒤 그 자리에 딤 구멍을 뚫는다.
+     * NestedScrollView를 해당 위치까지 스크롤한 뒤 그 자리에 딤 구멍을 뚫음.
      */
     private fun showEntryRegisterTutorialIfNeeded() {
         if (EntryRegisterTutorialPrefs.hasSeenTutorial(this)) return
@@ -269,9 +264,7 @@ class EntryRegisterActivity : AppCompatActivity() {
     }
 
     /**
-     * 이미지를 압축하여 파일 크기를 줄입니다
-     * @param uri 원본 이미지 URI
-     * @return 압축된 이미지 파일, 실패 시 null
+     * 이미지 압축
      */
     private fun compressImage(uri: Uri): File? {
         return try {
