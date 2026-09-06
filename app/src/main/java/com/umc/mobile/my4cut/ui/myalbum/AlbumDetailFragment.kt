@@ -218,7 +218,6 @@ class AlbumDetailFragment : Fragment() {
                         )
 
                         if (addRes.code == "A2006") {
-                            Log.d("ALBUM", "앨범에 사진 추가 성공!")
                             fetchAlbumDetail()
                         }
                     }
@@ -240,7 +239,7 @@ class AlbumDetailFragment : Fragment() {
             inputStream.close()
 
             if (originalBitmap == null) {
-                Log.e("ALBUM", "❌ Failed to decode bitmap from URL: $url")
+                Log.e("API_ERROR", "이미지 디코딩 실패: $url")
                 return null
             }
 
@@ -261,7 +260,7 @@ class AlbumDetailFragment : Fragment() {
 
             tempFile
         } catch (e: Exception) {
-            Log.e("API_ERROR", "❌ 이미지 다운로드/압축 실패: ${e.message}")
+            Log.e("API_ERROR", "이미지 다운로드/압축 실패: ${e.message}")
             null
         }
     }
@@ -287,7 +286,6 @@ class AlbumDetailFragment : Fragment() {
 
     // 서버가 오래된 순으로 반환하므로 reversed()로 최신순(새로 추가된 게 앞) 정렬
     private fun updateUI(newList: List<PhotoResponse>?) {
-        Log.d("ALBUM_DEBUG", "받아온 사진 개수: ${newList?.size ?: 0}")
         photoList.clear()
         newList?.let { photoList.addAll(it.reversed()) }
         detailAdapter.notifyDataSetChanged()
@@ -309,7 +307,6 @@ class AlbumDetailFragment : Fragment() {
                 if (!isEditMode) showSimplePhotoModal(viewUrl)
             },
             onDeleteClick = { photo, position ->
-                // TODO: PhotoResponse에 mediaId 필드명이 다르면 photo.mediaId 부분 수정 필요
                 pendingDeleteMediaIds.add(photo.mediaId)
                 photoList.removeAt(position)
                 detailAdapter.notifyItemRemoved(position)

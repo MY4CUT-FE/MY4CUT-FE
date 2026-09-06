@@ -3,7 +3,6 @@ package com.umc.mobile.my4cut.ui.myalbum
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -65,7 +64,6 @@ class GalleryPickerActivity : AppCompatActivity() {
         binding.btnUpload.setTextColor(ContextCompat.getColor(this, colorRes))
     }
 
-    // 홈/캘린더에서 Day4cut으로 저장한 네컷 사진을 전부 불러옴 (월별 API만 있어 달마다 순차 조회)
     private fun loadDay4CutPhotos() {
         val existingUrls = intent.getStringArrayListExtra(EXTRA_EXISTING_VIEW_URLS)?.toSet() ?: emptySet()
         binding.progressLoading.visibility = View.VISIBLE
@@ -119,7 +117,6 @@ class GalleryPickerActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("API_ERROR", "${yearMonth} 캘린더 조회 실패: ${e.message}")
                 consecutiveEmptyMonths++
             }
 

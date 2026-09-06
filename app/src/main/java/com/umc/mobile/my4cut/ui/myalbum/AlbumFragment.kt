@@ -27,7 +27,6 @@ class AlbumFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         binding = FragmentAlbumBinding.inflate(inflater, container, false)
-
         return binding.root
     }
 
@@ -37,15 +36,12 @@ class AlbumFragment : Fragment() {
         setupRecyclerView()
         fetchAlbumList()
 
-        // 상세 화면에서 수정/삭제/추가 작업이 있었다는 신호를 받으면 새로고침
         parentFragmentManager.setFragmentResultListener("album_changed", viewLifecycleOwner) { _, _ ->
             fetchAlbumList()
         }
 
-        // 아이콘뿐 아니라 원형 카드 전체(텍스트 포함) 어디를 눌러도 모달이 뜨도록 카드 자체에 연결
         binding.cvCreateAlbum.setOnClickListener { showCreateDialog() }
 
-        // 당겨서 새로고침
         binding.swipeRefresh.setOnRefreshListener {
             fetchAlbumList()
         }
@@ -56,13 +52,11 @@ class AlbumFragment : Fragment() {
         fetchAlbumList()
     }
 
-    // 부모(CalendarMainFragment)가 화면 재진입 시 직접 호출하는 새로고침 진입점.
     fun refresh() {
         if (!isAdded) return
         fetchAlbumList()
     }
 
-    // 앨범을 눌렀을 때, 상세 프래그먼트에 전달해주는 내용
     private fun setupRecyclerView() {
         albumAdapter = AlbumRVAdapter(albumList) { selected ->
             navigateToDetail(selected.id, selected.name)
@@ -71,7 +65,6 @@ class AlbumFragment : Fragment() {
         binding.rvAlbums.adapter = albumAdapter
     }
 
-    // [GET] 앨범 목록 조회
     private fun fetchAlbumList() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -80,7 +73,6 @@ class AlbumFragment : Fragment() {
                 response.data?.let { albumList.addAll(it) }
                 albumAdapter.notifyDataSetChanged()
 
-                // 앨범이 하나도 없을 때만 빈 상태 캐릭터+텍스트 표시
                 val emptyVisibility = if (albumList.isEmpty()) View.VISIBLE else View.GONE
                 binding.ivEmptyState.visibility = emptyVisibility
                 binding.tvEmptyState.visibility = emptyVisibility
@@ -92,14 +84,12 @@ class AlbumFragment : Fragment() {
         }
     }
 
-    // [POST] 앨범 생성
     private fun createNewAlbum(name: String) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response = RetrofitClient.albumService.createAlbum(AlbumNameRequest(name))
                 val newAlbum = response.data
                 if (newAlbum != null) {
-                    // 상세 화면으로 이동 (ID와 이름 전달)
                     navigateToDetail(newAlbum.id, newAlbum.name)
                 }
             } catch (e: Exception) {
@@ -121,20 +111,15 @@ class AlbumFragment : Fragment() {
 
             if (name.isNotEmpty()) {
                 createNewAlbum(name)
-
                 dialog.dismiss()
             }
         }
 
         dialogBinding.ivClose.setOnClickListener { dialog.dismiss() }
-
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
         dialog.show()
     }
 
-
-    // 앨범 생성 모달에서 다음 버튼을 눌렀을 때 전달해주는 내용
     private fun navigateToDetail(albumId: Int, title: String) {
         val fragment = AlbumDetailFragment().apply {
             arguments = Bundle().apply {

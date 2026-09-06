@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.util.AttributeSet
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -41,7 +40,6 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
     defStyleAttr: Int = 0,
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
-    private val TAG = this::class.simpleName
     private val binding: ViewCustomCalendar2Binding =
         ViewCustomCalendar2Binding.inflate(LayoutInflater.from(context), this, true)
 
@@ -57,7 +55,6 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
 
     // 외부(Fragment 등)에서 데이터를 설정할 수 있는 함수
     fun setDatesWithData(dataList: List<CalendarData>) {
-        Log.e("LOOP", "setDatesWithData() called")
         datesWithDataMap.clear()
         dataList.forEach { data ->
             datesWithDataMap[data.date] = data
@@ -94,7 +91,6 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
     }
 
     fun setDayLayout(layoutRes: Int) {
-        Log.e("LOOP", "setDayLayout() called")
         if (this.currentDayLayoutRes == layoutRes) return
         this.currentDayLayoutRes = layoutRes
 
@@ -116,7 +112,6 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
 
     private var didInitialScroll = false
     private fun setupCalendar() {
-        Log.e("LOOP", "setupCalendar() called")
         with(binding) {
             // 현재 연월 표시
             updateYearMonthText()
@@ -196,7 +191,6 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
             }
             // 달력 스크롤 시
             mcCustom.monthScrollListener = { month ->
-                Log.d(TAG, "## [스크롤 리스너] mouthScrollListener: $month")
                 currentMonth = month.yearMonth
                 updateYearMonthText()
             }
@@ -282,12 +276,6 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
                         }
                         data.position == DayPosition.MonthDate -> {
                             container.textView.setTextColor(Color.BLACK)
-                            // 현재 월에 속한 과거 또는 오늘 날짜는 요일에 따라 색상 설정
-//                            when (data.date.dayOfWeek) {
-//                                DayOfWeek.SUNDAY -> container.textView.setTextColor(Color.RED)
-//                                DayOfWeek.SATURDAY -> container.textView.setTextColor(Color.BLUE)
-//                                else -> container.textView.setTextColor(Color.BLACK)
-//                            }
                         }
                         else -> {
                             // 이전/다음 달의 날짜는 회색
@@ -352,7 +340,6 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
 }
 
 class DayViewContainer(view: View, layoutRes: Int) : ViewContainer(view) {
-    // binding을 먼저 선언해서 내부 뷰들을 가져옵니다.
     val textView: TextView
     val dayImage: ImageView?
     val dataDot: View?
@@ -368,7 +355,7 @@ class DayViewContainer(view: View, layoutRes: Int) : ViewContainer(view) {
         } else {
             val b = CalendarDayLayout2Binding.bind(view)
             textView = b.calendarDayText
-            dayImage = null // 일반 레이아웃에는 이미지가 없을 경우
+            dayImage = null
             dataDot = b.viewDataDot
             cardImage = null
         }
