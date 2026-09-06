@@ -142,12 +142,12 @@ fun PhotoUploadPager(
                 }
             }
 
-            // 인디케이터: 사진이 있을 때만 카드뷰 내부 하단 정중앙 오버레이
-            // 실제 페이지 개수(pageCount) 기준으로 표시 (사진 1장 → 2개, 2장 이상 → 3개)
-            if (photos.isNotEmpty()) {
+            // 인디케이터: 업로드된 사진 개수만큼만 점을 표시한다("+추가" 슬롯은 점에 포함하지 않음).
+            // 사진이 2장 이상일 때만 보여주고, 1장일 때는 표시하지 않는다.
+            if (photos.size >= 2) {
                 PhotoPageIndicator(
                     currentPage = pagerState.currentPage,
-                    pageCount = pageCount,
+                    pageCount = photos.size,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 14.dp)
@@ -343,11 +343,10 @@ private fun AddPhotoCard(
 // ─── 페이지 인디케이터 ─────────────────────────────────────────────────────────
 
 /**
- * 실제 페이저 페이지 개수(pageCount)만큼 점이 생성되는 인디케이터
+ * 업로드된 사진 개수(pageCount)만큼만 점이 생성되는 인디케이터 ("+추가" 슬롯은 점에 포함하지 않음)
  * - currentPage에 맞춰 해당 인덱스의 점이 활성화되어 스와이프 시 함께 움직임
- * - "추가" 슬롯 페이지에서는 그 페이지 자신의 점이 활성 상태가 됨
- *   (예: 사진 1장 → 점 2개[사진1, 추가], 사진 2장 → 점 3개[사진1, 사진2, 추가],
- *        사진 3장(최대치, 추가 슬롯 없음) → 점 3개[사진1, 사진2, 사진3])
+ * - "+추가" 슬롯 페이지로 넘어가면(현재 사진 개수를 벗어나면) 마지막 사진의 점이 활성 상태로 유지됨
+ *   (예: 사진 2장 → 점 2개, 사진 3장(최대치) → 점 3개, 사진 1장 → 표시 안 함)
  */
 @Composable
 private fun PhotoPageIndicator(

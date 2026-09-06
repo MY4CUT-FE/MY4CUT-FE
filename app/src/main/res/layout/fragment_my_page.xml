@@ -161,16 +161,15 @@
                     android:id="@+id/tv_today_date"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="24dp"
                     android:layout_marginTop="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:fontFamily="@font/suit_extrabold"
+                    android:layout_marginEnd="4dp"
+                    android:fontFamily="@font/suit_regular"
                     android:text="2026 January 2th"
                     android:textColor="#666666"
                     android:textSize="14sp"
                     app:layout_constrainedWidth="true"
                     app:layout_constraintEnd_toStartOf="@id/iv_stats_illustration"
-                    app:layout_constraintHorizontal_bias="0.0"
+                    app:layout_constraintHorizontal_bias="0.068"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
@@ -178,26 +177,36 @@
                     android:id="@+id/tv_count_info"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="24dp"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginEnd="8dp"
-                    android:fontFamily="@font/suit_bold"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginEnd="4dp"
+                    android:autoSizeMaxTextSize="19sp"
+                    android:autoSizeMinTextSize="10sp"
+                    android:autoSizeStepGranularity="1sp"
+                    android:autoSizeTextType="uniform"
+                    android:fontFamily="@font/suit_regular"
                     android:lineSpacingExtra="4dp"
+                    android:maxLines="2"
                     android:text="이번 달 11장의 네컷을\n찍었어요!"
                     android:textColor="#1A1A1A"
                     android:textSize="19sp"
                     app:layout_constrainedWidth="true"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/iv_stats_illustration"
+                    app:layout_constraintHorizontal_bias="0.125"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/tv_today_date"
-                    app:layout_constraintEnd_toStartOf="@id/iv_stats_illustration" />
+                    app:layout_constraintVertical_bias="0.0" />
 
                 <ImageView
                     android:id="@+id/iv_stats_illustration"
                     android:layout_width="100dp"
-                    android:layout_height="97dp"
+                    android:layout_height="98dp"
+                    android:layout_marginEnd="-6dp"
                     android:src="@drawable/img_mypage_squirrel"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" />
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintVertical_bias="1.0" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <LinearLayout

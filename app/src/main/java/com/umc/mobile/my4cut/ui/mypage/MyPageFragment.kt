@@ -1,6 +1,9 @@
 package com.umc.mobile.my4cut.ui.mypage
 
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import android.app.Activity.RESULT_OK
 import android.content.ClipData
@@ -9,7 +12,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
+import android.graphics.Typeface
+import android.text.TextPaint
+import android.text.style.MetricAffectingSpan
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import com.umc.mobile.my4cut.ui.home.HomeFragment
 import android.graphics.Color
 import android.os.Bundle
@@ -137,8 +144,9 @@ class MyPageFragment : Fragment() {
                         Log.d("MyPageFragment", "✅ Profile loaded: ${data.nickname}, imageUrl=${data.profileImageViewUrl?.take(50)}")
                         bindMyPage(data)
                         saveUserPrefs(data)
-                        // 서버가 이미 계산해서 내려주는 이번 달 촬영 수를 그대로 사용
-                        setupUsageText(data.thisMonthDay4CutCount)
+                        // thisMonthDay4CutCount는 "기록(하루) 개수"라 사진 장수와 다르다(하루에 최대 3장
+                        // 업로드 가능). "N장의 네컷"은 실제 업로드된 사진 장수를 의미하므로 별도 계산한다.
+                        loadMonthlyPhotoCount()
                     } else {
                         Log.e("MyPageFragment", "❌ Failed to load profile")
                         Toast.makeText(requireContext(), "정보를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
@@ -167,7 +175,8 @@ class MyPageFragment : Fragment() {
             .circleCrop()
             .into(binding.ivProfile)
 
-        // 통계 카드(날짜/이번 달 개수/삽화)는 loadMyPage()에서 서버 값을 받은 직후 setupUsageText에서 한 번에 표시
+        // 통계 카드(날짜/이번 달 개수/삽화)는 loadMyPage()에서 서버 값을 받은 직후 loadMonthlyPhotoCount()를
+        // 거쳐 setupUsageText에서 한 번에 표시
     }
 
     private fun saveUserPrefs(data: UserMeResponse) {
@@ -186,16 +195,73 @@ class MyPageFragment : Fragment() {
         clearSkeleton(binding.tvTodayDate)
         binding.tvTodayDate.text = today.format(formatter)
 
-        val fullText = "이번 달 ${count}장의 네컷을\n찍었어요!"
+        // 1행("이번 달 N장의 네컷을")은 기기/글자 크기와 무관하게 항상 한 줄로 붙어있어야 한다.
+        // 한글은 음절 사이에 공백이 없어도 줄바꿈이 일어날 수 있어서, 단순히 "\n"만 넣는 것만으로는
+        // 좁은 화면·큰 글자 설정에서 1행이 중간에 또 줄바꿈될 수 있다. WORD JOINER(U+2060)를 1행의
+        // 모든 글자 사이에 끼워 넣어 이 구간을 통째로 줄바꿈 불가능한 하나의 덩어리로 만들고,
+        // 줄바꿈은 오직 명시적인 "\n" 위치(1행 끝, "찍었어요!" 앞)에서만 일어나도록 한다.
+        val rawLine1 = "이번 달 ${count}장의 네컷을"
+        val countStr = count.toString()
+        val rawStart = rawLine1.indexOf(countStr)
+        val rawEnd = rawStart + countStr.length
+
+        val wordJoiner = "⁠" // WORD JOINER (zero-width, 줄바꿈 금지)
+        val line1 = rawLine1.toCharArray().joinToString(wordJoiner)
+        val fullText = "$line1\n찍었어요!"
+
+        // WORD JOINER 삽입으로 원래 인덱스가 2배로 늘어나므로(글자 사이마다 1글자씩 끼어듦) 매핑해서 계산
+        val start = rawStart * 2
+        val end = (rawEnd - 1) * 2 + 1
+
         val spannable = SpannableStringBuilder(fullText)
-        val start = fullText.indexOf(count.toString())
-        val end = start + count.toString().length
         spannable.setSpan(ForegroundColorSpan(Color.parseColor("#FF7E67")), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        // 장수 숫자만 Bold, 나머지는 XML 기본값(Regular)을 그대로 따름
+        val boldTypeface = ResourcesCompat.getFont(requireContext(), R.font.suit_bold)
+        if (boldTypeface != null) {
+            spannable.setSpan(CustomTypefaceSpan(boldTypeface), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
         clearSkeleton(binding.tvCountInfo)
         binding.tvCountInfo.text = spannable
 
         binding.ivStatsIllustration.background = null
         binding.ivStatsIllustration.setImageResource(R.drawable.img_mypage_squirrel)
+    }
+
+    /**
+     * 이번 달 업로드된 사진 총 장수를 계산한다. thisMonthDay4CutCount(서버 값)는 "기록(하루)
+     * 개수"라서 하루에 여러 장을 올린 경우와 안 맞기 때문에, 날짜별 상세를 조회해 실제 사진
+     * 장수(viewUrls 개수)를 합산한다.
+     */
+    private fun loadMonthlyPhotoCount() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val now = LocalDate.now()
+            val totalPhotoCount = try {
+                val calendarResponse = RetrofitClient.day4CutService.getCalendarStatus(now.year, now.monthValue)
+                val recordedDates = calendarResponse.data?.dates ?: emptyList()
+
+                coroutineScope {
+                    recordedDates.map { dayItem ->
+                        async {
+                            try {
+                                val dateString = String.format("%04d-%02d-%02d", now.year, now.monthValue, dayItem.day)
+                                val detailResponse = RetrofitClient.day4CutService.getDay4CutDetail(dateString)
+                                detailResponse.data?.viewUrls?.size ?: 0
+                            } catch (e: Exception) {
+                                Log.e("MyPageFragment", "❌ Failed to load photo count for day ${dayItem.day}", e)
+                                0
+                            }
+                        }
+                    }.awaitAll().sum()
+                }
+            } catch (e: Exception) {
+                Log.e("MyPageFragment", "💥 Failed to calculate monthly photo count", e)
+                0
+            }
+
+            if (_binding != null) {
+                setupUsageText(totalPhotoCount)
+            }
+        }
     }
 
     private fun initClickListener() {
@@ -353,5 +419,15 @@ class MyPageFragment : Fragment() {
                 binding.ivNotification.setImageResource(R.drawable.ic_noti_off)
             }
         }
+    }
+}
+
+/** SpannableString 안에서 일부 구간에만 커스텀 폰트(Typeface)를 적용하기 위한 Span */
+private class CustomTypefaceSpan(private val typeface: Typeface) : MetricAffectingSpan() {
+    override fun updateDrawState(ds: TextPaint) = apply(ds)
+    override fun updateMeasureState(paint: TextPaint) = apply(paint)
+
+    private fun apply(paint: TextPaint) {
+        paint.typeface = typeface
     }
 }
