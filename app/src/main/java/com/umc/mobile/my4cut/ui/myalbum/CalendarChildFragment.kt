@@ -26,7 +26,6 @@ class CalendarChildFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.myCalendar.setHeaderVisible(true)
 
-        // 마지막으로 보던 달이 기억되어 있으면 그 달로, 없으면(최초 진입) 기본 현재 달 그대로 사용
         val savedYear = lastViewedYear
         val savedMonth = lastViewedMonth
         if (savedYear != null && savedMonth != null) {
@@ -40,7 +39,6 @@ class CalendarChildFragment : Fragment() {
 
         setupClickListeners()
 
-        // 당겨서 새로고침
         binding.swipeRefresh.setOnRefreshListener {
             val currentYear = binding.myCalendar.getCurrentYear()
             val currentMonth = binding.myCalendar.getCurrentMonth()
@@ -58,11 +56,7 @@ class CalendarChildFragment : Fragment() {
     private fun fetchCalendarData(year: Int, month: Int) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                Log.d("CalendarChild", "Fetching calendar data: $year-$month")
-
                 val response = RetrofitClient.day4CutService.getCalendarStatus(year, month)
-
-                Log.d("CalendarChild", "Response: code=${response.code}, message=${response.message}")
 
                 if (response.code == "C2001") {
                     val calendarDataList = response.data?.dates?.map { item ->
@@ -72,8 +66,6 @@ class CalendarChildFragment : Fragment() {
                             memo = ""
                         )
                     } ?: emptyList()
-
-                    Log.d("CalendarChild", "Calendar data loaded: ${calendarDataList.size} days with records")
 
                     binding.myCalendar.setDatesWithData(calendarDataList)
                 } else {
@@ -88,11 +80,9 @@ class CalendarChildFragment : Fragment() {
     }
 
     private fun setupClickListeners() {
-        // Upload button click
         binding.myCalendar.setOnUploadClickListener {
             val intent = Intent(requireContext(), CalendarPickerActivity::class.java)
 
-            // Pass current year and month to CalendarPickerActivity
             val year = binding.myCalendar.getCurrentYear()
             val month = binding.myCalendar.getCurrentMonth()
 
@@ -102,18 +92,14 @@ class CalendarChildFragment : Fragment() {
             startActivity(intent)
         }
 
-        // Month change listener
         binding.myCalendar.setOnMonthChangeListener { year, month ->
-            // 사용자가 달을 넘길 때마다 마지막으로 보던 달을 기억해둠
             lastViewedYear = year
             lastViewedMonth = month
             fetchCalendarData(year, month)
         }
 
-        // Date selection listener
         binding.myCalendar.setOnDateSelectedListener { dateText, data ->
             if (data != null) {
-                // 상세 화면으로 넘어가는 시점의 달도 기억해둠 (달을 안 넘기고 바로 클릭한 경우 대비)
                 lastViewedYear = binding.myCalendar.getCurrentYear()
                 lastViewedMonth = binding.myCalendar.getCurrentMonth()
 
@@ -124,7 +110,6 @@ class CalendarChildFragment : Fragment() {
                     }
                 }
 
-                // ✅ 백스택에 추가하여 뒤로가기 가능하도록
                 requireActivity().supportFragmentManager.beginTransaction()
                     .replace(R.id.fcv_main, entryDetailFragment)
                     .addToBackStack(null)
@@ -134,7 +119,6 @@ class CalendarChildFragment : Fragment() {
     }
 
     companion object {
-        // 프래그먼트가 통째로 재생성돼도(뒤로가기 등) 유지되도록 companion object에 저장
         private var lastViewedYear: Int? = null
         private var lastViewedMonth: Int? = null
     }
