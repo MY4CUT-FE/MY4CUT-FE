@@ -54,7 +54,7 @@ class PoseRecommendFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initViews()
-        loadPosesFromServer() // ✅ 서버에서 데이터 로드
+        loadPosesFromServer() // 서버에서 데이터 로드
     }
 
     private fun initViews() {
@@ -78,7 +78,7 @@ class PoseRecommendFragment : Fragment() {
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 currentTabPosition = tab?.position ?: 0
-                loadPosesFromServer() // ✅ 탭 변경 시 서버에서 다시 로드
+                loadPosesFromServer() // 탭 변경 시 서버에서 다시 로드
             }
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
@@ -103,7 +103,7 @@ class PoseRecommendFragment : Fragment() {
         }
     }
 
-    // ✅ 포즈 상세 모달
+    // 포즈 상세 모달
     private fun showPoseDetailDialog(pose: PoseData, position: Int) {
         val dialog = Dialog(requireContext())
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
@@ -129,7 +129,9 @@ class PoseRecommendFragment : Fragment() {
         updateDialogStar(dialogBinding, pose.isFavorite)
 
         dialogBinding.ivDialogStar.setOnClickListener {
-            toggleBookmark(pose, position)
+            toggleBookmark(pose, position) { finalState ->
+                updateDialogStar(dialogBinding, finalState)
+            }
             updateDialogStar(dialogBinding, pose.isFavorite)
         }
 
@@ -150,7 +152,7 @@ class PoseRecommendFragment : Fragment() {
         }
     }
 
-    // ✅ 서버에서 포즈 목록 로드
+    // 서버에서 포즈 목록 로드
     private fun loadPosesFromServer() {
         val peopleCount = if (currentTabPosition == 0) null else currentTabPosition
         val sort = if (isFavoriteFilterOn) "bookmark" else null
@@ -173,19 +175,11 @@ class PoseRecommendFragment : Fragment() {
                             allPoseList.clear()
                             allPoseList.addAll(poseList)
 
-                            // ✅ 로컬 즐겨찾기 상태 적용
-                            allPoseList.forEach { pose ->
-                                pose.isFavorite = BookmarkManager.isBookmarked(requireContext(), pose.poseId)
-                            }
-
-                            // ✅ 즐겨찾기순 정렬 (클라이언트에서 처리) - 즐겨찾기한 포즈를 우선순위로, 나머지도 함께 표시
-                            val filteredList = if (sort == "bookmark") {
-                                allPoseList.sortedByDescending { it.isFavorite }
-                            } else {
-                                allPoseList
-                            }
-
-                            poseAdapter.updateData(filteredList)
+                            // 정렬은 서버가 sort=bookmark 파라미터로 이미 처리해서 내려주므로 그대로 신뢰한다.
+                            // (예전에는 클라이언트에서 sortedByDescending으로 다시 정렬했는데, 그러면 어댑터가
+                            // 넘기는 position과 allPoseList의 실제 인덱스가 어긋나 즐겨찾기 토글 시 엉뚱한
+                            // 포즈의 상태가 바뀌는 버그가 있었다)
+                            poseAdapter.updateData(allPoseList)
                         } else {
                             Log.e("PoseRecommend", "❌ Data is null")
                             Toast.makeText(requireContext(), "데이터를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
@@ -206,23 +200,21 @@ class PoseRecommendFragment : Fragment() {
             })
     }
 
-    // ✅ 즐겨찾기 토글
-    private fun toggleBookmark(pose: PoseData, position: Int) {
+    // 즐겨찾기 토글
+    private fun toggleBookmark(pose: PoseData, position: Int, onResult: ((Boolean) -> Unit)? = null) {
         if (pose.isFavorite) {
-            removeBookmark(pose.poseId, position)
+            removeBookmark(pose.poseId, position, onResult)
         } else {
-            addBookmark(pose.poseId, position)
+            addBookmark(pose.poseId, position, onResult)
         }
     }
 
-    // ✅ 즐겨찾기 등록 (로컬 우선)
-    private fun addBookmark(poseId: Int, position: Int) {
+    // 즐겨찾기 등록 (서버가 단일 소스 오브 트루스 - 화면은 낙관적으로 먼저 바꾸고, 실패하면 되돌림)
+    private fun addBookmark(poseId: Int, position: Int, onResult: ((Boolean) -> Unit)? = null) {
         Log.d("PoseRecommend", "📤 Adding bookmark for poseId: $poseId")
 
         allPoseList[position].isFavorite = true
         poseAdapter.updateItem(position, true)
-        BookmarkManager.addBookmark(requireContext(), poseId)
-        Toast.makeText(requireContext(), "즐겨찾기에 추가되었습니다.", Toast.LENGTH_SHORT).show()
 
         RetrofitClient.poseService.addBookmark(poseId)
             .enqueue(object : Callback<BaseResponse<Any>> {
@@ -230,27 +222,38 @@ class PoseRecommendFragment : Fragment() {
                     call: Call<BaseResponse<Any>>,
                     response: Response<BaseResponse<Any>>
                 ) {
+                    if (_binding == null) return
                     if (response.isSuccessful) {
                         Log.d("PoseRecommend", "✅ Bookmark synced to server")
+                        Toast.makeText(requireContext(), "즐겨찾기에 추가되었습니다.", Toast.LENGTH_SHORT).show()
+                        onResult?.invoke(true)
                     } else {
-                        Log.e("PoseRecommend", "⚠️ Server sync failed (${response.code()}), but local state saved")
+                        val errorBody = try { response.errorBody()?.string() } catch (e: Exception) { null }
+                        Log.e("PoseRecommend", "❌ Server sync failed (${response.code()}), body=$errorBody, reverting")
+                        allPoseList[position].isFavorite = false
+                        poseAdapter.updateItem(position, false)
+                        Toast.makeText(requireContext(), "즐겨찾기 등록에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                        onResult?.invoke(false)
                     }
                 }
 
                 override fun onFailure(call: Call<BaseResponse<Any>>, t: Throwable) {
-                    Log.e("PoseRecommend", "⚠️ Network error, but local state saved", t)
+                    Log.e("PoseRecommend", "❌ Network error, reverting", t)
+                    if (_binding == null) return
+                    allPoseList[position].isFavorite = false
+                    poseAdapter.updateItem(position, false)
+                    Toast.makeText(requireContext(), "네트워크 오류로 즐겨찾기에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                    onResult?.invoke(false)
                 }
             })
     }
 
-    // ✅ 즐겨찾기 해제 (로컬 우선)
-    private fun removeBookmark(poseId: Int, position: Int) {
+    // 즐겨찾기 해제 (서버가 단일 소스 오브 트루스 - 화면은 낙관적으로 먼저 바꾸고, 실패하면 되돌림)
+    private fun removeBookmark(poseId: Int, position: Int, onResult: ((Boolean) -> Unit)? = null) {
         Log.d("PoseRecommend", "📤 Removing bookmark for poseId: $poseId")
 
         allPoseList[position].isFavorite = false
         poseAdapter.updateItem(position, false)
-        BookmarkManager.removeBookmark(requireContext(), poseId)
-        Toast.makeText(requireContext(), "즐겨찾기가 해제되었습니다.", Toast.LENGTH_SHORT).show()
 
         RetrofitClient.poseService.removeBookmark(poseId)
             .enqueue(object : Callback<BaseResponse<Any>> {
@@ -258,15 +261,28 @@ class PoseRecommendFragment : Fragment() {
                     call: Call<BaseResponse<Any>>,
                     response: Response<BaseResponse<Any>>
                 ) {
+                    if (_binding == null) return
                     if (response.isSuccessful) {
                         Log.d("PoseRecommend", "✅ Bookmark removal synced to server")
+                        Toast.makeText(requireContext(), "즐겨찾기가 해제되었습니다.", Toast.LENGTH_SHORT).show()
+                        onResult?.invoke(true)
                     } else {
-                        Log.e("PoseRecommend", "⚠️ Server sync failed (${response.code()}), but local state saved")
+                        val errorBody = try { response.errorBody()?.string() } catch (e: Exception) { null }
+                        Log.e("PoseRecommend", "❌ Server sync failed (${response.code()}), body=$errorBody, reverting")
+                        allPoseList[position].isFavorite = true
+                        poseAdapter.updateItem(position, true)
+                        Toast.makeText(requireContext(), "즐겨찾기 해제에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                        onResult?.invoke(true)
                     }
                 }
 
                 override fun onFailure(call: Call<BaseResponse<Any>>, t: Throwable) {
-                    Log.e("PoseRecommend", "⚠️ Network error, but local state saved", t)
+                    Log.e("PoseRecommend", "❌ Network error, reverting", t)
+                    if (_binding == null) return
+                    allPoseList[position].isFavorite = true
+                    poseAdapter.updateItem(position, true)
+                    Toast.makeText(requireContext(), "네트워크 오류로 즐겨찾기 해제에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                    onResult?.invoke(true)
                 }
             })
     }

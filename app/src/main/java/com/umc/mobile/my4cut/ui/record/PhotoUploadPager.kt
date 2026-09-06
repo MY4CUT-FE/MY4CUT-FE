@@ -61,13 +61,6 @@ private val CoralColor = Color(0xFFFF7E67)
 
 private const val MAX_PHOTO_COUNT = 3
 
-/**
- * 네컷 업로드 페이저
- * - 사진 없음: EmptyCard(page 0) + AddCard(page 1) → 우측에 + 카드뷰 peek
- * - 사진 있음(최대치 미만): PhotoCards + AddCard(마지막)
- * - 사진 있음(최대치=3장): PhotoCards만 (추가 슬롯 없음)
- * - 인디케이터는 실제 페이지 개수(pageCount)만큼 표시
- */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PhotoUploadPager(
@@ -96,14 +89,12 @@ fun PhotoUploadPager(
         Box {
             HorizontalPager(
                 state = pagerState,
-                // 60dp: 양옆 카드뷰가 더 많이 peek되어 슬라이더블 느낌 강조
                 contentPadding = PaddingValues(horizontal = 60.dp),
                 pageSpacing = 12.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(370.dp)
             ) { page ->
-                // 비중앙 카드 85% 축소, 중앙 카드 100% 원본 크기
                 val pageOffset = ((pagerState.currentPage - page) +
                         pagerState.currentPageOffsetFraction).absoluteValue
                 val scale = lerp(
