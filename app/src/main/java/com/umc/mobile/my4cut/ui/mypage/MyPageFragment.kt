@@ -116,12 +116,12 @@ class MyPageFragment : Fragment() {
     private fun showMyPageLoadingState() {
         binding.ivProfile.setImageResource(R.drawable.img_profile_default)
 
-        // 닉네임/로그인방식 영역: F0F0F0
+        // 닉네임/로그인방식 영역
         applySkeleton(binding.tvNickname, 100, R.drawable.bg_skeleton_bar_light)
         applySkeleton(binding.tvLoginMethod, 70, R.drawable.bg_skeleton_bar_light)
         binding.llMyCode.visibility = View.INVISIBLE
 
-        // 통계 카드: 배경 F0F0F0, 내부 텍스트/원형 이미지는 D2D3D3
+        // 통계 카드
         binding.clStatsCard.setBackgroundResource(R.drawable.bg_stats_card_loading)
         applySkeleton(binding.tvTodayDate, 90, R.drawable.bg_skeleton_bar_dark)
         applySkeleton(binding.tvCountInfo, 140, R.drawable.bg_skeleton_bar_dark)
@@ -144,8 +144,6 @@ class MyPageFragment : Fragment() {
                         Log.d("MyPageFragment", "✅ Profile loaded: ${data.nickname}, imageUrl=${data.profileImageViewUrl?.take(50)}")
                         bindMyPage(data)
                         saveUserPrefs(data)
-                        // thisMonthDay4CutCount는 "기록(하루) 개수"라 사진 장수와 다르다(하루에 최대 3장
-                        // 업로드 가능). "N장의 네컷"은 실제 업로드된 사진 장수를 의미하므로 별도 계산한다.
                         loadMonthlyPhotoCount()
                     } else {
                         Log.e("MyPageFragment", "❌ Failed to load profile")
@@ -174,9 +172,6 @@ class MyPageFragment : Fragment() {
             .error(R.drawable.img_profile_default)
             .circleCrop()
             .into(binding.ivProfile)
-
-        // 통계 카드(날짜/이번 달 개수/삽화)는 loadMyPage()에서 서버 값을 받은 직후 loadMonthlyPhotoCount()를
-        // 거쳐 setupUsageText에서 한 번에 표시
     }
 
     private fun saveUserPrefs(data: UserMeResponse) {
@@ -195,11 +190,6 @@ class MyPageFragment : Fragment() {
         clearSkeleton(binding.tvTodayDate)
         binding.tvTodayDate.text = today.format(formatter)
 
-        // 1행("이번 달 N장의 네컷을")은 기기/글자 크기와 무관하게 항상 한 줄로 붙어있어야 한다.
-        // 한글은 음절 사이에 공백이 없어도 줄바꿈이 일어날 수 있어서, 단순히 "\n"만 넣는 것만으로는
-        // 좁은 화면·큰 글자 설정에서 1행이 중간에 또 줄바꿈될 수 있다. WORD JOINER(U+2060)를 1행의
-        // 모든 글자 사이에 끼워 넣어 이 구간을 통째로 줄바꿈 불가능한 하나의 덩어리로 만들고,
-        // 줄바꿈은 오직 명시적인 "\n" 위치(1행 끝, "찍었어요!" 앞)에서만 일어나도록 한다.
         val rawLine1 = "이번 달 ${count}장의 네컷을"
         val countStr = count.toString()
         val rawStart = rawLine1.indexOf(countStr)
@@ -209,13 +199,12 @@ class MyPageFragment : Fragment() {
         val line1 = rawLine1.toCharArray().joinToString(wordJoiner)
         val fullText = "$line1\n찍었어요!"
 
-        // WORD JOINER 삽입으로 원래 인덱스가 2배로 늘어나므로(글자 사이마다 1글자씩 끼어듦) 매핑해서 계산
         val start = rawStart * 2
         val end = (rawEnd - 1) * 2 + 1
 
         val spannable = SpannableStringBuilder(fullText)
         spannable.setSpan(ForegroundColorSpan(Color.parseColor("#FF7E67")), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-        // 장수 숫자만 Bold, 나머지는 XML 기본값(Regular)을 그대로 따름
+
         val boldTypeface = ResourcesCompat.getFont(requireContext(), R.font.suit_bold)
         if (boldTypeface != null) {
             spannable.setSpan(CustomTypefaceSpan(boldTypeface), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -227,11 +216,6 @@ class MyPageFragment : Fragment() {
         binding.ivStatsIllustration.setImageResource(R.drawable.img_mypage_squirrel)
     }
 
-    /**
-     * 이번 달 업로드된 사진 총 장수를 계산한다. thisMonthDay4CutCount(서버 값)는 "기록(하루)
-     * 개수"라서 하루에 여러 장을 올린 경우와 안 맞기 때문에, 날짜별 상세를 조회해 실제 사진
-     * 장수(viewUrls 개수)를 합산한다.
-     */
     private fun loadMonthlyPhotoCount() {
         viewLifecycleOwner.lifecycleScope.launch {
             val now = LocalDate.now()
@@ -350,7 +334,6 @@ class MyPageFragment : Fragment() {
     }
 
     private fun goToIntro() {
-        // 로그아웃·탈퇴 후 온보딩 화면으로 이동, 백스택 전체 제거
         val intent = Intent(requireContext(), OnboardingActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -378,7 +361,6 @@ class MyPageFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        // 메모리 누수 방지를 위해 등록한 Receiver 해제
         unregisterNotificationReceiver()
         super.onDestroyView()
         _binding = null
@@ -422,7 +404,7 @@ class MyPageFragment : Fragment() {
     }
 }
 
-/** SpannableString 안에서 일부 구간에만 커스텀 폰트(Typeface)를 적용하기 위한 Span */
+/** SpannableString 안에서 일부 구간에만 커스텀 폰트 적용하기 위한 Span */
 private class CustomTypefaceSpan(private val typeface: Typeface) : MetricAffectingSpan() {
     override fun updateDrawState(ds: TextPaint) = apply(ds)
     override fun updateMeasureState(paint: TextPaint) = apply(paint)

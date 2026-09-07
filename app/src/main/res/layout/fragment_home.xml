@@ -304,7 +304,7 @@
                                 android:src="@drawable/img_ex_photo"
                                 android:minHeight="350dp"/>
 
-                            <!-- [핵심] 일기+이모지 영역: content가 있을 때만 표시 -->
+                            <!-- 일기+이모지 영역: content가 있을 때만 표시 -->
                             <androidx.constraintlayout.widget.ConstraintLayout
                                 android:id="@+id/cl_diary_emoji_section"
                                 android:layout_width="match_parent"

@@ -62,7 +62,6 @@
         app:layout_constraintEnd_toEndOf="@id/ivMiniCal" />
 
     <!-- 년/월 선택 바텀시트를 여는 미니 달력 아이콘 -->
-    <!-- myCalendar 내부의 "< 2026년 8월 >" 월 이동 행과 수평이 되도록 myCalendar 위에 오버레이 배치 -->
     <ImageView
         android:id="@+id/ivMiniCal"
         android:layout_width="24dp"
@@ -75,11 +74,12 @@
 
     <TextView
         android:id="@+id/btnNext"
-        android:layout_width="353dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
+        android:layout_marginHorizontal="20dp"
         android:text="다음"
-        android:background="@drawable/bg_label_deep_pink"
+        android:background="@drawable/bg_btn_calendar_next"
         android:padding="15dp"
         android:textSize="14sp"
         android:textColor="#FFFFFF"
