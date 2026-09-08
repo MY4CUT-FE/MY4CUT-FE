@@ -27,13 +27,6 @@
         android:layout_height="0dp"
         android:background="@drawable/bg_dashed_highlight_radius_12" />
 
-    <!-- 댓글 영역 -->
-    <View
-        android:id="@+id/v_highlight_comment"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="@drawable/bg_dashed_highlight_radius_6" />
-
     <TextView
         android:id="@+id/tv_tutorial_save"
         android:layout_width="250dp"
@@ -68,24 +61,6 @@
         android:layout_width="33dp"
         android:layout_height="17dp"
         android:src="@drawable/ic_tutorial_arrow_detail_down"
-        android:scaleType="fitCenter" />
-
-    <TextView
-        android:id="@+id/tv_tutorial_comment"
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/suit_bold"
-        android:gravity="start"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
-        android:lineSpacingExtra="2dp"
-        tools:ignore="HardcodedText" />
-
-    <ImageView
-        android:id="@+id/iv_arrow_comment"
-        android:layout_width="33dp"
-        android:layout_height="24dp"
-        android:src="@drawable/ic_tutorial_arrow_detail_right"
         android:scaleType="fitCenter" />
 
     <LinearLayout

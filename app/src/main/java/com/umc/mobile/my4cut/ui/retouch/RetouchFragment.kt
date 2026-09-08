@@ -248,6 +248,7 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
     }
 
     private var tutorialView: View? = null
+    private var tutorialPage = 1
 
     private fun showRetouchMainTutorial() {
         if (tutorialView != null) return
@@ -262,12 +263,23 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
         )
 
         tutorialView = overlay
+        tutorialPage = 1
+
         root.addView(overlay)
+
+        overlay.setOnClickListener {
+            if (tutorialPage == 1) {
+                tutorialPage = 2
+                setupRetouchMainTutorial()
+            }
+        }
 
         overlay.findViewById<View>(
             R.id.ll_tutorial_close
         ).setOnClickListener {
-            completeRetouchMainTutorial()
+            if (tutorialPage == 2) {
+                completeRetouchMainTutorial()
+            }
         }
 
         overlay.post {
@@ -439,9 +451,35 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
                 baseAddFriendRect.bottom
             )
 
-        // Dim spotlight
+        // 이전 페이지의 spotlight 제거
         dimView.clearHighlights()
 
+        // 공통 텍스트 세팅
+        setupTutorialTexts(overlay)
+
+        if (tutorialPage == 1) {
+            setupRetouchTutorialPage1(
+                overlay = overlay,
+                dimView = dimView,
+                addSpaceRect = addSpaceRect,
+                addFriendRect = addFriendRect
+            )
+        } else {
+            setupRetouchTutorialPage2(
+                overlay = overlay,
+                dimView = dimView,
+                firstSpaceCard = firstSpaceCard
+            )
+        }
+    }
+
+    private fun setupRetouchTutorialPage1(
+        overlay: View,
+        dimView: TutorialDimView,
+        addSpaceRect: RectF,
+        addFriendRect: RectF
+    ) {
+        // 추가 버튼 Spotlight
         dimView.addHighlight(
             addSpaceRect,
             dp(6f)
@@ -452,7 +490,7 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
             dp(6f)
         )
 
-        // My Space 추가 점선
+        // 추가 버튼 하이라이트
         positionHighlight(
             overlay.findViewById(
                 R.id.v_highlight_add_space
@@ -460,7 +498,6 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
             addSpaceRect
         )
 
-        // Friends 추가 점선
         positionHighlight(
             overlay.findViewById(
                 R.id.v_highlight_add_friend
@@ -468,7 +505,18 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
             addFriendRect
         )
 
-        // 첫 번째 Space 카드
+        // 첫 번째 Space 카드 찾기
+        val rvMySpaces =
+            childFragmentManager.findFragmentById(
+                R.id.containerMySpace
+            )?.view?.findViewById<RecyclerView>(
+                R.id.rvMySpaces
+            )
+
+        val firstSpaceCard =
+            rvMySpaces?.findViewHolderForAdapterPosition(0)
+                ?.itemView
+
         if (firstSpaceCard != null) {
 
             val cardRect =
@@ -478,6 +526,7 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
                     dp(8f)
                 )
 
+            // 카드 Spotlight
             dimView.addHighlight(
                 cardRect,
                 dp(21f)
@@ -490,7 +539,177 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
                 cardRect
             )
 
-            setupSpaceCardTutorial(
+            // 참여 인원 설명 표시
+            val membersText =
+                overlay.findViewById<TextView>(
+                    R.id.tv_tutorial_members
+                )
+
+            val membersArrow =
+                overlay.findViewById<ImageView>(
+                    R.id.iv_arrow_members
+                )
+
+            membersText.visibility = View.VISIBLE
+            membersArrow.visibility = View.VISIBLE
+
+            positionView(
+                membersText,
+                cardRect.centerX() -
+                        membersText.width / 2f +
+                        dp(57f),
+                cardRect.bottom + dp(12f)
+            )
+
+            positionView(
+                membersArrow,
+                cardRect.left +
+                        cardRect.width() * 0.22f -
+                        membersArrow.width / 2f +
+                        dp(15f),
+                cardRect.bottom - dp(23f)
+            )
+
+        } else {
+
+            overlay.findViewById<View>(
+                R.id.v_highlight_space_card
+            ).visibility = View.GONE
+
+            overlay.findViewById<View>(
+                R.id.tv_tutorial_members
+            ).visibility = View.GONE
+
+            overlay.findViewById<View>(
+                R.id.iv_arrow_members
+            ).visibility = View.GONE
+        }
+
+        // 1페이지에서는 만료/소식 숨김
+        overlay.findViewById<View>(
+            R.id.tv_tutorial_expire
+        ).visibility = View.GONE
+
+        overlay.findViewById<View>(
+            R.id.iv_arrow_expire
+        ).visibility = View.GONE
+
+        overlay.findViewById<View>(
+            R.id.tv_tutorial_news
+        ).visibility = View.GONE
+
+        overlay.findViewById<View>(
+            R.id.iv_arrow_news
+        ).visibility = View.GONE
+
+        // 추가 관련 설명 표시
+        overlay.findViewById<View>(
+            R.id.tv_tutorial_create
+        ).visibility = View.VISIBLE
+
+        overlay.findViewById<View>(
+            R.id.iv_arrow_create
+        ).visibility = View.VISIBLE
+
+        overlay.findViewById<View>(
+            R.id.tv_tutorial_friend
+        ).visibility = View.VISIBLE
+
+        overlay.findViewById<View>(
+            R.id.iv_arrow_friend
+        ).visibility = View.VISIBLE
+
+        setupAddTutorial(
+            overlay,
+            addSpaceRect,
+            addFriendRect
+        )
+
+        // 첫 페이지는 닫기 없음
+        overlay.findViewById<View>(
+            R.id.ll_tutorial_close
+        ).visibility = View.GONE
+    }
+
+    private fun setupRetouchTutorialPage2(
+        overlay: View,
+        dimView: TutorialDimView,
+        firstSpaceCard: View?
+    ) {
+        // 1페이지 요소 숨기기
+        overlay.findViewById<View>(
+            R.id.v_highlight_add_space
+        ).visibility = View.GONE
+
+        overlay.findViewById<View>(
+            R.id.v_highlight_add_friend
+        ).visibility = View.GONE
+
+        overlay.findViewById<View>(
+            R.id.tv_tutorial_create
+        ).visibility = View.GONE
+
+        overlay.findViewById<View>(
+            R.id.iv_arrow_create
+        ).visibility = View.GONE
+
+        overlay.findViewById<View>(
+            R.id.tv_tutorial_friend
+        ).visibility = View.GONE
+
+        overlay.findViewById<View>(
+            R.id.iv_arrow_friend
+        ).visibility = View.GONE
+
+        // 2페이지에서는 참여 인원 숨김
+        overlay.findViewById<View>(
+            R.id.tv_tutorial_members
+        ).visibility = View.GONE
+
+        overlay.findViewById<View>(
+            R.id.iv_arrow_members
+        ).visibility = View.GONE
+
+        if (firstSpaceCard != null) {
+
+            val cardRect =
+                getRectInOverlay(
+                    firstSpaceCard,
+                    overlay,
+                    dp(8f)
+                )
+
+            // 카드 Spotlight
+            dimView.addHighlight(
+                cardRect,
+                dp(21f)
+            )
+
+            positionHighlight(
+                overlay.findViewById(
+                    R.id.v_highlight_space_card
+                ),
+                cardRect
+            )
+
+            // 만료/소식 표시
+            overlay.findViewById<View>(
+                R.id.tv_tutorial_expire
+            ).visibility = View.VISIBLE
+
+            overlay.findViewById<View>(
+                R.id.iv_arrow_expire
+            ).visibility = View.VISIBLE
+
+            overlay.findViewById<View>(
+                R.id.tv_tutorial_news
+            ).visibility = View.VISIBLE
+
+            overlay.findViewById<View>(
+                R.id.iv_arrow_news
+            ).visibility = View.VISIBLE
+
+            setupSpaceCardTutorialPage2(
                 overlay,
                 cardRect
             )
@@ -516,25 +735,74 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
             overlay.findViewById<View>(
                 R.id.iv_arrow_news
             ).visibility = View.GONE
-
-            overlay.findViewById<View>(
-                R.id.tv_tutorial_members
-            ).visibility = View.GONE
-
-            overlay.findViewById<View>(
-                R.id.iv_arrow_members
-            ).visibility = View.GONE
         }
 
-        // 추가 버튼 관련 설명 위치
-        setupAddTutorial(
-            overlay,
-            addSpaceRect,
-            addFriendRect
+        // 마지막 페이지에서만 닫기 표시
+        overlay.findViewById<View>(
+            R.id.ll_tutorial_close
+        ).visibility = View.VISIBLE
+    }
+
+    private fun setupSpaceCardTutorialPage2(
+        overlay: View,
+        cardRect: RectF
+    ) {
+        val expireText =
+            overlay.findViewById<TextView>(
+                R.id.tv_tutorial_expire
+            )
+
+        val expireArrow =
+            overlay.findViewById<ImageView>(
+                R.id.iv_arrow_expire
+            )
+
+        val newsText =
+            overlay.findViewById<TextView>(
+                R.id.tv_tutorial_news
+            )
+
+        val newsArrow =
+            overlay.findViewById<ImageView>(
+                R.id.iv_arrow_news
+            )
+
+        // 만료 설명 - 카드 위
+        positionView(
+            expireText,
+            cardRect.left + dp(3f),
+            cardRect.top -
+                    expireText.height -
+                    dp(13f)
         )
 
-        // 텍스트
-        setupTutorialTexts(overlay)
+        positionView(
+            expireArrow,
+            cardRect.left +
+                    cardRect.width() * 0.15f -
+                    expireArrow.width / 2f,
+            cardRect.top -
+                    expireArrow.height +
+                    dp(27f)
+        )
+
+        // 소식 설명 - 카드 바로 아래
+        positionView(
+            newsText,
+            cardRect.left +
+                    cardRect.width() / 3,
+            cardRect.bottom + dp(12f)
+        )
+
+        positionView(
+            newsArrow,
+            cardRect.left +
+                    cardRect.width() / 3 +
+                    dp(10f),
+            cardRect.centerY() +
+                    newsArrow.height / 3 -
+                    dp(10f)
+        )
     }
 
     private fun setupSpaceCardTutorial(
@@ -742,8 +1010,8 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
             overlay.findViewById(
                 R.id.tv_tutorial_news
             ),
-            "스페이스 소식을\n바로 확인해요.",
-            "소식을\n바로 확인"
+            "스페이스 소식을 바로 확인해요.",
+            "소식을 바로 확인"
         )
 
         setTutorialText(

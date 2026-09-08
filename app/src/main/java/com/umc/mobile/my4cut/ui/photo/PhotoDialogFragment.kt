@@ -1056,46 +1056,6 @@ class PhotoDialogFragment : DialogFragment() {
                 null
             }
 
-        val baseCommentIconRect =
-            getTutorialRect(
-                ivChat,
-                overlay
-            )
-
-        val baseCommentTextRect =
-            getTutorialRect(
-                tvChat,
-                overlay
-            )
-
-        val baseCommentRect =
-            getTutorialRect(
-                tvChat,
-                overlay
-            )
-
-        val commentRect = RectF(
-            minOf(
-                baseCommentIconRect.left,
-                baseCommentTextRect.left
-            ) - tutorialDp(7f),
-
-            minOf(
-                baseCommentIconRect.top,
-                baseCommentTextRect.top
-            ) - tutorialDp(2f),
-
-            maxOf(
-                baseCommentIconRect.right,
-                baseCommentTextRect.right
-            ) + tutorialDp(7f),
-
-            maxOf(
-                baseCommentIconRect.bottom,
-                baseCommentTextRect.bottom
-            ) + tutorialDp(2f)
-        )
-
         dimView.clearHighlights()
 
         dimView.addHighlight(
@@ -1109,11 +1069,6 @@ class PhotoDialogFragment : DialogFragment() {
                 it.height() / 2f
             )
         }
-
-        dimView.addHighlight(
-            commentRect,
-            21f
-        )
 
         positionTutorialHighlight(
             overlay.findViewById(
@@ -1136,18 +1091,10 @@ class PhotoDialogFragment : DialogFragment() {
             deleteHighlight.visibility = View.GONE
         }
 
-        positionTutorialHighlight(
-            overlay.findViewById(
-                R.id.v_highlight_comment
-            ),
-            commentRect
-        )
-
         setupRetouchDetailPositions(
             overlay,
             saveRect,
-            deleteRect,
-            commentRect
+            deleteRect
         )
 
         setupRetouchDetailTexts(
@@ -1158,8 +1105,7 @@ class PhotoDialogFragment : DialogFragment() {
     private fun setupRetouchDetailPositions(
         overlay: View,
         saveRect: RectF,
-        deleteRect: RectF?,
-        commentRect: RectF
+        deleteRect: RectF?
     ) {
         val saveText =
             overlay.findViewById<TextView>(
@@ -1179,16 +1125,6 @@ class PhotoDialogFragment : DialogFragment() {
         val deleteArrow =
             overlay.findViewById<ImageView>(
                 R.id.iv_arrow_delete
-            )
-
-        val commentText =
-            overlay.findViewById<TextView>(
-                R.id.tv_tutorial_comment
-            )
-
-        val commentArrow =
-            overlay.findViewById<ImageView>(
-                R.id.iv_arrow_comment
             )
 
         // 다운로드 설명
@@ -1236,23 +1172,6 @@ class PhotoDialogFragment : DialogFragment() {
             deleteText.visibility = View.GONE
             deleteArrow.visibility = View.GONE
         }
-
-        // 댓글 설명
-        positionTutorialView(
-            commentText,
-            commentRect.right -
-                    tutorialDp(29f),
-            commentRect.bottom +
-                    tutorialDp(6f)
-        )
-
-        positionTutorialView(
-            commentArrow,
-            commentRect.left +
-                    tutorialDp(4f),
-            commentRect.bottom +
-                    tutorialDp(2f)
-        )
     }
 
     private fun setupRetouchDetailTexts(
@@ -1272,14 +1191,6 @@ class PhotoDialogFragment : DialogFragment() {
             ),
             "내가 올린 사진은 언제든 삭제할 수 있어요.",
             "언제든 삭제"
-        )
-
-        setRetouchDetailText(
-            overlay.findViewById(
-                R.id.tv_tutorial_comment
-            ),
-            "댓글로 스페이스 친구와 소통해요.\n포토리의 TIP: 댓글에 SNS 업로드 시\n가리고 싶은 것을 말하거나 보정 순서를 정해보세요:)",
-            "포토리의 TIP:"
         )
     }
 
