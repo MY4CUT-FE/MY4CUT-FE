@@ -134,6 +134,9 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         binding.tvExpire.setBackgroundResource(R.drawable.bg_skeleton_text)
 
         val membersRecyclerView = view.findViewById<RecyclerView>(R.id.rvMembers)
+        membersRecyclerView.layoutParams = membersRecyclerView.layoutParams.apply {
+            width = 180.toDp()
+        }
         memberAdapter = MemberAdapter(memberItems)
         membersRecyclerView.adapter = memberAdapter
         membersRecyclerView.layoutManager = FlexboxLayoutManager(requireContext()).apply {
@@ -831,17 +834,25 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     ) : RecyclerView.Adapter<MemberAdapter.MemberViewHolder>() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MemberViewHolder {
-            val imageView = AppCompatImageView(parent.context).apply {
-                layoutParams = FlexboxLayoutManager.LayoutParams(27.toDp(), 27.toDp()).apply {
-                    val horizontal = 3.toDp()
-                    val vertical = 3.toDp()
-                    setMargins(horizontal, vertical, horizontal, vertical)
-                }
-                setImageResource(R.drawable.img_profile_default)
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                setPadding(0)
+            val itemView = layoutInflater.inflate(
+                R.layout.item_member_icon,
+                parent,
+                false
+            )
+
+            itemView.layoutParams = FlexboxLayoutManager.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                flexBasisPercent = 0.2f
+                flexGrow = 0f
+                flexShrink = 0f
+
+                val vertical = 3.toDp()
+                setMargins(0, vertical, 0, vertical)
             }
-            return MemberViewHolder(imageView)
+
+            return MemberViewHolder(itemView)
         }
 
         override fun onBindViewHolder(holder: MemberViewHolder, position: Int) {
@@ -851,8 +862,11 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         override fun getItemCount(): Int = items.size
 
         inner class MemberViewHolder(
-            private val imageView: AppCompatImageView
-        ) : RecyclerView.ViewHolder(imageView) {
+            itemView: View
+        ) : RecyclerView.ViewHolder(itemView) {
+
+            private val imageView: ImageView =
+                itemView.findViewById(R.id.ivMemberProfile)
 
             fun bind(item: MemberItem) {
                 if (item.profileImageUrl.isNullOrBlank()) {
