@@ -25,6 +25,8 @@ import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceUpdateRequestDto
 import com.umc.mobile.my4cut.databinding.DialogSpaceEditBinding
 import com.umc.mobile.my4cut.ui.friend.FriendsMode
+import java.text.Collator
+import java.util.Locale
 
 class EditSpaceDialogFragment : DialogFragment() {
 
@@ -210,8 +212,19 @@ class EditSpaceDialogFragment : DialogFragment() {
             originalMemberIds.contains(friend.friendId)
         }
 
-        val favorites = inviteAvailableFriends.filter { it.isFavorite }
-        val normals = inviteAvailableFriends.filter { !it.isFavorite }
+        val collator = Collator.getInstance(Locale.KOREAN)
+
+        val favorites = inviteAvailableFriends
+            .filter { it.isFavorite }
+            .sortedWith { a, b ->
+                collator.compare(a.nickname, b.nickname)
+            }
+
+        val normals = inviteAvailableFriends
+            .filter { !it.isFavorite }
+            .sortedWith { a, b ->
+                collator.compare(a.nickname, b.nickname)
+            }
 
         val uiItems = buildList<FriendUiItem> {
             favorites.forEach { add(FriendUiItem.Item(it)) }
