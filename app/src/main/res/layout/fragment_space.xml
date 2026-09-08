@@ -47,7 +47,7 @@
                 android:layout_width="16dp"
                 android:layout_height="15dp"
                 android:layout_marginStart="5dp"
-                android:src="@drawable/ic_change"
+                android:src="@drawable/ic_edit"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toEndOf="@id/tvTitle"
                 app:layout_constraintTop_toTopOf="parent" />
