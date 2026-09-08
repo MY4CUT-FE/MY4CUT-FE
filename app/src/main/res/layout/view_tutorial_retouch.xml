@@ -50,12 +50,12 @@
         android:src="@drawable/ic_tutorial_arrow_retouch_up"
         android:scaleType="fitCenter" />
 
-    <!-- 소식 → -->
+    <!-- 소식 ↓ -->
     <ImageView
         android:id="@+id/iv_arrow_news"
-        android:layout_width="42dp"
-        android:layout_height="12dp"
-        android:src="@drawable/ic_tutorial_arrow_retouch_right"
+        android:layout_width="8dp"
+        android:layout_height="92dp"
+        android:src="@drawable/ic_tutorial_arrow_retouch_down_long"
         android:scaleType="fitCenter" />
 
     <!-- 인원 ↓ -->
@@ -89,7 +89,7 @@
     <!-- 스페이스 만료 -->
     <TextView
         android:id="@+id/tv_tutorial_expire"
-        android:layout_width="300dp"
+        android:layout_width="350dp"
         android:layout_height="wrap_content"
         android:fontFamily="@font/suit_bold"
         android:gravity="start"
@@ -101,7 +101,7 @@
     <!-- 스페이스 소식 -->
     <TextView
         android:id="@+id/tv_tutorial_news"
-        android:layout_width="150dp"
+        android:layout_width="250dp"
         android:layout_height="wrap_content"
         android:fontFamily="@font/suit_bold"
         android:gravity="start"
@@ -152,6 +152,7 @@
             android:src="@drawable/close_tutorial" />
 
         <TextView
+            android:id="@+id/tv_tutorial_close"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
