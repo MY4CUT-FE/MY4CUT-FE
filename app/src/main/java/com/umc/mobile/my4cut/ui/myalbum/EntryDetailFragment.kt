@@ -310,6 +310,10 @@ class EntryDetailFragment : Fragment() {
             binding.vpPhotoSlider.setCurrentItem(imageItems.size, true)
         }
 
+        binding.btnDelete.setOnClickListener {
+            showDeleteRecordDialog()
+        }
+
         binding.btnCancel.setOnClickListener {
             imageItems.clear()
             imageItems.addAll(originalImageItems.map { it.copy() })
@@ -322,17 +326,41 @@ class EntryDetailFragment : Fragment() {
 
         binding.btnComplete.setOnClickListener {
             if (imageItems.isEmpty()) {
-                showDeleteConfirmDialog()
+                showDeleteRecordDialog()
             } else {
                 updateDay4Cut()
             }
         }
     }
 
+    private fun showDeleteRecordDialog() {
+        val dialogBinding = DialogExit2Binding.inflate(layoutInflater)
+        val builder = MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogBinding.root)
+        val dialog = builder.create()
+
+        dialog.setCanceledOnTouchOutside(true)
+
+        dialogBinding.tvMessage.text = "삭제한 네컷 기록은 다시 복구할 수 없어요."
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnExit.setOnClickListener {
+            dialog.dismiss()
+            deleteDay4Cut()
+        }
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.show()
+    }
+
     private fun setEditMode(isEditing: Boolean) {
         this.isEditMode = isEditing
 
         binding.btnEdit.visibility = if (isEditing) View.GONE else View.VISIBLE
+        binding.btnDelete.visibility = if (isEditing) View.GONE else View.VISIBLE
         binding.btnCancel.visibility = if (isEditing) View.VISIBLE else View.GONE
         binding.btnComplete.visibility = if (isEditing) View.VISIBLE else View.GONE
         binding.tvTextCount.visibility = if (isEditing) View.VISIBLE else View.GONE
@@ -677,17 +705,6 @@ class EntryDetailFragment : Fragment() {
                 }
             }
         }
-    }
-
-    private fun showDeleteConfirmDialog() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("기록 삭제")
-            .setMessage("모든 사진을 삭제하면 이 날짜의 기록이 모두 삭제됩니다. 계속하시겠습니까?")
-            .setPositiveButton("삭제") { _, _ ->
-                deleteDay4Cut()
-            }
-            .setNegativeButton("취소", null)
-            .show()
     }
 
     private fun deleteDay4Cut() {

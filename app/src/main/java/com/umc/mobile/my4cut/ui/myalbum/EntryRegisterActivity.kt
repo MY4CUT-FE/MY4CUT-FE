@@ -74,7 +74,7 @@ class EntryRegisterActivity : AppCompatActivity() {
     private var selectedMoodIndex = 1
 
     private val pickMultipleMedia = registerForActivityResult(
-        ActivityResultContracts.PickVisualMedia(3)
+        ActivityResultContracts.PickMultipleVisualMedia(3)
     ) { uris ->
         if (uris.isNotEmpty()) {
             if (selectedImageUris.size >= 3) {
