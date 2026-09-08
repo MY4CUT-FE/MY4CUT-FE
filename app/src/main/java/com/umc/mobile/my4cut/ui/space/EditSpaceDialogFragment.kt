@@ -25,6 +25,8 @@ import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceUpdateRequestDto
 import com.umc.mobile.my4cut.databinding.DialogSpaceEditBinding
 import com.umc.mobile.my4cut.ui.friend.FriendsMode
+import java.text.Collator
+import java.util.Locale
 
 class EditSpaceDialogFragment : DialogFragment() {
 
@@ -210,8 +212,19 @@ class EditSpaceDialogFragment : DialogFragment() {
             originalMemberIds.contains(friend.friendId)
         }
 
-        val favorites = inviteAvailableFriends.filter { it.isFavorite }
-        val normals = inviteAvailableFriends.filter { !it.isFavorite }
+        val collator = Collator.getInstance(Locale.KOREAN)
+
+        val favorites = inviteAvailableFriends
+            .filter { it.isFavorite }
+            .sortedWith { a, b ->
+                collator.compare(a.nickname, b.nickname)
+            }
+
+        val normals = inviteAvailableFriends
+            .filter { !it.isFavorite }
+            .sortedWith { a, b ->
+                collator.compare(a.nickname, b.nickname)
+            }
 
         val uiItems = buildList<FriendUiItem> {
             favorites.forEach { add(FriendUiItem.Item(it)) }
@@ -244,7 +257,13 @@ class EditSpaceDialogFragment : DialogFragment() {
                     )
                 }
 
-                Toast.makeText(requireContext(), "스페이스가 수정되었습니다", Toast.LENGTH_SHORT).show()
+                val message = if (inviteUserIds.isNotEmpty()) {
+                    "초대를 전송했어요."
+                } else {
+                    "스페이스를 수정했어요."
+                }
+
+                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
 
                 // 수정 완료 후 화면 갱신 콜백 호출
                 onEditCompleteListener?.invoke()
@@ -278,7 +297,7 @@ class EditSpaceDialogFragment : DialogFragment() {
                     else -> {
                         Toast.makeText(
                             requireContext(),
-                            "스페이스 수정에 실패했습니다",
+                            "스페이스 수정에 실패했습니다. 다시 시도해 주세요.",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -287,7 +306,7 @@ class EditSpaceDialogFragment : DialogFragment() {
                 Log.e("EditSpace", "스페이스 수정 실패", e)
                 Toast.makeText(
                     requireContext(),
-                    "스페이스 수정에 실패했습니다",
+                    "스페이스 수정에 실패했습니다. 다시 시도해 주세요.",
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -339,7 +358,7 @@ class EditSpaceDialogFragment : DialogFragment() {
                 }
             } catch (e: Exception) {
                 Log.e("EditSpace", "친구 목록 API 실패", e)
-                Toast.makeText(requireContext(), "친구 목록을 불러오지 못했습니다", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "친구 목록 불러오기에 실패했습니다. 다시 시도해 주세요", Toast.LENGTH_SHORT).show()
             }
         }
     }

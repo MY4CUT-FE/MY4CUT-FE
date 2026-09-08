@@ -69,10 +69,10 @@ class NotificationActivity : AppCompatActivity() {
                     RetrofitClient.notificationService.deleteAllNotifications()
                     binding.rvNotification.adapter = null
                     binding.btnMore.visibility = View.GONE
-                    Toast.makeText(this@NotificationActivity, "전체 삭제되었습니다.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@NotificationActivity, "알림을 전부 삭제헸어요.", Toast.LENGTH_SHORT).show()
                     dialog.dismiss()
                 } catch (e: Exception) {
-                    Toast.makeText(this@NotificationActivity, "전체 삭제 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@NotificationActivity, "알림 삭제에 실패했습니다. 다시 시도해주세요", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -209,7 +209,7 @@ class NotificationActivity : AppCompatActivity() {
                                             if (workspaceCount >= 4) {
                                                 Toast.makeText(
                                                     this@NotificationActivity,
-                                                    "최대 스페이스 개수를 넘어섰어요",
+                                                    "최대 스페이스 개수를 넘어섰어요.",
                                                     Toast.LENGTH_SHORT
                                                 ).show()
                                                 return@launch
@@ -219,7 +219,7 @@ class NotificationActivity : AppCompatActivity() {
                                             RetrofitClient.workspaceInvitationService.acceptInvitation(item.referenceId)
                                         }
                                     }
-                                    Toast.makeText(this@NotificationActivity, "수락 처리되었습니다.", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(this@NotificationActivity, "초대를 수락했어요.", Toast.LENGTH_SHORT).show()
                                     val index = uiList.indexOf(item)
                                     if (index != -1) {
                                         uiList.removeAt(index)
@@ -235,20 +235,20 @@ class NotificationActivity : AppCompatActivity() {
                                     ) {
                                         Toast.makeText(
                                             this@NotificationActivity,
-                                            "해당 스페이스 구성원이 꽉 찼어요",
+                                            "해당 스페이스 구성원이 꽉 찼어요.",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     } else {
                                         Toast.makeText(
                                             this@NotificationActivity,
-                                            "수락 실패: ${e.message()}",
+                                            "수락에 실패했어요. 다시 시도해 주세요.",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
                                 } catch (e: Exception) {
                                     Toast.makeText(
                                         this@NotificationActivity,
-                                        "수락 실패: ${e.message}",
+                                        "수락 실패했어요. 다시 시도해 주세요.",
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
@@ -266,7 +266,7 @@ class NotificationActivity : AppCompatActivity() {
                                             RetrofitClient.workspaceInvitationService.rejectInvitation(item.referenceId)
                                         }
                                     }
-                                    Toast.makeText(this@NotificationActivity, "거절 처리되었습니다.", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(this@NotificationActivity, "초대를 거절했어요.", Toast.LENGTH_SHORT).show()
                                     val index = uiList.indexOf(item)
                                     if (index != -1) {
                                         uiList.removeAt(index)
@@ -274,7 +274,7 @@ class NotificationActivity : AppCompatActivity() {
                                         binding.btnMore.visibility = View.VISIBLE
                                     }
                                 } catch (e: Exception) {
-                                    Toast.makeText(this@NotificationActivity, "거절 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(this@NotificationActivity, "거절에 실패했습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         },
@@ -289,7 +289,7 @@ class NotificationActivity : AppCompatActivity() {
                                         binding.btnMore.visibility = View.VISIBLE
                                     }
                                 } catch (e: Exception) {
-                                    Toast.makeText(this@NotificationActivity, "삭제 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(this@NotificationActivity, "알림 삭제에 실패했습니다. 다시 시도해 주세요", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         },
@@ -377,7 +377,7 @@ class NotificationActivity : AppCompatActivity() {
                                 }
                             } catch (e: Exception) {
                                 currentPage -= 1
-                                Toast.makeText(this@NotificationActivity, "알림을 더 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@NotificationActivity, "알림을 더 불러오지 못했습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
@@ -392,7 +392,7 @@ class NotificationActivity : AppCompatActivity() {
 
             } catch (e: Exception) {
                 Log.e("NotificationAPI", "error=" + e.message, e)
-                Toast.makeText(this@NotificationActivity, "네트워크 오류: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@NotificationActivity, "네트워크 연결 상태를 확인해주세요.", Toast.LENGTH_SHORT).show()
             }
         }
     }

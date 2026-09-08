@@ -224,7 +224,7 @@ class MySpaceAdapter(
             binding.tvExtraMemberCount.background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
                 setColor(cardColor)
-                setStroke(dpToPx(1), cardColor)
+                setStroke(dpToPx(1), Color.parseColor("#B3B3B3"))
             }
 
             val profileGroupWidthDp = when {
