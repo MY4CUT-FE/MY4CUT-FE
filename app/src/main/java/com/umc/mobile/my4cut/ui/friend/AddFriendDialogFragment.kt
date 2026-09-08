@@ -115,10 +115,10 @@ class AddFriendDialogFragment : DialogFragment() {
                     myFriendCode = me.friendCode
                     binding.tvMyCode.text = me.friendCode
                 } else {
-                    Toast.makeText(requireContext(), "내 코드를 불러오지 못했어요", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "내 코드를 불러오지 못했습니다. 다시 시도해 주세요.", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "내 코드를 불러오지 못했어요", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "내 코드를 불러오지 못했습니다. 다시 시도해 주세요.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -129,7 +129,7 @@ class AddFriendDialogFragment : DialogFragment() {
 
         // 자기 자신 코드 입력 방지
         if (inputCode == myFriendCode) {
-            Toast.makeText(requireContext(), "자기 자신은 친구신청할 수 없어요", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "자기 자신은 친구신청할 수 없어요.", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -160,7 +160,7 @@ class AddFriendDialogFragment : DialogFragment() {
             } catch (e: Exception) {
                 Toast.makeText(
                     requireContext(),
-                    "존재하지 않는 코드예요",
+                    "존재하지 않는 코드예요.",
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -197,7 +197,7 @@ class AddFriendDialogFragment : DialogFragment() {
                 val response = RetrofitClient.friendService.requestFriend(requestDto)
 
                 if (response.code.startsWith("C2")) {
-                    Toast.makeText(requireContext(), "친구 요청을 보냈어요", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "친구 요청을 보냈어요.", Toast.LENGTH_SHORT).show()
                     dismiss()
                 } else {
                     Toast.makeText(requireContext(), response.message, Toast.LENGTH_SHORT).show()
@@ -212,11 +212,11 @@ class AddFriendDialogFragment : DialogFragment() {
 
                     when {
                         code == "F4002" -> {
-                            "이미 친구 요청을 전송했어요"
+                            "이미 친구 요청을 전송했어요."
                         }
 
                         message.contains("이미 친구") -> {
-                            "이미 추가된 친구예요"
+                            "이미 추가된 친구예요."
                         }
 
                         message.isNotBlank() -> {
@@ -224,11 +224,11 @@ class AddFriendDialogFragment : DialogFragment() {
                         }
 
                         else -> {
-                            "친구 요청을 처리하지 못했어요"
+                            "친구 요청 전송에 실패했어요. 다시 시도해주세요. "
                         }
                     }
                 } catch (_: Exception) {
-                    "친구 요청을 처리하지 못했어요"
+                    "친구 요청 전송에 실패했어요. 다시 시도해주세요"
                 }
 
                 Toast.makeText(
@@ -240,7 +240,7 @@ class AddFriendDialogFragment : DialogFragment() {
             } catch (e: Exception) {
                 Toast.makeText(
                     requireContext(),
-                    "네트워크 연결을 확인해주세요",
+                    "네트워크 연결을 확인해주세요.",
                     Toast.LENGTH_SHORT
                 ).show()
             }

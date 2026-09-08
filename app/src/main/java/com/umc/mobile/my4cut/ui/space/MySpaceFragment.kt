@@ -135,7 +135,7 @@ class MySpaceFragment : Fragment() {
             if (spaces.size >= MAX_SPACE_COUNT) {
                 Toast.makeText(
                     requireContext(),
-                    "스페이스는 최대 4개까지 생성할 수 있어요",
+                    "스페이스는 최대 4개까지 생성할 수 있어요.",
                     Toast.LENGTH_SHORT
                 ).show()
                 return@setOnClickListener
