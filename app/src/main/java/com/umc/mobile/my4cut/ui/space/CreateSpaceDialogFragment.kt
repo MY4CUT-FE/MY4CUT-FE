@@ -27,6 +27,8 @@ import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
 import com.umc.mobile.my4cut.ui.friend.FriendsMode
 import com.umc.mobile.my4cut.ui.space.model.CreateSpaceResult
+import java.text.Collator
+import java.util.Locale
 
 class CreateSpaceDialogFragment : DialogFragment() {
 
@@ -150,7 +152,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
                     val currentCount = myWorkspaceResponse.data?.size ?: 0
 
                     if (currentCount >= 4) {
-                        Toast.makeText(requireContext(), "최대 스페이스 개수를 넘어섰어요", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "최대 스페이스 개수를 넘어섰어요.", Toast.LENGTH_SHORT).show()
                         return@launch
                     }
 
@@ -176,7 +178,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
                             )
                         )
 
-                        Toast.makeText(requireContext(), "초대가 전송되었습니다", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "초대를 전송했어요.", Toast.LENGTH_SHORT).show()
                     }
 
                     // 기존 콜백 유지 (UI 갱신용)
@@ -216,16 +218,16 @@ class CreateSpaceDialogFragment : DialogFragment() {
                         else -> {
                             Toast.makeText(
                                 requireContext(),
-                                "스페이스 생성 또는 초대에 실패했습니다",
+                                "스페이스 생성 또는 초대에 실패했습니다. 다시 시도해 주세요.",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e("CreateSpace", "스페이스 생성 또는 초대 실패 실패", e)
+                    Log.e("CreateSpace", "스페이스 생성 또는 초대 실패", e)
                     Toast.makeText(
                         requireContext(),
-                        "스페이스 생성 또는 초대 실패에 실패했습니다",
+                        "스페이스 생성 또는 초대 실패에 실패했습니다. 다시 시도해 주세요.",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -256,8 +258,19 @@ class CreateSpaceDialogFragment : DialogFragment() {
     }
 
     private fun buildFriendUiItems(): List<FriendUiItem> {
-        val favorites = friendList.filter { it.isFavorite }
-        val normals = friendList.filter { !it.isFavorite }
+        val collator = Collator.getInstance(Locale.KOREAN)
+
+        val favorites = friendList
+            .filter { it.isFavorite }
+            .sortedWith { a, b ->
+                collator.compare(a.nickname, b.nickname)
+            }
+
+        val normals = friendList
+            .filter { !it.isFavorite }
+            .sortedWith { a, b ->
+                collator.compare(a.nickname, b.nickname)
+            }
 
         return buildList {
             favorites.forEach { add(FriendUiItem.Item(it)) }

@@ -44,14 +44,14 @@ class DeleteFriendDialogFragment(
                     val response = RetrofitClient.friendService.deleteFriend(friendId)
 
                     if (response.code.startsWith("C2")) {
-                        Toast.makeText(requireContext(), "친구가 삭제되었어요", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "친구를 삭제했어요.", Toast.LENGTH_SHORT).show()
                         onConfirm()
                         dismiss()
                     } else {
                         Toast.makeText(requireContext(), response.message, Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
-                    Toast.makeText(requireContext(), "네트워크 오류가 발생했어요", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "네트워크 연결 상태를 확인해주세요.", Toast.LENGTH_SHORT).show()
                 }
             }
         }
