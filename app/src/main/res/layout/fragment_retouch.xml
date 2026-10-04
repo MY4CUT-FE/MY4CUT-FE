@@ -25,6 +25,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
+        <ImageView
+            android:id="@+id/ivSpaceInfo"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="5dp"
+            android:src="@drawable/ic_space_info"
+            android:contentDescription="스페이스 정보"
+            app:layout_constraintStart_toEndOf="@id/tvAppTitle"
+            app:layout_constraintTop_toTopOf="@id/tvAppTitle"
+            app:layout_constraintBottom_toBottomOf="@id/tvAppTitle" />
+
     <ImageView
         android:id="@+id/iv_mypage"
         android:layout_width="18dp"
