@@ -43,6 +43,8 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
     private val binding get() = _binding!!
 
     private lateinit var notificationLauncher: ActivityResultLauncher<Intent>
+    // info 버튼을 눌러 시작한 튜토리얼 다시보기인지 여부
+    private var isTutorialReplay = false
 
     // FCM 푸시가 도착하면 리터치 화면의 알림 아이콘도 즉시 갱신
     private val notificationReceiver = object : BroadcastReceiver() {
@@ -78,6 +80,10 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
                 ?.navigateToMyPage()
         }
 
+        binding.ivSpaceInfo.setOnClickListener {
+            startRetouchTutorialReplay()
+        }
+
         // 최초 로드
         loadChildFragments()
 
@@ -93,6 +99,27 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
             .replace(R.id.containerMySpace, MySpaceFragment())
             .replace(R.id.containerFriends, FriendsFragment())
             .commit()
+    }
+
+    private fun startRetouchTutorialReplay() {
+        isTutorialReplay = true
+
+        val mySpaceFragment =
+            childFragmentManager.findFragmentById(
+                R.id.containerMySpace
+            ) as? MySpaceFragment
+
+        val friendsFragment =
+            childFragmentManager.findFragmentById(
+                R.id.containerFriends
+            ) as? FriendsFragment
+
+        mySpaceFragment?.showTutorialData()
+        friendsFragment?.showTutorialData()
+
+        binding.root.post {
+            showRetouchMainTutorial()
+        }
     }
 
     override fun onResume() {
@@ -268,9 +295,17 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
         root.addView(overlay)
 
         overlay.setOnClickListener {
-            if (tutorialPage == 1) {
-                tutorialPage = 2
-                setupRetouchMainTutorial()
+            when (tutorialPage) {
+                1 -> {
+                    tutorialPage = 2
+                    setupRetouchMainTutorial()
+                }
+
+                2 -> {
+                    if (isTutorialReplay) {
+                        moveToTutorialSpace()
+                    }
+                }
             }
         }
 
@@ -737,10 +772,13 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
             ).visibility = View.GONE
         }
 
-        // 마지막 페이지에서만 닫기 표시
+        // 최초 튜토리얼에서는 닫기 표시
+        // info 다시보기에서는 화면 터치로 다음 단계 진행
         overlay.findViewById<View>(
             R.id.ll_tutorial_close
-        ).visibility = View.VISIBLE
+        ).visibility =
+            if (isTutorialReplay) View.GONE
+            else View.VISIBLE
     }
 
     private fun setupSpaceCardTutorialPage2(
@@ -1054,5 +1092,19 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
         }
 
         textView.text = spannable
+    }
+
+    private fun moveToTutorialSpace() {
+        hideRetouchMainTutorial()
+
+        requireActivity()
+            .supportFragmentManager
+            .beginTransaction()
+            .replace(
+                R.id.fcv_main,
+                com.umc.mobile.my4cut.ui.space.SpaceFragment.newTutorialInstance()
+            )
+            .addToBackStack("RetouchTutorial")
+            .commit()
     }
 }
