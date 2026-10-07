@@ -129,58 +129,72 @@ class PhotoRVAdapter(
             binding.tvDateTime.background = null
             binding.tvCommentCount.background = null
 
-            binding.ivComment.visibility = View.VISIBLE
+            if (photo.photoImageRes != null) {
+                // 튜토리얼처럼 로컬 drawable을 사용하는 사진
+                Glide.with(binding.ivPhoto)
+                    .clear(binding.ivPhoto)
 
-            binding.ivPhoto.setBackgroundResource(
-                R.drawable.bg_skeleton_img
-            )
-            binding.ivPhoto.setImageResource(
-                R.drawable.ic_skeleton_img
-            )
-            binding.ivPhoto.scaleType = ImageView.ScaleType.CENTER
+                binding.ivPhoto.background = null
+                binding.ivPhoto.scaleType =
+                    ImageView.ScaleType.CENTER_CROP
 
-            Glide.with(binding.ivPhoto.context)
-                .load(photo.photoUrl)
-                .placeholder(R.drawable.ic_skeleton_img)
-                .error(R.drawable.ic_skeleton_img)
-                .listener(object : RequestListener<Drawable> {
-                    override fun onLoadFailed(
-                        e: GlideException?,
-                        model: Any?,
-                        target: Target<Drawable>,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        binding.ivPhoto.scaleType = ImageView.ScaleType.CENTER
-                        binding.ivPhoto.setBackgroundResource(
-                            R.drawable.bg_skeleton_img
-                        )
-                        binding.ivPhoto.setImageResource(
-                            R.drawable.ic_skeleton_img
-                        )
-                        return true
-                    }
+                binding.ivPhoto.setImageResource(
+                    photo.photoImageRes
+                )
+            } else {
+                // 실제 서버 사진
+                binding.ivPhoto.setBackgroundResource(
+                    R.drawable.bg_skeleton_img
+                )
+                binding.ivPhoto.setImageResource(
+                    R.drawable.ic_skeleton_img
+                )
+                binding.ivPhoto.scaleType =
+                    ImageView.ScaleType.CENTER
 
-                    override fun onResourceReady(
-                        resource: Drawable,
-                        model: Any,
-                        target: Target<Drawable>?,
-                        dataSource: DataSource,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        binding.ivPhoto.background = null
-                        binding.ivPhoto.scaleType =
-                            ImageView.ScaleType.CENTER_CROP
-                        return false
-                    }
-                })
-                .into(binding.ivPhoto)
+                Glide.with(binding.ivPhoto.context)
+                    .load(photo.photoUrl)
+                    .placeholder(R.drawable.ic_skeleton_img)
+                    .error(R.drawable.ic_skeleton_img)
+                    .listener(object : RequestListener<Drawable> {
 
-            Glide.with(binding.ivUserIcon.context)
-                .load(photo.userProfileUrl)
-                .circleCrop()
-                .placeholder(com.umc.mobile.my4cut.R.drawable.img_profile_default)
-                .error(com.umc.mobile.my4cut.R.drawable.img_profile_default)
-                .into(binding.ivUserIcon)
+                        override fun onLoadFailed(
+                            e: GlideException?,
+                            model: Any?,
+                            target: Target<Drawable>,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            binding.ivPhoto.scaleType =
+                                ImageView.ScaleType.CENTER
+
+                            binding.ivPhoto.setBackgroundResource(
+                                R.drawable.bg_skeleton_img
+                            )
+
+                            binding.ivPhoto.setImageResource(
+                                R.drawable.ic_skeleton_img
+                            )
+
+                            return true
+                        }
+
+                        override fun onResourceReady(
+                            resource: Drawable,
+                            model: Any,
+                            target: Target<Drawable>?,
+                            dataSource: DataSource,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            binding.ivPhoto.background = null
+
+                            binding.ivPhoto.scaleType =
+                                ImageView.ScaleType.CENTER_CROP
+
+                            return false
+                        }
+                    })
+                    .into(binding.ivPhoto)
+            }
 
             binding.tvUserName.text = photo.userName
             binding.tvDateTime.text = formatAbsoluteDateTime(photo.dateTime)

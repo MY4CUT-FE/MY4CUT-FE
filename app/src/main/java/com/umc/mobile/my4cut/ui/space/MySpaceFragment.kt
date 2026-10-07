@@ -33,11 +33,15 @@ class MySpaceFragment : Fragment() {
     private lateinit var mySpaceAdapter: MySpaceAdapter
     private var currentPage = 0
 
+    private var isTutorialMode = false
+
     private val refreshHandler = Handler(Looper.getMainLooper())
     private val refreshRunnable = object : Runnable {
         override fun run() {
-            loadSpacesFromApi()
-            refreshHandler.postDelayed(this, 30_000)
+            if (!isTutorialMode) {
+                loadSpacesFromApi()
+                refreshHandler.postDelayed(this, 30_000)
+            }
         }
     }
 
@@ -58,6 +62,11 @@ class MySpaceFragment : Fragment() {
         setupFragmentResultListener()
 
         binding.swipeRefresh.setOnRefreshListener {
+            if (isTutorialMode) {
+                binding.swipeRefresh.isRefreshing = false
+                return@setOnRefreshListener
+            }
+
             loadSpacesFromApi()
         }
     }
@@ -65,10 +74,15 @@ class MySpaceFragment : Fragment() {
     override fun onStart() {
         super.onStart()
 
-        mySpaceAdapter.showSkeleton()
-        loadSpacesFromApi()
+        if (!isTutorialMode) {
+            mySpaceAdapter.showSkeleton()
+            loadSpacesFromApi()
 
-        refreshHandler.postDelayed(refreshRunnable, 30_000)
+            refreshHandler.postDelayed(
+                refreshRunnable,
+                30_000
+            )
+        }
     }
 
     override fun onStop() {
@@ -156,6 +170,8 @@ class MySpaceFragment : Fragment() {
     }
 
     private fun loadSpacesFromApi() {
+        if (isTutorialMode) return
+
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response =
@@ -231,6 +247,44 @@ class MySpaceFragment : Fragment() {
         }
     }
 
+    fun showTutorialData() {
+        isTutorialMode = true
+
+        refreshHandler.removeCallbacks(refreshRunnable)
+
+        spaces.clear()
+
+        val now = System.currentTimeMillis()
+
+        spaces.add(
+            Space(
+                id = TUTORIAL_SPACE_ID,
+                name = "포토리의 스페이스",
+                currentMember = 1,
+                maxMember = 10,
+                createdAt = now,
+                expiredAt = now + (7L * 24 * 60 * 60 * 1000),
+                memberProfileImageUrls = emptyList(),
+                recentActivityType = null,
+                recentActivityUserNickname = null,
+                recentActivityAt = null
+            )
+        )
+
+        binding.tvEmptyMySpace.visibility = View.GONE
+        binding.rvMySpaces.visibility = View.VISIBLE
+        binding.layoutSpaceIndicator.visibility = View.VISIBLE
+
+        currentPage = 0
+
+        mySpaceAdapter.hideSkeleton()
+        mySpaceAdapter.submitList(spaces.toList())
+
+        binding.rvMySpaces.scrollToPosition(0)
+
+        updateIndicator()
+    }
+
     private fun updateIndicator() {
         binding.layoutSpaceIndicator.removeAllViews()
 
@@ -263,12 +317,22 @@ class MySpaceFragment : Fragment() {
     }
 
     private fun moveToSpaceDetail(space: Space) {
+
+        val fragment =
+            if (isTutorialMode) {
+                SpaceFragment.newTutorialInstance()
+            } else {
+                SpaceFragment.newInstance(
+                    spaceId = space.id
+                )
+            }
+
         requireActivity()
             .supportFragmentManager
             .beginTransaction()
             .replace(
                 R.id.fcv_main,
-                SpaceFragment.newInstance(spaceId = space.id)
+                fragment
             )
             .addToBackStack("SpaceFragment")
             .commit()
@@ -291,5 +355,7 @@ class MySpaceFragment : Fragment() {
 
     companion object {
         private const val MAX_SPACE_COUNT = 4
+
+        private const val TUTORIAL_SPACE_ID = -100L
     }
 }

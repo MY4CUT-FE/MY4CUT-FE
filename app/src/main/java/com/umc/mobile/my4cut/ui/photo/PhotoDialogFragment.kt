@@ -86,6 +86,9 @@ class PhotoDialogFragment : DialogFragment() {
     private var myUserId: Long? = null
     private var myNickname: String? = null
 
+    // info 버튼으로 시작한 튜토리얼 다시보기인지 여부
+    private var isTutorialReplay = false
+
     /** 내 정보 조회해서 userId 가져오기 */
     private fun loadMyInfo() {
         lifecycleScope.launch {
@@ -119,6 +122,8 @@ class PhotoDialogFragment : DialogFragment() {
 
     /** 댓글 삭제 API 연결 */
     fun deleteComment(commentId: Long) {
+        if (isTutorialReplay) return
+
         if (workspaceId == -1L || photoId == -1L) {
             Log.e("PhotoDialog", "workspaceId 또는 photoId가 없음")
             return
@@ -196,6 +201,11 @@ class PhotoDialogFragment : DialogFragment() {
         photoId = arguments?.getLong("photoId") ?: -1L
         myUserId = arguments?.getLong("myUserId")
         uploaderId = arguments?.getLong("uploaderId")
+
+        isTutorialReplay =
+            arguments?.getBoolean(ARG_TUTORIAL_REPLAY, false)
+                ?: false
+
         Log.d("PhotoDialog", "arguments 전달값 -> uploaderId=$uploaderId, photoId=$photoId, workspaceId=$workspaceId")
         uploaderNickname = arguments?.getString("uploaderNickname")
         uploaderProfileUrl = arguments?.getString("uploaderProfileUrl")
@@ -206,9 +216,69 @@ class PhotoDialogFragment : DialogFragment() {
         bindUploaderInfo()
         initRecyclerView()
         initListeners()
-        loadMyInfo()   // 내 userId API로 조회 후 댓글/삭제버튼 반영
+
+        if (isTutorialReplay) {
+            setupTutorialDetailData()
+        } else {
+            loadMyInfo()
+        }
 
         return view
+    }
+
+    private fun setupTutorialDetailData() {
+        myUserId = TUTORIAL_USER_ID
+        myNickname = "포토리"
+
+        // 튜토리얼에서는 내가 올린 사진으로 설정해서
+        // 삭제 버튼도 함께 설명할 수 있게 함
+        uploaderId = TUTORIAL_USER_ID
+        uploaderNickname = "포토리"
+
+        tvUserName.text = "포토리"
+        tvDate.text = "2100/01/01 00:00"
+
+        ivProfile.setImageResource(
+            R.drawable.img_profile_default
+        )
+
+        // 실제 URL 대신 로컬 튜토리얼 이미지
+        ivMainPhoto.background = null
+        ivMainPhoto.scaleType =
+            ImageView.ScaleType.CENTER_CROP
+
+        ivMainPhoto.setImageResource(
+            R.drawable.img_tutorial_photo_sample
+        )
+
+        updateDeleteButtonVisibility()
+
+        val tutorialComments =
+            listOf(
+                CommentData(
+                    commentId = -101L,
+                    profileImgUrl = null,
+                    userName = "포토리",
+                    time = "2100/01/01 00:00",
+                    content = "이 사진으로 보정해 보면 좋을 것 같아!",
+                    isMine = true
+                ),
+                CommentData(
+                    commentId = -102L,
+                    profileImgUrl = null,
+                    userName = "도토리",
+                    time = "2100/01/01 00:00",
+                    content = "좋아! 이 사진이 제일 괜찮다",
+                    isMine = false
+                )
+            )
+
+        updateComments(tutorialComments)
+
+        // 모든 View가 배치된 다음 DETAIL 튜토리얼 강제 표시
+        view?.post {
+            showRetouchDetailTutorial()
+        }
     }
 
     override fun onDestroyView() {
@@ -569,6 +639,8 @@ class PhotoDialogFragment : DialogFragment() {
 
     /** 사진 삭제 API 연결 */
     private fun deletePhoto() {
+        if (isTutorialReplay) return
+
         if (workspaceId == -1L || photoId == -1L) {
             Log.e("PhotoDialog", "workspaceId 또는 photoId가 없음")
             return
@@ -597,6 +669,8 @@ class PhotoDialogFragment : DialogFragment() {
 
     /** 댓글 작성 API 연결 */
     private fun sendComment() {
+        if (isTutorialReplay) return
+
         val content = etComment.text.toString().trim()
         if (content.isEmpty()) return
 
@@ -624,6 +698,8 @@ class PhotoDialogFragment : DialogFragment() {
     }
 
     private fun downloadPhoto() {
+        if (isTutorialReplay) return
+
         val url = photoUrl
         if (url.isNullOrBlank()) {
             Toast.makeText(requireContext(), "다운로드할 사진이 없어요.", Toast.LENGTH_SHORT).show()
@@ -784,6 +860,11 @@ class PhotoDialogFragment : DialogFragment() {
 
         private const val ARG_PHOTO_URL = "photoUrl"
 
+        private const val ARG_TUTORIAL_REPLAY =
+            "arg_tutorial_replay"
+
+        private const val TUTORIAL_USER_ID = -100L
+
         fun newInstance(
             workspaceId: Long,
             photoId: Long,
@@ -792,7 +873,8 @@ class PhotoDialogFragment : DialogFragment() {
             uploaderNickname: String,
             uploaderProfileUrl: String?,
             createdAt: String,
-            myUserId: Long
+            myUserId: Long,
+            isTutorialReplay: Boolean = false
         ): PhotoDialogFragment {
             return PhotoDialogFragment().apply {
                 arguments = Bundle().apply {
@@ -804,12 +886,18 @@ class PhotoDialogFragment : DialogFragment() {
                     putString("uploaderProfileUrl", uploaderProfileUrl)
                     putString("createdAt", createdAt)
                     putLong("myUserId", myUserId)
+                    putBoolean(ARG_TUTORIAL_REPLAY, isTutorialReplay)
                 }
             }
         }
     }
 
     private fun checkRetouchDetailTutorial() {
+        if (isTutorialReplay) {
+            showRetouchDetailTutorial()
+            return
+        }
+
         val userId =
             TokenManager.getUserId(requireContext())
                 ?: return
@@ -906,10 +994,23 @@ class PhotoDialogFragment : DialogFragment() {
         retouchDetailTutorialView = overlay
         retouchDetailTutorialDialog = tutorialDialog
 
-        overlay.findViewById<View>(
-            R.id.ll_tutorial_close
-        ).setOnClickListener {
-            completeRetouchDetailTutorial()
+        if (isTutorialReplay) {
+
+            overlay.findViewById<View>(
+                R.id.ll_tutorial_close
+            ).visibility = View.GONE
+
+            overlay.setOnClickListener {
+                finishTutorialReplay()
+            }
+
+        } else {
+
+            overlay.findViewById<View>(
+                R.id.ll_tutorial_close
+            ).setOnClickListener {
+                completeRetouchDetailTutorial()
+            }
         }
 
         tutorialDialog.setOnShowListener {
@@ -930,6 +1031,29 @@ class PhotoDialogFragment : DialogFragment() {
         retouchDetailTutorialDialog?.dismiss()
         retouchDetailTutorialDialog = null
         retouchDetailTutorialView = null
+    }
+
+    private fun finishTutorialReplay() {
+        hideRetouchDetailTutorial()
+
+        // dismiss 전에 FragmentManager를 먼저 저장해야 함
+        val fragmentManager = parentFragmentManager
+
+        dismissAllowingStateLoss()
+
+        fragmentManager.popBackStack(
+            "RetouchTutorial",
+            androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
+        )
+
+        fragmentManager.executePendingTransactions()
+
+        fragmentManager.beginTransaction()
+            .replace(
+                R.id.fcv_main,
+                com.umc.mobile.my4cut.ui.retouch.RetouchFragment()
+            )
+            .commit()
     }
 
     private fun tutorialDp(

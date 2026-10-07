@@ -38,6 +38,8 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
     private val selectedFriendIds = mutableSetOf<Long>()
     // 전체 친구 데이터(상태)
     private val allFriends = mutableListOf<Friend>()
+    // info 버튼으로 실행한 튜토리얼 모드
+    private var isTutorialMode = false
 
     // ㄱㄴㄷ 인덱스
     private val indexChars = listOf(
@@ -59,7 +61,11 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
     }
 
     private fun initFriends() {
-        // 스켈레톤 적용
+        if (isTutorialMode) {
+            showTutorialData()
+            return
+        }
+
         friendsAdapter.showSkeleton()
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -90,6 +96,24 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
                 e.printStackTrace()
             }
         }
+    }
+
+    fun showTutorialData() {
+        isTutorialMode = true
+
+        allFriends.clear()
+        selectedFriendIds.clear()
+
+        friendsMode = FriendsMode.NORMAL
+
+        friendsAdapter.hideSkeleton()
+        friendsAdapter.submitList(emptyList())
+
+        binding.layoutEmptyFriends.visibility = View.VISIBLE
+        binding.rvFriends.visibility = View.GONE
+        binding.layoutIndexScroller.visibility = View.GONE
+
+        updateHeaderUi()
     }
 
     // allFriends에서 UI 리스트 생성 및 어댑터에 반영
@@ -338,8 +362,10 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
             val nickname =
                 bundle.getString(AddFriendDialogFragment.KEY_FRIEND_NICKNAME) ?: return@setFragmentResultListener
 
-            // 서버에서 최신 친구 목록 다시 불러오기
-            initFriends()
+            if (!isTutorialMode) {
+                // 서버에서 최신 친구 목록 다시 불러오기
+                initFriends()
+            }
         }
     }
     /** 프로필 이미지 업로드 (압축 후 업로드) */

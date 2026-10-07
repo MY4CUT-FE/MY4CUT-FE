@@ -87,6 +87,10 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
     private var retouchPhotoTutorialView: View? = null
 
     private var spaceId: Long = -1L
+
+    // info 버튼으로 실행한 튜토리얼 다시보기 모드
+    private var isTutorialReplay = false
+
     // 알림에서 특정 사진을 눌러 들어온 경우
     // 자동으로 열어야 할 mediaId
     private var targetPhotoId: Long? = null
@@ -117,6 +121,10 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
 
         // 열어야 할 워크스페이스 ID
         spaceId = arguments?.getLong(ARG_SPACE_ID) ?: -1L
+
+        isTutorialReplay =
+            arguments?.getBoolean(ARG_TUTORIAL_REPLAY, false)
+                ?: false
 
         // 알림에서 사진을 눌러 진입했다면 mediaId도 전달받음
         targetPhotoId = arguments
@@ -173,12 +181,21 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         binding.rvPhotoList.adapter = photoAdapter
         binding.rvPhotoList.layoutManager = GridLayoutManager(requireContext(), 2)
 
-        loadSpaceFromApi()
+        if (isTutorialReplay) {
+            setupTutorialSpaceData()
+        } else {
+            loadSpaceFromApi()
 
-        photoAdapter.showSkeleton()
-        loadPhotosFromApi()
+            photoAdapter.showSkeleton()
+            loadPhotosFromApi()
+        }
 
         binding.swipeRefreshLayout.setOnRefreshListener {
+            if (isTutorialReplay) {
+                binding.swipeRefreshLayout.isRefreshing = false
+                return@setOnRefreshListener
+            }
+
             loadSpaceFromApi()
             loadPhotosFromApi()
         }
@@ -188,21 +205,28 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         }
 
         photoAdapter.onFinalToggleListener = { photo ->
-            selectFinalPhoto(photo)
+            if (!isTutorialReplay) {
+                selectFinalPhoto(photo)
+            }
         }
 
         binding.btnExitMenu.setOnClickListener {
-            showExitDialog()  //혼자일 때 -> tvMessage.text = 나가면 스페이스가 삭제되어 복구할 수 없어요.
+            if (!isTutorialReplay) {
+                showExitDialog() //혼자일 때 -> tvMessage.text = 나가면 스페이스가 삭제되어 복구할 수 없어요.
+            }
         }
 
         binding.btnChange.setOnClickListener {
-            showChangeDialog(spaceId)
+            if (!isTutorialReplay) {
+                showChangeDialog(spaceId)
+            }
         }
 
         binding.btnUpload.setOnClickListener {
-            pickImageLauncher.launch("image/*")
+            if (!isTutorialReplay) {
+                pickImageLauncher.launch("image/*")
+            }
         }
-
         // 뒤로가기 버튼: 이전(리터치 스페이스) 화면으로 돌아가기
         binding.back.setOnClickListener {
             parentFragmentManager.popBackStack()
@@ -221,6 +245,87 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         retouchPhotoTutorialView = null
 
         super.onDestroyView()
+    }
+
+    private fun setupTutorialSpaceData() {
+        // 스페이스 기본 정보
+        binding.tvTitle.text = "포토리의 스페이스"
+
+        memberCount = 1
+
+        binding.tvExpire.setBackgroundResource(
+            R.drawable.bg_label_pink
+        )
+        binding.tvExpire.text = "6일 뒤 만료"
+
+        binding.btnChange.visibility = View.VISIBLE
+
+        // 튜토리얼에서는 실제 사용자/멤버 API를 사용하지 않음
+        myUserId = TUTORIAL_USER_ID
+        myNickname = "포토리"
+        myProfileImageUrl = null
+
+        existingMemberIds.clear()
+
+        // 샘플 멤버 3명
+        memberItems.clear()
+
+        repeat(1) { index ->
+            memberItems.add(
+                MemberItem(
+                    id = index.toLong(),
+                    profileImageUrl = null
+                )
+            )
+        }
+
+        memberAdapter.notifyDataSetChanged()
+
+        setupTutorialPhotos()
+
+        // 모든 View가 실제 위치를 잡은 뒤 SPACE 튜토리얼 표시
+        binding.root.post {
+            showRetouchSpaceTutorial()
+        }
+    }
+
+    private fun setupTutorialPhotos() {
+        photoDatas.clear()
+
+        photoDatas.addAll(
+            listOf(
+                PhotoData(
+                    photoId = TUTORIAL_PHOTO_ID_1,
+                    userProfileUrl = null,
+                    userName = "포토리",
+                    dateTime = "2100/01/01 00:00",
+                    commentCount = 1,
+                    photoImageRes = R.drawable.img_tutorial_photo_sample,
+                    photoUrl = null,
+                    uploaderId = TUTORIAL_USER_ID,
+                    isFinal = true
+                ),
+                PhotoData(
+                    photoId = TUTORIAL_PHOTO_ID_2,
+                    userProfileUrl = null,
+                    userName = "도토리",
+                    dateTime = "2100/01/02 00:00",
+                    commentCount = 0,
+                    photoImageRes = R.drawable.img_tutorial_photo_sample,
+                    photoUrl = null,
+                    uploaderId = TUTORIAL_USER_ID,
+                    isFinal = false
+                )
+            )
+        )
+
+        selectedFinalPhotoId = TUTORIAL_PHOTO_ID_1
+
+        binding.layoutEmptyPhotos.visibility = View.GONE
+        binding.rvPhotoList.visibility = View.VISIBLE
+
+        photoAdapter.updatePhotos(photoDatas.toList())
+        photoAdapter.hideSkeleton()
     }
 
     private fun loadSpaceFromApi() {
@@ -654,6 +759,17 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         dialog.show()
     }
 
+    private fun openTutorialPhotoDetail() {
+        val tutorialPhoto =
+            photoDatas.firstOrNull()
+                ?: return
+
+        showPhotoDialog(
+            photo = tutorialPhoto,
+            isCommentExpanded = true
+        )
+    }
+
     private fun showPhotoDialog(
         photo: PhotoData,
         isCommentExpanded: Boolean = true
@@ -661,12 +777,13 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         val dialog = PhotoDialogFragment.newInstance(
             workspaceId = spaceId,
             photoId = photo.photoId,
-            photo.photoUrl ?: "",
+            photoUrl = photo.photoUrl ?: "",
             uploaderId = photo.uploaderId,
             uploaderNickname = photo.userName,
             uploaderProfileUrl = photo.userProfileUrl,
             createdAt = photo.dateTime,
-            myUserId = myUserId
+            myUserId = myUserId,
+            isTutorialReplay = isTutorialReplay
         )
         dialog.show(parentFragmentManager, "PhotoDialog")
     }
@@ -746,9 +863,14 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
 
         // 열어야 할 워크스페이스 ID
         private const val ARG_SPACE_ID = "arg_space_id"
-
         // 알림에서 특정 사진을 열어야 할 경우 전달하는 mediaId
         private const val ARG_PHOTO_ID = "arg_photo_id"
+        private const val ARG_TUTORIAL_REPLAY = "arg_tutorial_replay"
+
+        private const val TUTORIAL_SPACE_ID = -100L
+        private const val TUTORIAL_USER_ID = -100L
+        private const val TUTORIAL_PHOTO_ID_1 = -101L
+        private const val TUTORIAL_PHOTO_ID_2 = -102L
 
         /**
          * 일반적인 스페이스 진입:
@@ -773,6 +895,22 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                     if (photoId != null) {
                         putLong(ARG_PHOTO_ID, photoId)
                     }
+                }
+            }
+        }
+
+        fun newTutorialInstance(): SpaceFragment {
+            return SpaceFragment().apply {
+                arguments = Bundle().apply {
+                    putLong(
+                        ARG_SPACE_ID,
+                        TUTORIAL_SPACE_ID
+                    )
+
+                    putBoolean(
+                        ARG_TUTORIAL_REPLAY,
+                        true
+                    )
                 }
             }
         }
@@ -967,10 +1105,24 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         retouchSpaceTutorialView = overlay
         root.addView(overlay)
 
-        overlay.findViewById<View>(
-            R.id.ll_tutorial_close
-        ).setOnClickListener {
-            completeRetouchSpaceTutorial()
+        if (isTutorialReplay) {
+            overlay.findViewById<View>(
+                R.id.ll_tutorial_close
+            ).visibility = View.GONE
+
+            overlay.setOnClickListener {
+                hideRetouchSpaceTutorial()
+
+                binding.rvPhotoList.post {
+                    showRetouchPhotoTutorial()
+                }
+            }
+        } else {
+            overlay.findViewById<View>(
+                R.id.ll_tutorial_close
+            ).setOnClickListener {
+                completeRetouchSpaceTutorial()
+            }
         }
 
         overlay.post {
@@ -1372,10 +1524,21 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         retouchPhotoTutorialView = overlay
         root.addView(overlay)
 
-        overlay.findViewById<View>(
-            R.id.ll_tutorial_close
-        ).setOnClickListener {
-            completeRetouchPhotoTutorial()
+        if (isTutorialReplay) {
+            overlay.findViewById<View>(
+                R.id.ll_tutorial_close
+            ).visibility = View.GONE
+
+            overlay.setOnClickListener {
+                hideRetouchPhotoTutorial()
+                openTutorialPhotoDetail()
+            }
+        } else {
+            overlay.findViewById<View>(
+                R.id.ll_tutorial_close
+            ).setOnClickListener {
+                completeRetouchPhotoTutorial()
+            }
         }
 
         overlay.post {
@@ -1470,29 +1633,28 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                 R.id.iv_arrow_final
             )
 
-        // 설명: 최종본 버튼 오른쪽 아래
+        // 설명: 최종본 버튼의 실제 크기를 기준으로 오른쪽 아래 배치
         val finalTextX =
-            (finalRect.right + dp(8f))
-                .coerceAtMost(
-                    overlay.width.toFloat() -
-                            finalText.width -
-                            dp(8f)
-                )
+            finalRect.right - finalRect.width() * 0.2f
+
+        val finalTextY =
+            finalRect.bottom +
+                    finalText.height * 0.1f
 
         positionTutorialView(
             finalText,
-            finalTextX + dp(20f),
-            finalRect.bottom + dp(2f)
+            finalTextX,
+            finalTextY
         )
 
-        // 화살표: 버튼과 설명 사이
-        positionTutorialView(
-            finalArrow,
-            finalRect.right -
-                    finalArrow.width * 0.25f - dp(47f),
-            finalRect.bottom -
-                    finalArrow.height * 0.15f - dp(3f)
-        )
+        // 화살표: 최종본 버튼 오른쪽 끝과 설명 사이
+                positionTutorialView(
+                    finalArrow,
+                    finalRect.right -
+                            finalArrow.width * 1.5f,
+                    finalRect.bottom -
+                            finalArrow.height * 0.1f
+                )
     }
 
     private fun setupRetouchPhotoText(
