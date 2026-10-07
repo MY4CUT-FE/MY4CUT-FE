@@ -153,11 +153,16 @@ class RetouchFragment : Fragment(R.layout.fragment_retouch) {
             try {
                 val response = RetrofitClient.notificationService.getUnreadStatus()
                 val hasUnread = response.data?.hasUnread == true
+                val currentBinding = _binding ?: return@launch
 
-                binding.ivNotification.setImageResource(
-                    if (hasUnread) R.drawable.ic_noti_on
-                    else R.drawable.ic_noti_off
+                currentBinding.ivNotification.setImageResource(
+                    if (hasUnread) {
+                        R.drawable.ic_noti_on
+                    } else {
+                        R.drawable.ic_noti_off
+                    }
                 )
+
             } catch (e: Exception) {
                 binding.ivNotification.setImageResource(R.drawable.ic_noti_off)
             }

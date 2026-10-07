@@ -1045,15 +1045,6 @@ class PhotoDialogFragment : DialogFragment() {
             "RetouchTutorial",
             androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
         )
-
-        fragmentManager.executePendingTransactions()
-
-        fragmentManager.beginTransaction()
-            .replace(
-                R.id.fcv_main,
-                com.umc.mobile.my4cut.ui.retouch.RetouchFragment()
-            )
-            .commit()
     }
 
     private fun tutorialDp(
