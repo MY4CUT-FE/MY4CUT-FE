@@ -253,27 +253,19 @@ class PhotoDialogFragment : DialogFragment() {
 
         updateDeleteButtonVisibility()
 
-        val tutorialComments =
-            listOf(
-                CommentData(
-                    commentId = -101L,
-                    profileImgUrl = null,
-                    userName = "포토리",
-                    time = "2100/01/01 00:00",
-                    content = "이 사진으로 보정해 보면 좋을 것 같아!",
-                    isMine = true
-                ),
-                CommentData(
-                    commentId = -102L,
-                    profileImgUrl = null,
-                    userName = "도토리",
-                    time = "2100/01/01 00:00",
-                    content = "좋아! 이 사진이 제일 괜찮다",
-                    isMine = false
-                )
-            )
+        updateComments(emptyList())
 
-        updateComments(tutorialComments)
+        // 튜토리얼에서는 댓글 영역을 닫힌 상태로 시작
+        isCommentExpanded = false
+
+        rvChatList.visibility = View.GONE
+        tvEmptyComments.visibility = View.GONE
+        etComment.visibility = View.GONE
+        ivSend.visibility = View.GONE
+
+        ivToggleComment.setImageResource(
+            R.drawable.ic_space_up
+        )
 
         // 모든 View가 배치된 다음 DETAIL 튜토리얼 강제 표시
         view?.post {
@@ -593,6 +585,8 @@ class PhotoDialogFragment : DialogFragment() {
                 ivSend.visibility = View.GONE
                 ivToggleComment.setImageResource(R.drawable.ic_space_up)
             }
+
+            updateDialogSize()
         }
 
         ivToggleComment.setOnClickListener {
@@ -841,17 +835,36 @@ class PhotoDialogFragment : DialogFragment() {
         etComment.requestFocus()
     }
 
+    private fun updateDialogSize() {
+        val window = dialog?.window ?: return
+
+        val width =
+            (resources.displayMetrics.widthPixels * 0.9).toInt()
+
+        val heightRatio =
+            if (isCommentExpanded) {
+                0.85
+            } else {
+                0.75
+            }
+
+        val height =
+            (resources.displayMetrics.heightPixels * heightRatio).toInt()
+
+        window.setLayout(
+            width,
+            height
+        )
+    }
+
     override fun onStart() {
         super.onStart()
 
-        dialog?.window?.apply {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog?.window?.setBackgroundDrawable(
+            ColorDrawable(Color.TRANSPARENT)
+        )
 
-            setLayout(
-                (resources.displayMetrics.widthPixels * 0.9).toInt(),
-                (resources.displayMetrics.heightPixels * 0.85).toInt()
-            )
-        }
+        updateDialogSize()
     }
 
     companion object {
