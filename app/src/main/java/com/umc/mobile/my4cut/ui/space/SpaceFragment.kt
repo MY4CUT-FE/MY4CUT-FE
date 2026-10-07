@@ -1633,29 +1633,28 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                 R.id.iv_arrow_final
             )
 
-        // 설명: 최종본 버튼 오른쪽 아래
+        // 설명: 최종본 버튼의 실제 크기를 기준으로 오른쪽 아래 배치
         val finalTextX =
-            (finalRect.right + dp(8f))
-                .coerceAtMost(
-                    overlay.width.toFloat() -
-                            finalText.width -
-                            dp(8f)
-                )
+            finalRect.right - finalRect.width() * 0.2f
+
+        val finalTextY =
+            finalRect.bottom +
+                    finalText.height * 0.1f
 
         positionTutorialView(
             finalText,
-            finalTextX + dp(20f),
-            finalRect.bottom + dp(2f)
+            finalTextX,
+            finalTextY
         )
 
-        // 화살표: 버튼과 설명 사이
-        positionTutorialView(
-            finalArrow,
-            finalRect.right -
-                    finalArrow.width * 0.25f - dp(47f),
-            finalRect.bottom -
-                    finalArrow.height * 0.15f - dp(3f)
-        )
+        // 화살표: 최종본 버튼 오른쪽 끝과 설명 사이
+                positionTutorialView(
+                    finalArrow,
+                    finalRect.right -
+                            finalArrow.width * 1.5f,
+                    finalRect.bottom -
+                            finalArrow.height * 0.1f
+                )
     }
 
     private fun setupRetouchPhotoText(
