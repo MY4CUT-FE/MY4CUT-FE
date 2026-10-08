@@ -9,7 +9,6 @@ import android.view.LayoutInflater
 import android.view.TouchDelegate
 import android.view.View
 import android.view.ViewGroup
-import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
@@ -33,7 +32,6 @@ class InviteSpaceFriendDialogFragment : DialogFragment() {
     private var _binding: DialogSpaceInviteFriendBinding? = null
     private val binding get() = _binding!!
 
-    private var popupWindow: PopupWindow? = null
     private lateinit var friendsAdapter: FriendsAdapter
 
     /** 선택한 친구 */
@@ -97,17 +95,28 @@ class InviteSpaceFriendDialogFragment : DialogFragment() {
             R.drawable.bg_dropdown_closed
         )
 
-        // 친구 선택 드롭다운
+        // 친구 목록 RecyclerView 초기화
+        setupFriendList()
+
+// 친구 선택 드롭다운
         binding.layoutFriendSelect.setOnClickListener {
 
-            if (popupWindow?.isShowing == true) {
-                popupWindow?.dismiss()
+            val isOpen = binding.layoutFriendList.visibility == View.VISIBLE
+
+            if (isOpen) {
+                // 목록 닫기
+                binding.layoutFriendList.visibility = View.INVISIBLE
+
+                binding.layoutFriendSelect.setBackgroundResource(
+                    R.drawable.bg_dropdown_closed
+                )
             } else {
-                binding.root.postDelayed({
-                    if (_binding != null) {
-                        showFriendPopup()
-                    }
-                }, 150)
+                // 목록 열기
+                binding.layoutFriendList.visibility = View.VISIBLE
+
+                binding.layoutFriendSelect.setBackgroundResource(
+                    R.drawable.bg_dropdown_open
+                )
             }
         }
 
@@ -165,21 +174,7 @@ class InviteSpaceFriendDialogFragment : DialogFragment() {
         }
     }
 
-    /**
-     * 친구 선택 팝업
-     */
-    private fun showFriendPopup() {
-
-        val popupBinding =
-            PopupFriendListBinding.inflate(layoutInflater)
-
-        popupBinding.root.setBackgroundResource(
-            R.drawable.bg_dropdown_popup
-        )
-
-        binding.layoutFriendSelect.setBackgroundResource(
-            R.drawable.bg_dropdown_open
-        )
+    private fun setupFriendList() {
 
         friendsAdapter = FriendsAdapter(
             getMode = { FriendsMode.NORMAL },
@@ -219,60 +214,14 @@ class InviteSpaceFriendDialogFragment : DialogFragment() {
             enableSelectionGray = true
         )
 
-        popupBinding.rvFriends.apply {
-            layoutManager = LinearLayoutManager(
-                requireContext()
-            )
+        binding.rvInviteFriends.apply {
+
+            layoutManager = LinearLayoutManager(requireContext())
 
             adapter = friendsAdapter
+
+            isNestedScrollingEnabled = true
         }
-
-        popupBinding.rvFriends.setPadding(
-            0,
-            popupBinding.rvFriends.paddingTop,
-            0,
-            popupBinding.rvFriends.paddingBottom
-        )
-
-        popupBinding.rvFriends.clipToPadding = false
-
-        // 친구 수와 관계없이 기존 드롭다운 높이 유지
-        val popupHeightPx = (290 * resources.displayMetrics.density).toInt()
-
-        val params = popupBinding.rvFriends.layoutParams
-        params.height = popupHeightPx
-        popupBinding.rvFriends.layoutParams = params
-
-        popupBinding.rvFriends.isNestedScrollingEnabled = true
-
-        popupWindow = PopupWindow(
-            popupBinding.root,
-            binding.layoutFriendSelect.width,
-            popupHeightPx,
-            true
-        ).apply {
-
-            isOutsideTouchable = true
-            isFocusable = true
-
-            inputMethodMode =
-                PopupWindow.INPUT_METHOD_NOT_NEEDED
-
-            elevation = 0f
-
-            setOnDismissListener {
-                _binding?.layoutFriendSelect
-                    ?.setBackgroundResource(
-                        R.drawable.bg_dropdown_closed
-                    )
-            }
-        }
-
-        popupWindow?.showAsDropDown(
-            binding.layoutFriendSelect,
-            0,
-            -1
-        )
 
         submitDialogFriends()
     }
@@ -544,23 +493,18 @@ class InviteSpaceFriendDialogFragment : DialogFragment() {
     override fun onStart() {
         super.onStart()
 
+        val displayMetrics = resources.displayMetrics
+
+        val width = (displayMetrics.widthPixels * 0.9f).toInt()
+        val height = (displayMetrics.heightPixels * 0.6f).toInt()
+
         dialog?.window?.apply {
-
-            setLayout(
-                (resources.displayMetrics.widthPixels * 0.9).toInt(),
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-
-            setBackgroundDrawable(
-                ColorDrawable(Color.TRANSPARENT)
-            )
+            setLayout(width, height)
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         }
     }
 
     override fun onDestroyView() {
-
-        popupWindow?.dismiss()
-        popupWindow = null
 
         _binding = null
 
