@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <!-- ==================== 상단 헤더 ==================== -->
+    <!-- SpaceFragment와 동일 규격 -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutHeader"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/back"
+            android:layout_width="wrap_content"
+            android:layout_height="17dp"
+            android:layout_marginStart="20dp"
+            android:src="@drawable/ic_arrow_back_24"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="스페이스 관리"
+            android:textColor="#4D4D4D"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/btnExit"
+            android:layout_width="wrap_content"
+            android:layout_height="17dp"
+            android:layout_marginEnd="20dp"
+            android:src="@drawable/ic_exit"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    <!-- ==================== 본문 ==================== -->
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollContent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutHeader">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="17dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="32dp">
+
+
+            <!-- ==================== 스페이스 정보 ==================== -->
+
+            <TextView
+                android:id="@+id/tvSpaceLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/suit_regular"
+                android:text="space"
+                android:textColor="#1A1A1A"
+                android:textSize="10sp" />
+
+            <LinearLayout
+                android:id="@+id/layoutSpaceInfo"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:gravity="top"
+                android:orientation="horizontal">
+
+                <!-- 스페이스 이름 -->
+                <TextView
+                    android:id="@+id/tvSpaceName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/suit_bold"
+                    android:text="1104 네컷"
+                    android:textColor="#1A1A1A"
+                    android:textSize="18sp" />
+
+                <!-- 이름 수정 -->
+                <ImageView
+                    android:id="@+id/btnEditName"
+                    android:layout_width="17dp"
+                    android:layout_height="17dp"
+                    android:layout_marginStart="5dp"
+                    android:layout_marginTop="3dp"
+                    android:src="@drawable/ic_edit" />
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+
+                <!-- 친구 추가 -->
+                <TextView
+                    android:id="@+id/btnAddFriend"
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:fontFamily="@font/suit_bold"
+                    android:gravity="center"
+                    android:text="친구 초대"
+                    android:textColor="@color/coral_900"
+                    android:textSize="11sp" />
+
+            </LinearLayout>
+
+
+            <!-- ==================== 구분선 ==================== -->
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E1E1E1" />
+
+
+            <!-- ==================== 스페이스 참여자 ==================== -->
+
+            <LinearLayout
+                android:id="@+id/headerMembers"
+                android:layout_width="match_parent"
+                android:layout_height="35dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/suit_bold"
+                    android:text="스페이스 참여자"
+                    android:textColor="#505050"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvMemberCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:fontFamily="@font/suit_regular"
+                    android:text="3/10"
+                    android:textColor="#FF6F61"
+                    android:textSize="10sp" />
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+
+                <ImageView
+                    android:id="@+id/ivMemberArrow"
+                    android:layout_width="16dp"
+                    android:layout_height="9dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_arrow_up_gray" />
+
+            </LinearLayout>
+
+
+            <!-- 참여자 목록 -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvMembers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
+
+
+            <!-- ==================== 구분선 ==================== -->
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E1E1E1" />
+
+
+            <!-- ==================== 초대 수락 대기 ==================== -->
+
+            <LinearLayout
+                android:id="@+id/headerPending"
+                android:layout_width="match_parent"
+                android:layout_height="35dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/suit_bold"
+                    android:text="초대 수락 대기 중"
+                    android:textColor="#505050"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/ivPendingArrow"
+                    android:layout_width="16dp"
+                    android:layout_height="9dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_arrow_up_gray" />
+
+            </LinearLayout>
+
+
+            <!-- 초대 수락 대기 목록 -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvPending"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
+
+
+            <!-- ==================== 구분선 ==================== -->
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E1E1E1" />
+
+
+            <!-- ==================== 초대 거절 ==================== -->
+
+            <LinearLayout
+                android:id="@+id/headerRejected"
+                android:layout_width="match_parent"
+                android:layout_height="35dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/suit_bold"
+                    android:text="초대 거절"
+                    android:textColor="#505050"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/ivRejectedArrow"
+                    android:layout_width="16dp"
+                    android:layout_height="9dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_arrow_down" />
+
+            </LinearLayout>
+
+
+            <!-- 초대 거절 목록 -->
+            <!-- 진입 시에는 항상 닫힘 -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvRejected"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

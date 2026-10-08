@@ -17,7 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
 import com.umc.mobile.my4cut.data.network.RetrofitClient
-import com.umc.mobile.my4cut.databinding.DialogSpaceAddFriendBinding
+import com.umc.mobile.my4cut.databinding.DialogSpaceInviteFriendBinding
 import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
 import com.umc.mobile.my4cut.ui.friend.Friend
 import com.umc.mobile.my4cut.ui.friend.FriendUiItem
@@ -28,9 +28,9 @@ import retrofit2.HttpException
 import java.text.Collator
 import java.util.Locale
 
-class AddSpaceFriendDialogFragment : DialogFragment() {
+class InviteSpaceFriendDialogFragment : DialogFragment() {
 
-    private var _binding: DialogSpaceAddFriendBinding? = null
+    private var _binding: DialogSpaceInviteFriendBinding? = null
     private val binding get() = _binding!!
 
     private var popupWindow: PopupWindow? = null
@@ -74,7 +74,7 @@ class AddSpaceFriendDialogFragment : DialogFragment() {
             ColorDrawable(Color.TRANSPARENT)
         )
 
-        _binding = DialogSpaceAddFriendBinding.inflate(
+        _binding = DialogSpaceInviteFriendBinding.inflate(
             inflater,
             container,
             false
@@ -579,9 +579,9 @@ class AddSpaceFriendDialogFragment : DialogFragment() {
         fun newInstance(
             spaceId: Long,
             memberIds: List<Long>
-        ): AddSpaceFriendDialogFragment {
+        ): InviteSpaceFriendDialogFragment {
 
-            return AddSpaceFriendDialogFragment().apply {
+            return InviteSpaceFriendDialogFragment().apply {
 
                 arguments = Bundle().apply {
 

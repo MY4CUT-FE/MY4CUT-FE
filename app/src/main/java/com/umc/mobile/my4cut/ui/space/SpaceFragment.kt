@@ -137,7 +137,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         binding = FragmentSpaceBinding.bind(view)
 
         // API 호출 전
-        binding.btnChange.visibility = View.GONE
+        binding.btnSpaceManage.visibility = View.GONE
         binding.tvExpire.text = ""
         binding.tvExpire.setBackgroundResource(R.drawable.bg_skeleton_text)
 
@@ -184,8 +184,6 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         if (isTutorialReplay) {
             setupTutorialSpaceData()
         } else {
-            loadSpaceFromApi()
-
             photoAdapter.showSkeleton()
             loadPhotosFromApi()
         }
@@ -216,9 +214,9 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
             }
         }
 
-        binding.btnChange.setOnClickListener {
+        binding.btnSpaceManage.setOnClickListener {
             if (!isTutorialReplay) {
-                showChangeDialog(spaceId)
+                openSpaceManage()
             }
         }
 
@@ -230,6 +228,14 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         // 뒤로가기 버튼: 이전(리터치 스페이스) 화면으로 돌아가기
         binding.back.setOnClickListener {
             parentFragmentManager.popBackStack()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (!isTutorialReplay && spaceId > 0L) {
+            loadSpaceFromApi()
         }
     }
 
@@ -258,7 +264,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         )
         binding.tvExpire.text = "6일 뒤 만료"
 
-        binding.btnChange.visibility = View.VISIBLE
+        binding.btnSpaceManage.visibility = View.VISIBLE
 
         // 튜토리얼에서는 실제 사용자/멤버 API를 사용하지 않음
         myUserId = TUTORIAL_USER_ID
@@ -374,9 +380,9 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                         myNickname = userData?.nickname.orEmpty()
                         myProfileImageUrl = userData?.profileImageViewUrl
 
-                        binding.btnChange.visibility = View.VISIBLE
+                        binding.btnSpaceManage.visibility = View.VISIBLE
 
-                        binding.btnChange.post {
+                        binding.btnSpaceManage.post {
                             checkRetouchSpaceTutorial()
                         }
 
@@ -804,6 +810,18 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         }
 
         dialog.show(parentFragmentManager, "EditSpaceDialog")
+    }
+
+    private fun openSpaceManage() {
+        val fragment = SpaceManageFragment.newInstance(
+            spaceId = spaceId,
+            spaceName = binding.tvTitle.text.toString()
+        )
+
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fcv_main, fragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun uploadImageToServer(uri: Uri) {
@@ -1259,7 +1277,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
             )
 
         // 실제 SpaceFragment View
-        val changeView = binding.btnChange
+        val changeView = binding.btnSpaceManage
         val exitView = binding.btnExitMenu
         val uploadView = binding.btnUpload
 
