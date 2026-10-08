@@ -11,14 +11,12 @@ import android.view.LayoutInflater
 import android.view.TouchDelegate
 import android.view.View
 import android.view.ViewGroup
-import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.umc.mobile.my4cut.ui.friend.Friend
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.DialogSpaceCreateBinding
-import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
 
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -41,7 +39,6 @@ class CreateSpaceDialogFragment : DialogFragment() {
     private var _binding: DialogSpaceCreateBinding? = null
     private val binding get() = _binding!!
 
-    private var popupWindow: PopupWindow? = null
     private lateinit var friendsAdapter: FriendsAdapter
 
     /** 선택된 친구 (요약용) */
@@ -68,17 +65,20 @@ class CreateSpaceDialogFragment : DialogFragment() {
 
         binding.layoutFriendSelect.setBackgroundResource(R.drawable.bg_dropdown_closed)
 
-        // 드롭다운 클릭
-        binding.layoutFriendSelect.setOnClickListener {
-            if (popupWindow?.isShowing == true) {
-                popupWindow?.dismiss()
-            } else {
-                hideKeyboard()
+        setupFriendList()
 
-                binding.root.postDelayed({
-                    showFriendPopup()
-                }, 150)
-            }
+        binding.layoutFriendSelect.setOnClickListener {
+            hideKeyboard()
+
+            val isOpen = binding.layoutFriendList.visibility == View.VISIBLE
+
+            binding.layoutFriendList.visibility =
+                if (isOpen) View.INVISIBLE else View.VISIBLE
+
+            binding.layoutFriendSelect.setBackgroundResource(
+                if (isOpen) R.drawable.bg_dropdown_closed
+                else R.drawable.bg_dropdown_open
+            )
         }
 
         // 클릭 영역 확장
@@ -292,7 +292,6 @@ class CreateSpaceDialogFragment : DialogFragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        popupWindow?.dismiss()
         _binding = null
     }
 
@@ -304,94 +303,43 @@ class CreateSpaceDialogFragment : DialogFragment() {
         friendsAdapter.submitList(buildFriendUiItems())
     }
 
-    private fun showFriendPopup() {
-        val popupBinding = PopupFriendListBinding.inflate(layoutInflater)
-
-        popupBinding.root.setBackgroundResource(R.drawable.bg_dropdown_popup)
-
-        // 상단 박스: 열림 상태 배경
-        binding.layoutFriendSelect.setBackgroundResource(
-            R.drawable.bg_dropdown_open
-        )
-
-        popupBinding.rvFriends.setPadding(
-            0,
-            popupBinding.rvFriends.paddingTop,
-            0,
-            popupBinding.rvFriends.paddingBottom
-        )
-        popupBinding.rvFriends.clipToPadding = false
-
+    private fun setupFriendList() {
         friendsAdapter = FriendsAdapter(
             getMode = { FriendsMode.NORMAL },
-            isSelected = { id: Long -> selectedFriendIds.contains(id) },
+
+            isSelected = { id: Long ->
+                selectedFriendIds.contains(id)
+            },
+
             onFriendClick = { friend ->
                 val id = friend.friendId
-                Log.d("FriendSelect", "clicked friendId=$id, nickname=${friend.nickname}")
 
                 if (selectedFriendIds.contains(id)) {
                     selectedFriendIds.remove(id)
                     selectedFriends.removeAll { it.friendId == id }
-                    Log.d("FriendSelect", "removed friendId=$id")
                 } else {
                     selectedFriendIds.add(id)
                     selectedFriends.add(friend)
-                    Log.d("FriendSelect", "added friendId=$id")
                 }
-
-                Log.d("FriendSelect", "selectedFriendIds=$selectedFriendIds")
-                Log.d("FriendSelect", "selectedFriends=${selectedFriends.map { it.nickname }}")
 
                 updateFriendSummary()
                 submitDialogFriends()
             },
+
             onFavoriteClick = { friend ->
                 friend.isFavorite = !friend.isFavorite
                 submitDialogFriends()
             },
+
             hideFavoriteDivider = true,
             enableSelectionGray = true
         )
 
-        popupBinding.rvFriends.apply {
+        binding.rvInviteFriends.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = friendsAdapter
+            isNestedScrollingEnabled = true
         }
-
-        // 드롭다운 최소/최대 높이 제한
-        val maxHeightDp = 290
-        val minHeightDp = 50
-        val density = resources.displayMetrics.density
-        val maxHeightPx = (maxHeightDp * density).toInt()
-        val minHeightPx = (minHeightDp * density).toInt()
-
-        // RecyclerView 높이 제한 (최대 높이까지, 내용이 적으면 최소 높이 유지)
-        popupBinding.root.minimumHeight = minHeightPx
-        val params = popupBinding.rvFriends.layoutParams
-        params.height = maxHeightPx
-        popupBinding.rvFriends.layoutParams = params
-        popupBinding.rvFriends.isNestedScrollingEnabled = true
-
-        popupWindow = PopupWindow(
-            popupBinding.root,
-            binding.layoutFriendSelect.width,
-            maxHeightPx,
-            true
-        ).apply {
-            isOutsideTouchable = true
-            isFocusable = true
-            inputMethodMode = PopupWindow.INPUT_METHOD_NOT_NEEDED
-            elevation = 0f
-
-            setOnDismissListener {
-                // 닫히면 다시 기본 배경
-                binding.layoutFriendSelect.setBackgroundResource(
-                    R.drawable.bg_dropdown_closed
-                )
-            }
-        }
-
-        popupWindow?.showAsDropDown(binding.layoutFriendSelect, 0, -1)
 
         submitDialogFriends()
     }
