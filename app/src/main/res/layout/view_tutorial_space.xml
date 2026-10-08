@@ -48,9 +48,9 @@
 
     <ImageView
         android:id="@+id/iv_arrow_change"
-        android:layout_width="30dp"
-        android:layout_height="24dp"
-        android:src="@drawable/ic_tutorial_arrow_space_down"
+        android:layout_width="27dp"
+        android:layout_height="34dp"
+        android:src="@drawable/ic_tutorial_arrow_retouch_down"
         android:scaleType="fitCenter" />
 
     <!-- 나가기 설명 -->
@@ -68,8 +68,8 @@
     <ImageView
         android:id="@+id/iv_arrow_exit"
         android:layout_width="30dp"
-        android:layout_height="72dp"
-        android:src="@drawable/ic_tutorial_arrow_space_down_long"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_tutorial_arrow_space_down"
         android:scaleType="fitCenter" />
 
     <!-- 업로드 설명 -->

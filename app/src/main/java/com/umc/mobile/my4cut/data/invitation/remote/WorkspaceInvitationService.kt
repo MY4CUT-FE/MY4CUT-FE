@@ -28,4 +28,10 @@ interface WorkspaceInvitationService {
     /** 내가 받은 초대 목록 조회 */
     @GET("workspaces/invitations/me")
     suspend fun getMyInvitations(): BaseResponse<List<WorkspaceInvitationDto>>
+
+    /** 내가 보낸 워크스페이스 초대 취소 */
+    @DELETE("workspaces/invitations/{invitationId}")
+    suspend fun cancelInvitation(
+        @Path("invitationId") invitationId: Long
+    ): BaseResponse<Unit>
 }

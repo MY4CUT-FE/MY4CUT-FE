@@ -43,4 +43,10 @@ interface WorkspaceService {
     suspend fun inviteMembers(
         @Body request: WorkspaceInviteRequestDto
     ): BaseResponse<Unit>
+
+    /** 워크스페이스 초대 취소 */
+    @DELETE("workspaces/invitations/{invitationId}")
+    suspend fun cancelInvitation(
+        @Path("invitationId") invitationId: Long
+    ): BaseResponse<Unit>
 }

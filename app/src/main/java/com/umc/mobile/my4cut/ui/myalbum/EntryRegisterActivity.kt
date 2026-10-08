@@ -526,7 +526,7 @@ class EntryRegisterActivity : AppCompatActivity() {
             binding.ivDiaryArrow.setImageResource(R.drawable.ic_arrow_up_gray)
         } else {
             binding.clDiaryContent.visibility = View.GONE
-            binding.ivDiaryArrow.setImageResource(R.drawable.ic_arrow_down_gray)
+            binding.ivDiaryArrow.setImageResource(R.drawable.ic_arrow_down_gray_filled)
         }
     }
 

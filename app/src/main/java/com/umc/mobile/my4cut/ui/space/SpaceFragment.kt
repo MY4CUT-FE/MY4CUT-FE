@@ -137,7 +137,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         binding = FragmentSpaceBinding.bind(view)
 
         // API 호출 전
-        binding.btnChange.visibility = View.GONE
+        binding.btnSpaceManage.visibility = View.GONE
         binding.tvExpire.text = ""
         binding.tvExpire.setBackgroundResource(R.drawable.bg_skeleton_text)
 
@@ -184,8 +184,6 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         if (isTutorialReplay) {
             setupTutorialSpaceData()
         } else {
-            loadSpaceFromApi()
-
             photoAdapter.showSkeleton()
             loadPhotosFromApi()
         }
@@ -216,9 +214,9 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
             }
         }
 
-        binding.btnChange.setOnClickListener {
+        binding.btnSpaceManage.setOnClickListener {
             if (!isTutorialReplay) {
-                showChangeDialog(spaceId)
+                openSpaceManage()
             }
         }
 
@@ -230,6 +228,14 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         // 뒤로가기 버튼: 이전(리터치 스페이스) 화면으로 돌아가기
         binding.back.setOnClickListener {
             parentFragmentManager.popBackStack()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (!isTutorialReplay && spaceId > 0L) {
+            loadSpaceFromApi()
         }
     }
 
@@ -258,7 +264,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         )
         binding.tvExpire.text = "6일 뒤 만료"
 
-        binding.btnChange.visibility = View.VISIBLE
+        binding.btnSpaceManage.visibility = View.VISIBLE
 
         // 튜토리얼에서는 실제 사용자/멤버 API를 사용하지 않음
         myUserId = TUTORIAL_USER_ID
@@ -374,9 +380,9 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                         myNickname = userData?.nickname.orEmpty()
                         myProfileImageUrl = userData?.profileImageViewUrl
 
-                        binding.btnChange.visibility = View.VISIBLE
+                        binding.btnSpaceManage.visibility = View.VISIBLE
 
-                        binding.btnChange.post {
+                        binding.btnSpaceManage.post {
                             checkRetouchSpaceTutorial()
                         }
 
@@ -804,6 +810,18 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         }
 
         dialog.show(parentFragmentManager, "EditSpaceDialog")
+    }
+
+    private fun openSpaceManage() {
+        val fragment = SpaceManageFragment.newInstance(
+            spaceId = spaceId,
+            spaceName = binding.tvTitle.text.toString()
+        )
+
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fcv_main, fragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun uploadImageToServer(uri: Uri) {
@@ -1259,7 +1277,7 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
             )
 
         // 실제 SpaceFragment View
-        val changeView = binding.btnChange
+        val changeView = binding.btnSpaceManage
         val exitView = binding.btnExitMenu
         val uploadView = binding.btnUpload
 
@@ -1277,11 +1295,17 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                 overlay
             )
 
+        val changeDiameter =
+            maxOf(
+                baseChangeRect.width(),
+                baseChangeRect.height()
+            ) + dp(10f)
+
         val changeRect = RectF(
-            baseChangeRect.left - dp(9f),
-            baseChangeRect.top - dp(10f),
-            baseChangeRect.right + dp(9f),
-            baseChangeRect.bottom + dp(10f)
+            baseChangeRect.centerX() - changeDiameter / 2f + dp(5f),
+            baseChangeRect.centerY() - changeDiameter / 2f + dp(6f),
+            baseChangeRect.centerX() + changeDiameter / 2f - dp(5f),
+            baseChangeRect.centerY() + changeDiameter / 2f - dp(6f)
         )
 
         val baseExitRect =
@@ -1403,19 +1427,18 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         // 수정 설명
         positionTutorialView(
             changeText,
-            changeRect.right -
-                    changeText.width -
-                    dp(50f),
+            changeRect.centerX() -
+                    changeText.width * 0.96f,
             changeRect.bottom + dp(5f)
         )
 
         // 수정 화살표
         positionTutorialView(
             changeArrow,
-            changeRect.left -
-                    changeArrow.width * 0.45f + dp(1f),
+            changeRect.centerX() +
+                    changeArrow.width * 0.1f,
             changeRect.bottom -
-                    changeArrow.height * 0.15f + dp(3f)
+                    changeArrow.height * 0.15f
         )
 
         // 나가기 설명
@@ -1423,8 +1446,9 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
             exitText,
             exitRect.centerX() -
                     exitText.width / 2f -
-                    dp(195f),
-            exitRect.bottom + dp(65f)
+                    dp(196f),
+            exitRect.centerY() +
+                    exitText.height * 0.5f
         )
 
         // 나가기 화살표

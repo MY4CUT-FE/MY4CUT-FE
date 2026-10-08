@@ -43,16 +43,6 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <ImageView
-                android:id="@+id/btnChange"
-                android:layout_width="16dp"
-                android:layout_height="15dp"
-                android:layout_marginStart="5dp"
-                android:src="@drawable/ic_edit"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toEndOf="@id/tvTitle"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <ImageView
                 android:id="@+id/btnExitMenu"
                 android:layout_width="15dp"
                 android:layout_height="14dp"
@@ -145,28 +135,66 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <LinearLayout
-            android:id="@+id/btnUpload"
-            android:layout_width="60dp"
+            android:id="@+id/layoutSpaceActions"
+            android:layout_width="wrap_content"
             android:layout_height="60dp"
-            android:orientation="vertical"
-            android:gravity="center"
             android:layout_margin="20dp"
+            android:paddingHorizontal="11dp"
+            android:orientation="horizontal"
+            android:gravity="center"
             android:background="@drawable/bg_upload_button"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <ImageView
-                android:layout_width="30dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_upload" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:text="네컷 업로드"
-                android:textSize="9sp"
-                android:textColor="#391801"
-                android:gravity="center"/>
+            <!-- 네컷 업로드 -->
+            <LinearLayout
+                android:id="@+id/btnUpload"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_upload" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="네컷 업로드"
+                    android:textSize="9sp"
+                    android:textColor="#391801"
+                    android:gravity="center" />
+
+            </LinearLayout>
+
+            <!-- 스페이스 관리 -->
+            <LinearLayout
+                android:id="@+id/btnSpaceManage"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="20dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_space_manage" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="스페이스 관리"
+                    android:textSize="9sp"
+                    android:textColor="#391801"
+                    android:gravity="center" />
+
+            </LinearLayout>
+
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

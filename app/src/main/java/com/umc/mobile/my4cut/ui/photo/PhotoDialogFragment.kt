@@ -577,7 +577,7 @@ class PhotoDialogFragment : DialogFragment() {
 
                 etComment.visibility = View.VISIBLE
                 ivSend.visibility = View.VISIBLE
-                ivToggleComment.setImageResource(R.drawable.ic_space_down)
+                ivToggleComment.setImageResource(R.drawable.ic_arrow_down)
             } else {
                 rvChatList.visibility = View.GONE
                 tvEmptyComments.visibility = View.GONE

@@ -1,0 +1,550 @@
+package com.umc.mobile.my4cut.ui.space
+
+import android.graphics.Color
+import android.graphics.Rect
+import android.graphics.drawable.ColorDrawable
+import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.TouchDelegate
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
+import com.umc.mobile.my4cut.data.network.RetrofitClient
+import com.umc.mobile.my4cut.databinding.DialogSpaceInviteFriendBinding
+import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
+import com.umc.mobile.my4cut.ui.friend.Friend
+import com.umc.mobile.my4cut.ui.friend.FriendUiItem
+import com.umc.mobile.my4cut.ui.friend.FriendsAdapter
+import com.umc.mobile.my4cut.ui.friend.FriendsMode
+import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.text.Collator
+import java.util.Locale
+
+class InviteSpaceFriendDialogFragment : DialogFragment() {
+
+    private var _binding: DialogSpaceInviteFriendBinding? = null
+    private val binding get() = _binding!!
+
+    private lateinit var friendsAdapter: FriendsAdapter
+
+    /** 선택한 친구 */
+    private val selectedFriends = mutableListOf<Friend>()
+    private val selectedFriendIds = mutableSetOf<Long>()
+
+    /** 전체 친구 목록 */
+    private val friendList = mutableListOf<Friend>()
+
+    /** 스페이스 정보 */
+    private var spaceId: Long = -1L
+    private val originalMemberIds = mutableSetOf<Long>()
+
+    /** 초대 완료 콜백 */
+    private var onInviteCompleteListener: (() -> Unit)? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        arguments?.let { bundle ->
+            spaceId = bundle.getLong(ARG_SPACE_ID, -1L)
+
+            originalMemberIds.addAll(
+                bundle.getLongArray(ARG_SPACE_MEMBER_IDS)
+                    ?.toList()
+                    ?: emptyList()
+            )
+        }
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+
+        dialog?.window?.setBackgroundDrawable(
+            ColorDrawable(Color.TRANSPARENT)
+        )
+
+        _binding = DialogSpaceInviteFriendBinding.inflate(
+            inflater,
+            container,
+            false
+        )
+
+        return binding.root
+    }
+
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?
+    ) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // 친구 목록 조회
+        loadFriendsFromApi()
+
+        // 드롭다운 기본 배경
+        binding.layoutFriendSelect.setBackgroundResource(
+            R.drawable.bg_dropdown_closed
+        )
+
+        // 친구 목록 RecyclerView 초기화
+        setupFriendList()
+
+// 친구 선택 드롭다운
+        binding.layoutFriendSelect.setOnClickListener {
+
+            val isOpen = binding.layoutFriendList.visibility == View.VISIBLE
+
+            if (isOpen) {
+                // 목록 닫기
+                binding.layoutFriendList.visibility = View.INVISIBLE
+
+                binding.layoutFriendSelect.setBackgroundResource(
+                    R.drawable.bg_dropdown_closed
+                )
+            } else {
+                // 목록 열기
+                binding.layoutFriendList.visibility = View.VISIBLE
+
+                binding.layoutFriendSelect.setBackgroundResource(
+                    R.drawable.bg_dropdown_open
+                )
+            }
+        }
+
+        expandTouchArea()
+        updateFriendSummary()
+
+        // 닫기 버튼
+        binding.layoutClose.setOnClickListener {
+            dismiss()
+        }
+
+        // 초대 버튼
+        binding.mainText.text = "확인"
+        binding.mainText.isClickable = true
+        binding.mainText.isFocusable = true
+
+        binding.mainText.setOnClickListener {
+            inviteMembers()
+        }
+    }
+
+    /**
+     * 선택한 친구 이름 요약
+     */
+    private fun updateFriendSummary() {
+
+        when (selectedFriends.size) {
+
+            0 -> {
+                binding.tvFriendSummary.text = "친구 선택"
+                binding.tvFriendSummary.setTextColor(
+                    Color.parseColor("#D9D9D9")
+                )
+            }
+
+            1 -> {
+                binding.tvFriendSummary.text =
+                    selectedFriends.first().nickname
+
+                binding.tvFriendSummary.setTextColor(
+                    Color.parseColor("#1A1A1A")
+                )
+            }
+
+            else -> {
+                val first = selectedFriends.first().nickname
+
+                binding.tvFriendSummary.text =
+                    "$first 외 ${selectedFriends.size - 1}명"
+
+                binding.tvFriendSummary.setTextColor(
+                    Color.parseColor("#1A1A1A")
+                )
+            }
+        }
+    }
+
+    private fun setupFriendList() {
+
+        friendsAdapter = FriendsAdapter(
+            getMode = { FriendsMode.NORMAL },
+
+            isSelected = { id: Long ->
+                selectedFriendIds.contains(id)
+            },
+
+            onFriendClick = { friend ->
+
+                val id = friend.friendId
+
+                if (selectedFriendIds.contains(id)) {
+
+                    selectedFriendIds.remove(id)
+
+                    selectedFriends.removeAll {
+                        it.friendId == id
+                    }
+
+                } else {
+
+                    selectedFriendIds.add(id)
+                    selectedFriends.add(friend)
+                }
+
+                updateFriendSummary()
+                submitDialogFriends()
+            },
+
+            onFavoriteClick = {
+                it.isFavorite = !it.isFavorite
+                submitDialogFriends()
+            },
+
+            hideFavoriteDivider = true,
+            enableSelectionGray = true
+        )
+
+        binding.rvInviteFriends.apply {
+
+            layoutManager = LinearLayoutManager(requireContext())
+
+            adapter = friendsAdapter
+
+            isNestedScrollingEnabled = true
+        }
+
+        submitDialogFriends()
+    }
+
+    /**
+     * 친구 목록 정렬 및 표시
+     */
+    private fun submitDialogFriends() {
+
+        if (!::friendsAdapter.isInitialized) return
+
+        // 이미 참여 중이거나 초대받은 친구 제외
+        val inviteAvailableFriends = friendList.filterNot { friend ->
+            originalMemberIds.contains(friend.friendId)
+        }
+
+        Log.d(
+            "InviteSpaceFriend",
+            "전체 친구=${friendList.size}, " +
+                    "제외 ID=${originalMemberIds.size}, " +
+                    "초대 가능 친구=${inviteAvailableFriends.size}"
+        )
+
+        val collator = Collator.getInstance(Locale.KOREAN)
+
+        // 즐겨찾기 친구
+        val favorites = inviteAvailableFriends
+            .filter { it.isFavorite }
+            .sortedWith { a, b ->
+                collator.compare(a.nickname, b.nickname)
+            }
+
+        // 일반 친구
+        val normals = inviteAvailableFriends
+            .filter { !it.isFavorite }
+            .sortedWith { a, b ->
+                collator.compare(a.nickname, b.nickname)
+            }
+
+        val uiItems = buildList<FriendUiItem> {
+
+            favorites.forEach {
+                add(FriendUiItem.Item(it))
+            }
+
+            normals.forEach {
+                add(FriendUiItem.Item(it))
+            }
+        }
+
+        friendsAdapter.submitList(uiItems)
+    }
+
+    /**
+     * 친구 목록 API 조회
+     */
+    private fun loadFriendsFromApi() {
+
+        viewLifecycleOwner.lifecycleScope.launch {
+
+            try {
+
+                val response =
+                    RetrofitClient.friendService.getFriends()
+
+                val data = response.data ?: return@launch
+
+                friendList.clear()
+                selectedFriends.clear()
+                selectedFriendIds.clear()
+
+                friendList.addAll(
+                    data.map {
+                        Friend(
+                            friendId = it.friendId,
+                            userId = it.userId,
+                            nickname = it.nickname,
+                            isFavorite = it.isFavorite,
+                            profileImageUrl = it.profileImageUrl
+                        )
+                    }
+                )
+
+                Log.d(
+                    "InviteSpaceFriend",
+                    "친구 목록=${friendList.map { "${it.nickname}(${it.userId})" }}"
+                )
+
+                Log.d(
+                    "InviteSpaceFriend",
+                    "제외 목록=$originalMemberIds"
+                )
+
+                Log.d(
+                    "AddSpaceFriend",
+                    "loadedFriends=${friendList.size}, " +
+                            "excludedUserIds=$originalMemberIds"
+                )
+
+                updateFriendSummary()
+
+                if (::friendsAdapter.isInitialized) {
+                    submitDialogFriends()
+                }
+
+            } catch (e: Exception) {
+
+                Log.e(
+                    "AddSpaceFriend",
+                    "친구 목록 API 실패",
+                    e
+                )
+
+                Toast.makeText(
+                    requireContext(),
+                    "친구 목록 불러오기에 실패했습니다. 다시 시도해 주세요.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    /**
+     * 친구 초대 API
+     */
+    private fun inviteMembers() {
+
+        // 초대할 친구가 없는 경우
+        if (selectedFriends.isEmpty()) {
+
+            Toast.makeText(
+                requireContext(),
+                "초대할 친구를 선택해 주세요.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            return
+        }
+
+        if (spaceId <= 0L) {
+            Toast.makeText(
+                requireContext(),
+                "스페이스 정보를 확인할 수 없어요.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        val inviteUserIds = selectedFriends
+            .map { it.friendId }
+            .distinct()
+
+        // 중복 요청 방지
+        binding.mainText.isEnabled = false
+
+        viewLifecycleOwner.lifecycleScope.launch {
+
+            try {
+
+                RetrofitClient.workspaceService.inviteMembers(
+                    WorkspaceInviteRequestDto(
+                        workspaceId = spaceId,
+                        userIds = inviteUserIds
+                    )
+                )
+
+                Toast.makeText(
+                    requireContext(),
+                    "초대를 전송했어요.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                // 초대 완료 후 관리 화면 갱신
+                onInviteCompleteListener?.invoke()
+
+                dismiss()
+
+            } catch (e: HttpException) {
+
+                Log.e(
+                    "AddSpaceFriend",
+                    "친구 초대 실패",
+                    e
+                )
+
+                val errorBody =
+                    e.response()?.errorBody()?.string()
+
+                when {
+
+                    errorBody?.contains("\"code\":\"W4003\"") == true ||
+                            errorBody?.contains("\"code\": \"W4003\"") == true -> {
+
+                        Toast.makeText(
+                            requireContext(),
+                            "한 번에 최대 9명까지만 초대할 수 있어요.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    e.code() == 400 -> {
+
+                        Toast.makeText(
+                            requireContext(),
+                            "친구 초대 요청을 확인해 주세요.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    else -> {
+
+                        Toast.makeText(
+                            requireContext(),
+                            "친구 초대에 실패했습니다. 다시 시도해 주세요.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+
+            } catch (e: Exception) {
+
+                Log.e(
+                    "AddSpaceFriend",
+                    "친구 초대 실패",
+                    e
+                )
+
+                Toast.makeText(
+                    requireContext(),
+                    "친구 초대에 실패했습니다. 다시 시도해 주세요.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+            } finally {
+                _binding?.mainText?.isEnabled = true
+            }
+        }
+    }
+
+    /**
+     * 친구 선택 영역 터치 범위 확대
+     */
+    private fun expandTouchArea() {
+
+        binding.layoutFriendSelect.post {
+
+            val parent = binding.root as ViewGroup
+            val rect = Rect()
+
+            binding.layoutFriendSelect.getHitRect(rect)
+
+            val density = resources.displayMetrics.density
+
+            rect.inset(
+                (-20 * density).toInt(),
+                (-12 * density).toInt()
+            )
+
+            parent.touchDelegate = TouchDelegate(
+                rect,
+                binding.layoutFriendSelect
+            )
+        }
+    }
+
+    /**
+     * 모달 크기
+     */
+    override fun onStart() {
+        super.onStart()
+
+        val displayMetrics = resources.displayMetrics
+
+        val width = (displayMetrics.widthPixels * 0.9f).toInt()
+        val height = (displayMetrics.heightPixels * 0.6f).toInt()
+
+        dialog?.window?.apply {
+            setLayout(width, height)
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        }
+    }
+
+    override fun onDestroyView() {
+
+        _binding = null
+
+        super.onDestroyView()
+    }
+
+    /**
+     * 초대 완료 콜백
+     */
+    fun setOnInviteCompleteListener(
+        listener: () -> Unit
+    ) {
+        onInviteCompleteListener = listener
+    }
+
+    companion object {
+
+        private const val ARG_SPACE_ID = "arg_space_id"
+        private const val ARG_SPACE_MEMBER_IDS = "arg_space_member_ids"
+
+        fun newInstance(
+            spaceId: Long,
+            memberIds: List<Long>
+        ): InviteSpaceFriendDialogFragment {
+
+            return InviteSpaceFriendDialogFragment().apply {
+
+                arguments = Bundle().apply {
+
+                    putLong(
+                        ARG_SPACE_ID,
+                        spaceId
+                    )
+
+                    putLongArray(
+                        ARG_SPACE_MEMBER_IDS,
+                        memberIds.toLongArray()
+                    )
+                }
+            }
+        }
+    }
+}
