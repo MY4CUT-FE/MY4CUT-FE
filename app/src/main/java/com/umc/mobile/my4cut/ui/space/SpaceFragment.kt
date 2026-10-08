@@ -1295,11 +1295,17 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
                 overlay
             )
 
+        val changeDiameter =
+            maxOf(
+                baseChangeRect.width(),
+                baseChangeRect.height()
+            ) + dp(10f)
+
         val changeRect = RectF(
-            baseChangeRect.left - dp(9f),
-            baseChangeRect.top - dp(10f),
-            baseChangeRect.right + dp(9f),
-            baseChangeRect.bottom + dp(10f)
+            baseChangeRect.centerX() - changeDiameter / 2f + dp(5f),
+            baseChangeRect.centerY() - changeDiameter / 2f + dp(6f),
+            baseChangeRect.centerX() + changeDiameter / 2f - dp(5f),
+            baseChangeRect.centerY() + changeDiameter / 2f - dp(6f)
         )
 
         val baseExitRect =
@@ -1421,19 +1427,18 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
         // 수정 설명
         positionTutorialView(
             changeText,
-            changeRect.right -
-                    changeText.width -
-                    dp(50f),
+            changeRect.centerX() -
+                    changeText.width * 0.96f,
             changeRect.bottom + dp(5f)
         )
 
         // 수정 화살표
         positionTutorialView(
             changeArrow,
-            changeRect.left -
-                    changeArrow.width * 0.45f + dp(1f),
+            changeRect.centerX() +
+                    changeArrow.width * 0.1f,
             changeRect.bottom -
-                    changeArrow.height * 0.15f + dp(3f)
+                    changeArrow.height * 0.15f
         )
 
         // 나가기 설명
@@ -1441,8 +1446,9 @@ class SpaceFragment : Fragment(R.layout.fragment_space) {
             exitText,
             exitRect.centerX() -
                     exitText.width / 2f -
-                    dp(195f),
-            exitRect.bottom + dp(65f)
+                    dp(196f),
+            exitRect.centerY() +
+                    exitText.height * 0.5f
         )
 
         // 나가기 화살표
