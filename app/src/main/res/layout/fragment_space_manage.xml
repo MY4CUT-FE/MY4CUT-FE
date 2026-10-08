@@ -142,7 +142,7 @@
             <LinearLayout
                 android:id="@+id/headerMembers"
                 android:layout_width="match_parent"
-                android:layout_height="35dp"
+                android:layout_height="36dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -151,6 +151,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/suit_bold"
                     android:text="스페이스 참여자"
+                    android:layout_marginTop="1dp"
                     android:textColor="#505050"
                     android:textSize="13sp" />
 
@@ -193,6 +194,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
+                android:layout_marginTop="5dp"
                 android:background="#E1E1E1" />
 
 
@@ -201,7 +203,7 @@
             <LinearLayout
                 android:id="@+id/headerPending"
                 android:layout_width="match_parent"
-                android:layout_height="35dp"
+                android:layout_height="36dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -209,6 +211,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:layout_marginTop="1dp"
                     android:fontFamily="@font/suit_bold"
                     android:text="초대 수락 대기 중"
                     android:textColor="#505050"
@@ -238,6 +241,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
+                android:layout_marginTop="5dp"
                 android:background="#E1E1E1" />
 
 
@@ -246,7 +250,7 @@
             <LinearLayout
                 android:id="@+id/headerRejected"
                 android:layout_width="match_parent"
-                android:layout_height="35dp"
+                android:layout_height="36dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -254,6 +258,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:layout_marginTop="1dp"
                     android:fontFamily="@font/suit_bold"
                     android:text="초대 거절"
                     android:textColor="#505050"
