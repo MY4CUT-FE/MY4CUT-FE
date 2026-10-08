@@ -36,6 +36,8 @@ class SpaceManageFragment : Fragment() {
 
     private val maxMembers = 10
 
+    private var inviteExcludedUserIds: List<Long> = emptyList()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -110,11 +112,25 @@ class SpaceManageFragment : Fragment() {
         }
 
         binding.btnAddFriend.setOnClickListener {
-            Toast.makeText(
-                requireContext(),
-                "친구 초대 기능은 추후 연결할 예정이에요.",
-                Toast.LENGTH_SHORT
-            ).show()
+            if (spaceId <= 0L) {
+                Toast.makeText(
+                    requireContext(),
+                    "스페이스 정보를 확인할 수 없어요.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+
+            val dialog = InviteSpaceFriendDialogFragment.newInstance(
+                spaceId = spaceId,
+                memberIds = inviteExcludedUserIds
+            )
+
+            dialog.setOnInviteCompleteListener {
+                loadSpaceInfo()
+            }
+
+            dialog.show(parentFragmentManager, "InviteSpaceFriendDialog")
         }
     }
 
@@ -156,6 +172,13 @@ class SpaceManageFragment : Fragment() {
 
                 // 초대 사용자 목록
                 val invitationUsers = data.invitationUsers.orEmpty()
+
+                // 이미 참여 중이거나 초대받은 사용자 제외
+                inviteExcludedUserIds = (
+                        data.memberIds.orEmpty() +
+                                data.pendingInvitationUserIds.orEmpty() +
+                                data.alreadyInvitedFriendIds
+                        ).distinct()
 
                 // 참여자
                 val members = invitationUsers

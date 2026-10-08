@@ -236,22 +236,11 @@ class InviteSpaceFriendDialogFragment : DialogFragment() {
 
         popupBinding.rvFriends.clipToPadding = false
 
-        // 드롭다운 높이
-        val maxHeightDp = 290
-        val minHeightDp = 50
-
-        val density = resources.displayMetrics.density
-
-        val maxHeightPx =
-            (maxHeightDp * density).toInt()
-
-        val minHeightPx =
-            (minHeightDp * density).toInt()
-
-        popupBinding.root.minimumHeight = minHeightPx
+        // 친구 수와 관계없이 기존 드롭다운 높이 유지
+        val popupHeightPx = (290 * resources.displayMetrics.density).toInt()
 
         val params = popupBinding.rvFriends.layoutParams
-        params.height = maxHeightPx
+        params.height = popupHeightPx
         popupBinding.rvFriends.layoutParams = params
 
         popupBinding.rvFriends.isNestedScrollingEnabled = true
@@ -259,7 +248,7 @@ class InviteSpaceFriendDialogFragment : DialogFragment() {
         popupWindow = PopupWindow(
             popupBinding.root,
             binding.layoutFriendSelect.width,
-            maxHeightPx,
+            popupHeightPx,
             true
         ).apply {
 
@@ -295,10 +284,17 @@ class InviteSpaceFriendDialogFragment : DialogFragment() {
 
         if (!::friendsAdapter.isInitialized) return
 
-        // 기존 참여자 제외
+        // 이미 참여 중이거나 초대받은 친구 제외
         val inviteAvailableFriends = friendList.filterNot { friend ->
-            originalMemberIds.contains(friend.userId)
+            originalMemberIds.contains(friend.friendId)
         }
+
+        Log.d(
+            "InviteSpaceFriend",
+            "전체 친구=${friendList.size}, " +
+                    "제외 ID=${originalMemberIds.size}, " +
+                    "초대 가능 친구=${inviteAvailableFriends.size}"
+        )
 
         val collator = Collator.getInstance(Locale.KOREAN)
 
@@ -361,6 +357,16 @@ class InviteSpaceFriendDialogFragment : DialogFragment() {
                 )
 
                 Log.d(
+                    "InviteSpaceFriend",
+                    "친구 목록=${friendList.map { "${it.nickname}(${it.userId})" }}"
+                )
+
+                Log.d(
+                    "InviteSpaceFriend",
+                    "제외 목록=$originalMemberIds"
+                )
+
+                Log.d(
                     "AddSpaceFriend",
                     "loadedFriends=${friendList.size}, " +
                             "excludedUserIds=$originalMemberIds"
@@ -415,9 +421,8 @@ class InviteSpaceFriendDialogFragment : DialogFragment() {
             return
         }
 
-        // 초대 API에는 friendId가 아닌 userId 전달
         val inviteUserIds = selectedFriends
-            .map { it.userId }
+            .map { it.friendId }
             .distinct()
 
         // 중복 요청 방지
