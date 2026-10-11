@@ -190,6 +190,7 @@ class SpaceManageFragment : Fragment() {
                             profileImageUrl = user.profileImageUrl,
                             status = SpaceManageMemberStatus.MEMBER,
                             isFriend = user.isFriend,
+                            isMe = user.userId == myUserId,
                             invitedByMe = user.isInviter,
                             invitationId = user.invitationId
                         )

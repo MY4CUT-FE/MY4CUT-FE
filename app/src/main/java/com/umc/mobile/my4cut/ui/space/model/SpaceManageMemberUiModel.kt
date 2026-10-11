@@ -15,6 +15,9 @@ data class SpaceManageMemberUiModel(
     // 현재 나와 친구인지
     val isFriend: Boolean,
 
+    // 현재 로그인한 사용자 본인인지
+    val isMe: Boolean = false,
+
     // 이 사람을 내가 초대했는지
     val invitedByMe: Boolean,
 
