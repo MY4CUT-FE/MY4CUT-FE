@@ -306,7 +306,7 @@ class SpaceManageFragment : Fragment() {
                     return@SpaceManageMemberAdapter
                 }
 
-                cancelInvitation(invitationId)
+                showCancelInvitationDialog(invitationId)
             }
         )
 
@@ -409,6 +409,37 @@ class SpaceManageFragment : Fragment() {
             } else {
                 R.drawable.ic_arrow_down
             }
+        )
+    }
+
+    private fun showCancelInvitationDialog(invitationId: Long) {
+        val dialog = android.app.Dialog(requireContext())
+
+        val dialogBinding =
+            com.umc.mobile.my4cut.databinding.DialogCancelInvitationBinding.inflate(
+                layoutInflater
+            )
+
+        dialog.setContentView(dialogBinding.root)
+
+        dialog.window?.setBackgroundDrawableResource(
+            android.R.color.transparent
+        )
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnExit.setOnClickListener {
+            dialog.dismiss()
+            cancelInvitation(invitationId)
+        }
+
+        dialog.show()
+
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.9f).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
         )
     }
 
