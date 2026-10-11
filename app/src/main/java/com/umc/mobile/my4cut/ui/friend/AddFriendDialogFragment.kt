@@ -31,6 +31,24 @@ class AddFriendDialogFragment : DialogFragment() {
     companion object {
         const val RESULT_ADD_FRIEND = "result_add_friend"
         const val KEY_FRIEND_NICKNAME = "key_friend_nickname"
+
+        private const val ARG_FRIEND_CODE = "arg_friend_code"
+        private const val ARG_NICKNAME = "arg_nickname"
+        private const val ARG_PROFILE_IMAGE_URL = "arg_profile_image_url"
+
+        fun newInstanceForMember(
+            friendCode: String,
+            nickname: String,
+            profileImageUrl: String?
+        ): AddFriendDialogFragment {
+            return AddFriendDialogFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_FRIEND_CODE, friendCode)
+                    putString(ARG_NICKNAME, nickname)
+                    putString(ARG_PROFILE_IMAGE_URL, profileImageUrl)
+                }
+            }
+        }
     }
 
     private var _binding: DialogAddFriendBinding? = null
@@ -62,7 +80,22 @@ class AddFriendDialogFragment : DialogFragment() {
 
         initView()
         initClickListeners()
-        loadMyCode()
+
+        val friendCode = arguments?.getString(ARG_FRIEND_CODE)
+
+        if (!friendCode.isNullOrBlank()) {
+            // 스페이스 관리 화면에서 진입한 경우
+            searchedFriendCode = friendCode
+
+            showSearchResult(
+                nickname = arguments?.getString(ARG_NICKNAME).orEmpty(),
+                profileImageUrl = arguments?.getString(ARG_PROFILE_IMAGE_URL)
+            )
+        } else {
+            // 기존 친구 추가 화면에서 진입한 경우
+            loadMyCode()
+        }
+
         binding.tvMyCode.paintFlags =
             binding.tvMyCode.paintFlags or Paint.UNDERLINE_TEXT_FLAG
     }
@@ -180,9 +213,30 @@ class AddFriendDialogFragment : DialogFragment() {
             .circleCrop()
             .into(binding.ivProfile)
 
-        // 검색 결과가 보일 때는 내 코드 영역 숨김
+        // 내 친구 코드 영역 숨기기
         binding.tvMyCodeLabel.visibility = View.GONE
         binding.tvMyCode.visibility = View.GONE
+
+        // 친구 코드 입력 영역 숨기기
+        binding.tvInputLabel.visibility = View.GONE
+        binding.etFriendCode.visibility = View.GONE
+
+        // 프로필과 닉네임을 다이얼로그 중앙에 배치
+        val params = binding.layoutResult.layoutParams
+                as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+
+        params.topToBottom =
+            androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.UNSET
+
+        params.topToTop =
+            androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID
+
+        params.bottomToBottom =
+            androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID
+
+        params.verticalBias = 0.5f
+
+        binding.layoutResult.layoutParams = params
 
         isSearchResultVisible = true
     }

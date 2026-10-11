@@ -11,12 +11,15 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.friend.model.FriendRequestCreateDto
 import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.databinding.FragmentSpaceManageBinding
+import com.umc.mobile.my4cut.ui.friend.AddFriendDialogFragment
 import com.umc.mobile.my4cut.ui.space.SpaceManageMemberAdapter
 import com.umc.mobile.my4cut.ui.space.model.SpaceManageMemberStatus
 import com.umc.mobile.my4cut.ui.space.model.SpaceManageMemberUiModel
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 class SpaceManageFragment : Fragment() {
 
@@ -192,7 +195,8 @@ class SpaceManageFragment : Fragment() {
                             isFriend = user.isFriend,
                             isMe = user.userId == myUserId,
                             invitedByMe = user.isInviter,
-                            invitationId = user.invitationId
+                            invitationId = user.invitationId,
+                            friendCode = user.friendCode
                         )
                     }
 
@@ -268,11 +272,22 @@ class SpaceManageFragment : Fragment() {
         memberAdapter = SpaceManageMemberAdapter(
             members = members,
             onAddFriendClick = { member ->
-                Toast.makeText(
-                    requireContext(),
-                    "${member.nickname}님에게 친구 요청을 보내는 기능은 추후 연결할 예정이에요.",
-                    Toast.LENGTH_SHORT
-                ).show()
+
+                val friendCode = member.friendCode
+
+                if (friendCode.isNullOrBlank()) {
+                    Toast.makeText(
+                        requireContext(),
+                        "친구 코드를 확인할 수 없어요.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    AddFriendDialogFragment.newInstanceForMember(
+                        friendCode = friendCode,
+                        nickname = member.nickname,
+                        profileImageUrl = member.profileImageUrl
+                    ).show(parentFragmentManager, "AddFriendDialog")
+                }
             }
         )
 
@@ -474,6 +489,84 @@ class SpaceManageFragment : Fragment() {
         } catch (e: Exception) {
             Log.e("SpaceManageFragment", "Failed to read current user ID", e)
             -1L
+        }
+    }
+
+    private val requestingFriendIds = mutableSetOf<Long>()
+
+    private fun requestFriend(member: SpaceManageMemberUiModel) {
+
+        val friendCode = member.friendCode
+
+        if (friendCode.isNullOrBlank()) {
+            Toast.makeText(
+                requireContext(),
+                "친구 코드를 확인할 수 없어요.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        // 본인에게 친구 요청 방지
+        if (member.isMe) return
+
+        // 이미 친구인 경우
+        if (member.isFriend) {
+            Toast.makeText(
+                requireContext(),
+                "이미 추가된 친구예요.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        // 중복 클릭 방지
+        if (!requestingFriendIds.add(member.id)) return
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.friendService.requestFriend(
+                    FriendRequestCreateDto(
+                        targetFriendCode = friendCode
+                    )
+                )
+
+                if (response.code == "C2001") {
+                    Toast.makeText(
+                        requireContext(),
+                        "친구 요청을 전송했어요.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        response.message ?: "친구 요청에 실패했어요.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+            } catch (e: HttpException) {
+
+                Toast.makeText(
+                    requireContext(),
+                    when (e.code()) {
+                        409 -> "이미 친구이거나 친구 요청을 보냈어요."
+                        else -> "친구 요청에 실패했어요."
+                    },
+                    Toast.LENGTH_SHORT
+                ).show()
+
+            } catch (e: Exception) {
+
+                Toast.makeText(
+                    requireContext(),
+                    "네트워크 오류가 발생했어요.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+            } finally {
+                requestingFriendIds.remove(member.id)
+            }
         }
     }
 
