@@ -28,11 +28,10 @@
         <!-- 앨범이 하나도 없을 때만 화면 중앙에 표시 -->
         <ImageView
             android:id="@+id/iv_empty_state"
-            android:layout_width="101dp"
-            android:layout_height="62dp"
+            android:layout_width="110dp"
+            android:layout_height="90dp"
             android:scaleType="fitCenter"
             android:src="@drawable/img_empty_state_character"
-            android:visibility="gone"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toTopOf="@id/cv_create_album"
             app:layout_constraintStart_toStartOf="parent"
@@ -42,12 +41,10 @@
             android:id="@+id/tv_empty_state"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
             android:text="아직 생성한 앨범이 없어요"
-            android:textSize="10sp"
+            android:textSize="12sp"
             android:textColor="#B6B6B6"
             android:fontFamily="@font/suit_regular"
-            android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@id/iv_empty_state"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
