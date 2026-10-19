@@ -104,6 +104,7 @@ class PhotoRVAdapter(
             binding.root.isClickable = true
             binding.ivFinalToggle.isClickable = true
 
+            binding.ivComment.visibility = View.VISIBLE
             binding.ivPhoto.background = null
             binding.ivPhoto.scaleType = ImageView.ScaleType.CENTER_CROP
 
