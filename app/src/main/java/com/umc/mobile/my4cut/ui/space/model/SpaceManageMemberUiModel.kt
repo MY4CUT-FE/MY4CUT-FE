@@ -1,9 +1,9 @@
 package com.umc.mobile.my4cut.ui.space.model
 
 enum class SpaceManageMemberStatus {
-    MEMBER,      // 스페이스 참여 중
-    PENDING,     // 초대 수락 대기
-    REJECTED     // 초대 거절
+    MEMBER,
+    PENDING,
+    REJECTED
 }
 
 data class SpaceManageMemberUiModel(
@@ -15,9 +15,15 @@ data class SpaceManageMemberUiModel(
     // 현재 나와 친구인지
     val isFriend: Boolean,
 
+    // 현재 로그인한 사용자 본인인지
+    val isMe: Boolean = false,
+
     // 이 사람을 내가 초대했는지
     val invitedByMe: Boolean,
 
     // 초대 취소 API에서 사용할 ID
-    val invitationId: Long? = null
+    val invitationId: Long? = null,
+
+    // 친구 요청 API에서 사용할 친구 코드
+    val friendCode: String? = null
 )

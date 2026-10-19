@@ -4,6 +4,7 @@ data class WorkspaceInvitationUserResponseDto(
     val invitationId: Long,
     val userId: Long,
     val nickname: String,
+    val friendCode: String? = null,
     val profileImageUrl: String?,
     val inviterId: Long,
     val inviteeId: Long,

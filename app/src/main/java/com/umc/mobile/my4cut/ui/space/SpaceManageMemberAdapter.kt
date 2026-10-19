@@ -45,8 +45,8 @@ class SpaceManageMemberAdapter(
                 // =========================
                 SpaceManageMemberStatus.MEMBER -> {
 
-                    // 친구가 아닌 경우에만 친구 추가 표시
-                    if (!member.isFriend) {
+                    // 본인이 아니고 친구가 아닌 참여자에게만 친구 추가 표시
+                    if (!member.isMe && !member.isFriend) {
 
                         binding.ivAction.visibility = View.VISIBLE
 
