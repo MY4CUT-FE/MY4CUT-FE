@@ -1,7 +1,7 @@
 package com.umc.mobile.my4cut.ui.space
 
-import FriendUiItem
-import FriendsAdapter
+import com.umc.mobile.my4cut.ui.friend.FriendUiItem
+import com.umc.mobile.my4cut.ui.friend.FriendsAdapter
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
@@ -21,13 +21,16 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import android.widget.Toast
 import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceUpdateRequestDto
-import com.umc.mobile.my4cut.databinding.DialogChangeSpaceBinding
+import com.umc.mobile.my4cut.databinding.DialogSpaceEditBinding
+import com.umc.mobile.my4cut.ui.friend.FriendsMode
+import java.text.Collator
+import java.util.Locale
 
 class EditSpaceDialogFragment : DialogFragment() {
 
-    private var _binding: DialogChangeSpaceBinding? = null
+    private var _binding: DialogSpaceEditBinding? = null
     private val binding get() = _binding!!
 
     private var popupWindow: PopupWindow? = null
@@ -63,7 +66,7 @@ class EditSpaceDialogFragment : DialogFragment() {
         savedInstanceState: Bundle?
     ): View {
         dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        _binding = DialogChangeSpaceBinding.inflate(inflater, container, false)
+        _binding = DialogSpaceEditBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -79,14 +82,21 @@ class EditSpaceDialogFragment : DialogFragment() {
         binding.layoutFriendSelect.setBackgroundResource(R.drawable.bg_dropdown_closed)
 
         binding.layoutFriendSelect.setOnClickListener {
-            if (popupWindow?.isShowing == true) popupWindow?.dismiss()
-            else showFriendPopup()
+            if (popupWindow?.isShowing == true) {
+                popupWindow?.dismiss()
+            } else {
+                hideKeyboard()
+
+                binding.root.postDelayed({
+                    showFriendPopup()
+                }, 150)
+            }
         }
 
         expandTouchArea()
         updateFriendSummary()
 
-        binding.ivClose.setOnClickListener { dismiss() }
+        binding.layoutClose.setOnClickListener { dismiss() }
 
         /** 수정 완료 */
         binding.mainText.text = "확인"
@@ -162,7 +172,7 @@ class EditSpaceDialogFragment : DialogFragment() {
         popupBinding.rvFriends.clipToPadding = false
 
         // 드롭다운 최소/최대 높이 제한 (CreateSpace와 동일)
-        val maxHeightDp = 240
+        val maxHeightDp = 290
         val minHeightDp = 50
         val density = resources.displayMetrics.density
         val maxHeightPx = (maxHeightDp * density).toInt()
@@ -182,6 +192,7 @@ class EditSpaceDialogFragment : DialogFragment() {
         ).apply {
             isOutsideTouchable = true
             isFocusable = true
+            inputMethodMode = PopupWindow.INPUT_METHOD_NOT_NEEDED
             elevation = 0f
 
             setOnDismissListener {
@@ -201,8 +212,19 @@ class EditSpaceDialogFragment : DialogFragment() {
             originalMemberIds.contains(friend.friendId)
         }
 
-        val favorites = inviteAvailableFriends.filter { it.isFavorite }
-        val normals = inviteAvailableFriends.filter { !it.isFavorite }
+        val collator = Collator.getInstance(Locale.KOREAN)
+
+        val favorites = inviteAvailableFriends
+            .filter { it.isFavorite }
+            .sortedWith { a, b ->
+                collator.compare(a.nickname, b.nickname)
+            }
+
+        val normals = inviteAvailableFriends
+            .filter { !it.isFavorite }
+            .sortedWith { a, b ->
+                collator.compare(a.nickname, b.nickname)
+            }
 
         val uiItems = buildList<FriendUiItem> {
             favorites.forEach { add(FriendUiItem.Item(it)) }
@@ -235,7 +257,13 @@ class EditSpaceDialogFragment : DialogFragment() {
                     )
                 }
 
-                Toast.makeText(requireContext(), "스페이스가 수정되었습니다", Toast.LENGTH_SHORT).show()
+                val message = if (inviteUserIds.isNotEmpty()) {
+                    "초대를 전송했어요."
+                } else {
+                    "스페이스를 수정했어요."
+                }
+
+                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
 
                 // 수정 완료 후 화면 갱신 콜백 호출
                 onEditCompleteListener?.invoke()
@@ -243,9 +271,44 @@ class EditSpaceDialogFragment : DialogFragment() {
                 // 다이얼로그 닫기
                 dismiss()
 
+            } catch (e: retrofit2.HttpException) {
+                Log.e("EditSpace", "스페이스 수정 실패", e)
+
+                val errorBody = e.response()?.errorBody()?.string()
+
+                when {
+                    errorBody?.contains("\"code\":\"W4003\"") == true ||
+                            errorBody?.contains("\"code\": \"W4003\"") == true -> {
+                        Toast.makeText(
+                            requireContext(),
+                            "한 번에 최대 9명까지만 초대할 수 있어요.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    e.code() == 400 -> {
+                        Toast.makeText(
+                            requireContext(),
+                            "스페이스 이름은 영어, 한글, 숫자만 가능하며 15자까지 입력할 수 있어요.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    else -> {
+                        Toast.makeText(
+                            requireContext(),
+                            "스페이스 수정에 실패했습니다. 다시 시도해 주세요.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
             } catch (e: Exception) {
                 Log.e("EditSpace", "스페이스 수정 실패", e)
-                Toast.makeText(requireContext(), "스페이스 수정에 실패했습니다", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "스페이스 수정에 실패했습니다. 다시 시도해 주세요.",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -295,7 +358,7 @@ class EditSpaceDialogFragment : DialogFragment() {
                 }
             } catch (e: Exception) {
                 Log.e("EditSpace", "친구 목록 API 실패", e)
-                Toast.makeText(requireContext(), "친구 목록을 불러오지 못했습니다", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "친구 목록 불러오기에 실패했습니다. 다시 시도해 주세요", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -338,6 +401,15 @@ class EditSpaceDialogFragment : DialogFragment() {
                 }
             }
         }
+    }
+
+    private fun hideKeyboard() {
+        val imm = requireContext()
+            .getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                as android.view.inputmethod.InputMethodManager
+
+        imm.hideSoftInputFromWindow(binding.etSpaceName.windowToken, 0)
+        binding.etSpaceName.clearFocus()
     }
 
     private var onEditCompleteListener: (() -> Unit)? = null

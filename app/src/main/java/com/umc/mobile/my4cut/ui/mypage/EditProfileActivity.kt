@@ -16,10 +16,9 @@ import com.bumptech.glide.Glide
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.data.user.model.NicknameRequest
-import com.umc.mobile.my4cut.data.user.model.ProfileImageResponse
 import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 import com.umc.mobile.my4cut.databinding.ActivityEditProfileBinding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,7 +41,6 @@ class EditProfileActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             if (uri != null) {
                 selectedImageUri = uri
-                // ✅ Glide 사용 (기존 코드와 동일)
                 com.bumptech.glide.Glide.with(this)
                     .load(uri)
                     .circleCrop()
@@ -111,7 +109,7 @@ class EditProfileActivity : AppCompatActivity() {
                     val body = response.body()?.data ?: return
 
                     if (!body.profileImageViewUrl.isNullOrBlank()) {
-                        com.bumptech.glide.Glide.with(this@EditProfileActivity)
+                        Glide.with(this@EditProfileActivity)
                             .load(body.profileImageViewUrl)
                             .circleCrop()
                             .placeholder(R.drawable.img_profile_default)
@@ -132,7 +130,7 @@ class EditProfileActivity : AppCompatActivity() {
     }
 
     /**
-     * ✅ 프로필 이미지 업로드 (multipart/form-data로 직접 업로드)
+     *  프로필 이미지 업로드 (multipart/form-data로 직접 업로드)
      */
     private fun updateProfileImage(uri: Uri, onSuccess: () -> Unit) {
         lifecycleScope.launch {
@@ -282,7 +280,7 @@ class EditProfileActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     val intent = Intent().apply {
                         putExtra("nickname", nickname)
-                        // ✅ 프로필 이미지도 함께 전달
+                        // 프로필 이미지도 함께 전달
                         selectedImageUri?.let {
                             putExtra("profile_image", it.toString())
                         }

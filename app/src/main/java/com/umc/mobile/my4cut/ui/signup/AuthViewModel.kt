@@ -14,9 +14,15 @@ class AuthViewModel : ViewModel() {
         _isEmailVerified.value = verified
     }
 
-    // 비밀번호 형식 검사: 영어/숫자/특수기호만 허용, 8~15자
+    // 이메일 인증 완료 시 서버로부터 받은 verificationToken (회원가입 요청 시 필요)
+    var verificationToken: String? = null
+
+    // 비밀번호 형식 검사: 영어/숫자/특수기호를 모두 포함, 8~15자
     fun isValidPassword(password: String): Boolean {
-        val regex = Regex("""^[a-zA-Z0-9!@#${'$'}%^&*()_+\-=\[\]{};':"\\|,.<>/?]{8,15}${'$'}""")
+        val regex = Regex(
+            """^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#${'$'}%^&*()_+\-=\[\]{};':"\\|,.<>/?])""" +
+                """[a-zA-Z0-9!@#${'$'}%^&*()_+\-=\[\]{};':"\\|,.<>/?]{8,15}${'$'}"""
+        )
         return regex.matches(password)
     }
 

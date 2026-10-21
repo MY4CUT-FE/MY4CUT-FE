@@ -7,9 +7,8 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.data.friend.model.FriendRequestCreateDto
-import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -24,12 +23,32 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
 import com.umc.mobile.my4cut.databinding.DialogAddFriendBinding
+import org.json.JSONObject
+import retrofit2.HttpException
 
 class AddFriendDialogFragment : DialogFragment() {
 
     companion object {
         const val RESULT_ADD_FRIEND = "result_add_friend"
         const val KEY_FRIEND_NICKNAME = "key_friend_nickname"
+
+        private const val ARG_FRIEND_CODE = "arg_friend_code"
+        private const val ARG_NICKNAME = "arg_nickname"
+        private const val ARG_PROFILE_IMAGE_URL = "arg_profile_image_url"
+
+        fun newInstanceForMember(
+            friendCode: String,
+            nickname: String,
+            profileImageUrl: String?
+        ): AddFriendDialogFragment {
+            return AddFriendDialogFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_FRIEND_CODE, friendCode)
+                    putString(ARG_NICKNAME, nickname)
+                    putString(ARG_PROFILE_IMAGE_URL, profileImageUrl)
+                }
+            }
+        }
     }
 
     private var _binding: DialogAddFriendBinding? = null
@@ -61,7 +80,22 @@ class AddFriendDialogFragment : DialogFragment() {
 
         initView()
         initClickListeners()
-        loadMyCode()
+
+        val friendCode = arguments?.getString(ARG_FRIEND_CODE)
+
+        if (!friendCode.isNullOrBlank()) {
+            // 스페이스 관리 화면에서 진입한 경우
+            searchedFriendCode = friendCode
+
+            showSearchResult(
+                nickname = arguments?.getString(ARG_NICKNAME).orEmpty(),
+                profileImageUrl = arguments?.getString(ARG_PROFILE_IMAGE_URL)
+            )
+        } else {
+            // 기존 친구 추가 화면에서 진입한 경우
+            loadMyCode()
+        }
+
         binding.tvMyCode.paintFlags =
             binding.tvMyCode.paintFlags or Paint.UNDERLINE_TEXT_FLAG
     }
@@ -114,10 +148,10 @@ class AddFriendDialogFragment : DialogFragment() {
                     myFriendCode = me.friendCode
                     binding.tvMyCode.text = me.friendCode
                 } else {
-                    Toast.makeText(requireContext(), "내 코드를 불러오지 못했어요", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "내 코드를 불러오지 못했습니다. 다시 시도해 주세요.", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "내 코드를 불러오지 못했어요", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "내 코드를 불러오지 못했습니다. 다시 시도해 주세요.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -128,7 +162,7 @@ class AddFriendDialogFragment : DialogFragment() {
 
         // 자기 자신 코드 입력 방지
         if (inputCode == myFriendCode) {
-            Toast.makeText(requireContext(), "자기 자신은 친구신청할 수 없어요", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "자기 자신은 친구신청할 수 없어요.", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -159,7 +193,7 @@ class AddFriendDialogFragment : DialogFragment() {
             } catch (e: Exception) {
                 Toast.makeText(
                     requireContext(),
-                    "존재하지 않는 코드예요",
+                    "존재하지 않는 코드예요.",
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -174,14 +208,35 @@ class AddFriendDialogFragment : DialogFragment() {
 
         Glide.with(this)
             .load(profileImageUrl)
-            .placeholder(R.drawable.ic_profile_cat)
-            .error(R.drawable.ic_profile_cat)
+            .placeholder(R.drawable.img_profile_default)
+            .error(R.drawable.img_profile_default)
             .circleCrop()
             .into(binding.ivProfile)
 
-        // 검색 결과가 보일 때는 내 코드 영역 숨김
+        // 내 친구 코드 영역 숨기기
         binding.tvMyCodeLabel.visibility = View.GONE
         binding.tvMyCode.visibility = View.GONE
+
+        // 친구 코드 입력 영역 숨기기
+        binding.tvInputLabel.visibility = View.GONE
+        binding.etFriendCode.visibility = View.GONE
+
+        // 프로필과 닉네임을 다이얼로그 중앙에 배치
+        val params = binding.layoutResult.layoutParams
+                as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+
+        params.topToBottom =
+            androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.UNSET
+
+        params.topToTop =
+            androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID
+
+        params.bottomToBottom =
+            androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID
+
+        params.verticalBias = 0.5f
+
+        binding.layoutResult.layoutParams = params
 
         isSearchResultVisible = true
     }
@@ -196,13 +251,52 @@ class AddFriendDialogFragment : DialogFragment() {
                 val response = RetrofitClient.friendService.requestFriend(requestDto)
 
                 if (response.code.startsWith("C2")) {
-                    Toast.makeText(requireContext(), "친구 요청을 보냈어요", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "친구 요청을 보냈어요.", Toast.LENGTH_SHORT).show()
                     dismiss()
                 } else {
                     Toast.makeText(requireContext(), response.message, Toast.LENGTH_SHORT).show()
                 }
+            } catch (e: HttpException) {
+                val errorBody = e.response()?.errorBody()?.string()
+
+                val errorMessage = try {
+                    val errorJson = JSONObject(errorBody.orEmpty())
+                    val code = errorJson.optString("code")
+                    val message = errorJson.optString("message")
+
+                    when {
+                        code == "F4002" -> {
+                            "이미 친구 요청을 전송했어요."
+                        }
+
+                        message.contains("이미 친구") -> {
+                            "이미 추가된 친구예요."
+                        }
+
+                        message.isNotBlank() -> {
+                            message
+                        }
+
+                        else -> {
+                            "친구 요청 전송에 실패했어요. 다시 시도해주세요. "
+                        }
+                    }
+                } catch (_: Exception) {
+                    "친구 요청 전송에 실패했어요. 다시 시도해주세요"
+                }
+
+                Toast.makeText(
+                    requireContext(),
+                    errorMessage,
+                    Toast.LENGTH_SHORT
+                ).show()
+
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "이미 존재하는 친구예요", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "네트워크 연결을 확인해주세요.",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }

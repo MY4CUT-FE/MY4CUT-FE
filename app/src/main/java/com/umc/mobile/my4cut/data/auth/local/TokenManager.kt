@@ -15,26 +15,18 @@ object TokenManager {
         refreshToken: String
     ) {
         Log.d("TokenManager", "Saving tokens...")
-        Log.d("TokenManager", "AccessToken: $accessToken")
 
         val spf = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         spf.edit()
             .putString(KEY_ACCESS, accessToken)
             .putString(KEY_REFRESH, refreshToken)
             .apply()
-
-        // 토큰 저장 확인
-        val saved = spf.getString(KEY_ACCESS, null)
-        Log.d("TokenManager", "Saved and retrieved: $saved")
     }
 
     fun getAccessToken(context: Context): String? {
-        val token = context
+        return context
             .getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
             .getString(KEY_ACCESS, null)
-
-        Log.d("TokenManager", "Getting AccessToken: $token")
-        return token
     }
 
     fun getRefreshToken(context: Context): String? {

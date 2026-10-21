@@ -5,16 +5,18 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.exifinterface.media.ExifInterface
@@ -23,7 +25,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
-import coil.load
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.umc.mobile.my4cut.MainActivity
@@ -34,7 +40,8 @@ import com.umc.mobile.my4cut.databinding.DialogExit2Binding
 import com.umc.mobile.my4cut.databinding.FragmentEntryDetailBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoAddBinding
 import com.umc.mobile.my4cut.databinding.ItemPhotoSlider2Binding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
+import com.umc.mobile.my4cut.ui.theme.loadWithSkeleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -47,10 +54,9 @@ import java.io.FileOutputStream
 import java.time.LocalDate
 import kotlin.math.abs
 
-// ✅ ImageItem을 Fragment 외부로 이동
 data class ImageItem(
-    val uri: String,       // URI 또는 URL
-    val isNew: Boolean     // 새로 추가된 이미지인지
+    val uri: String,
+    val isNew: Boolean
 )
 
 class EntryDetailFragment : Fragment() {
@@ -66,16 +72,23 @@ class EntryDetailFragment : Fragment() {
     private var originalContent: String = ""
     private var originalEmojiType: String? = null
     private var typicalImageIndex: Int = 0
+    private var heightFixListener: ViewTreeObserver.OnGlobalLayoutListener? = null
+    private var diaryHintText: CharSequence? = null
 
     private val pickMultipleMedia = registerForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(50)
+        ActivityResultContracts.PickMultipleVisualMedia(3)
     ) { uris ->
         if (uris.isNotEmpty()) {
-            uris.forEach { uri ->
+            val remaining = 3 - imageItems.size
+            val toAdd = uris.take(remaining)
+            toAdd.forEach { uri ->
                 imageItems.add(ImageItem(
                     uri = uri.toString(),
                     isNew = true
                 ))
+            }
+            if (uris.size > remaining) {
+                Toast.makeText(requireContext(), "사진은 최대 3장까지 추가할 수 있어요.", Toast.LENGTH_SHORT).show()
             }
             updatePhotoState()
             binding.vpPhotoSlider.currentItem = imageItems.size - 1
@@ -84,6 +97,7 @@ class EntryDetailFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentEntryDetailBinding.inflate(inflater, container, false)
+        diaryHintText = binding.etDiary.hint
         return binding.root
     }
 
@@ -94,82 +108,196 @@ class EntryDetailFragment : Fragment() {
         selectedDate = arguments?.getString("SELECTED_DATE") ?: "2026.01.01"
         binding.tvDateCapsule.text = selectedDate
 
-        // ✅ 초기 상태: 읽기 모드
         setEditMode(false)
 
         setupClickListeners()
         setupDiaryLogic()
+        setupMoodSelection()
+        setupKeyboardScroll()
+        setupBackPressHandling()
 
         if (apiDate != null) {
             fetchDay4CutDetail()
+        } else {
+            hideLoadingSkeleton()
         }
     }
 
-    private fun fetchDay4CutDetail() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                Log.d("EntryDetail", "📖 Fetching detail for date: $apiDate")
-
-                val response = RetrofitClient.day4CutService.getDay4CutDetail(apiDate!!)
-
-                Log.d("EntryDetail", "📨 Response: code=${response.code}, message=${response.message}")
-
-                // ✅ isSuccess 제거, code 체크만 사용
-                if (response.code == "C2001") {
-                    response.data?.let { data ->
-                        Log.d("EntryDetail", "✅ Data loaded:")
-                        Log.d("EntryDetail", "   ├─ content: ${data.content}")
-                        Log.d("EntryDetail", "   ├─ emojiType: ${data.emojiType}")
-                        Log.d("EntryDetail", "   └─ images: ${data.viewUrls?.size ?: 0}")
-
-                        binding.etDiary.setText(data.content ?: "")
-                        originalContent = data.content ?: ""
-
-                        originalEmojiType = data.emojiType
-                        setEmojiByType(originalEmojiType)
-
-                        imageItems.clear()
-                        data.viewUrls?.forEach { url ->
-                            imageItems.add(ImageItem(
-                                uri = url,
-                                isNew = false
-                            ))
-                        }
-
-                        val dateObj = LocalDate.parse(apiDate)
-                        val statusResponse = RetrofitClient.day4CutService.getCalendarStatus(
-                            dateObj.year, dateObj.monthValue
-                        )
-
-                        if (statusResponse.code == "C2001") {
-                            // 해당 날짜의 데이터를 찾음
-                            val dayStatus = statusResponse.data?.dates?.find { it.day == dateObj.dayOfMonth }
-                            val serverThumbnailUrl = dayStatus?.thumbnailUrl
-
-                            // 리스트 중 서버 썸네일 URL과 일치하는 인덱스 찾기
-                            val foundIndex = data.viewUrls?.indexOf(serverThumbnailUrl) ?: 0
-                            typicalImageIndex = if (foundIndex != -1) foundIndex else 0
-
-                            updatePhotoState()
-                        }
-                    }
-                } else {
-                    Log.e("EntryDetail", "❌ Failed to load: ${response.code} - ${response.message}")
-                    Toast.makeText(requireContext(), "데이터를 불러올 수 없습니다", Toast.LENGTH_SHORT).show()
+    private fun setupBackPressHandling() {
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    goBack()
                 }
-            } catch (e: Exception) {
-                Log.e("EntryDetail", "💥 Failed to fetch detail", e)
-                Toast.makeText(requireContext(), "조회 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    private fun goBack() {
+        parentFragmentManager.popBackStack()
+    }
+
+    private fun setupKeyboardScroll() {
+        binding.etDiary.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                binding.etDiary.post {
+                    binding.nsvEntryDetail.smoothScrollTo(0, binding.clDiaryContent.bottom)
+                }
             }
         }
+
+        var isFixingHeight = false
+        heightFixListener = ViewTreeObserver.OnGlobalLayoutListener {
+            if (!isAdded) return@OnGlobalLayoutListener
+
+            val nsv = binding.nsvEntryDetail
+            val fcvMain = requireActivity().findViewById<View>(R.id.fcv_main)
+
+            if (!isFixingHeight && fcvMain != null && fcvMain.height > 0) {
+                val desiredHeight = fcvMain.height - nsv.top
+                if (desiredHeight > 0 && desiredHeight != nsv.height) {
+                    isFixingHeight = true
+                    val params = nsv.layoutParams
+                    params.height = desiredHeight
+                    nsv.layoutParams = params
+                    nsv.post { isFixingHeight = false }
+                }
+            }
+
+            val child = nsv.getChildAt(0)
+            if (child != null) {
+                val maxScroll = (child.height - nsv.height).coerceAtLeast(0)
+                if (nsv.scrollY > maxScroll) {
+                    nsv.scrollTo(0, maxScroll)
+                }
+            }
+        }
+        binding.nsvEntryDetail.viewTreeObserver.addOnGlobalLayoutListener(heightFixListener)
+    }
+
+    override fun onDestroyView() {
+        heightFixListener?.let {
+            binding.nsvEntryDetail.viewTreeObserver.removeOnGlobalLayoutListener(it)
+        }
+        heightFixListener = null
+        super.onDestroyView()
+    }
+
+    private fun fetchDay4CutDetail() {
+        showLoadingSkeleton()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.day4CutService.getDay4CutDetail(apiDate!!)
+
+                if (response.code == "C2001") {
+                    val data = response.data
+                    if (data == null) {
+                        hideLoadingSkeleton()
+                        return@launch
+                    }
+
+                    binding.etDiary.setText(data.content ?: "")
+                    originalContent = data.content ?: ""
+
+                    originalEmojiType = data.emojiType
+                    setEmojiByType(originalEmojiType)
+
+                    imageItems.clear()
+                    data.viewUrls?.forEach { url ->
+                        imageItems.add(ImageItem(
+                            uri = url,
+                            isNew = false
+                        ))
+                    }
+
+                    val dateObj = LocalDate.parse(apiDate)
+                    val statusResponse = RetrofitClient.day4CutService.getCalendarStatus(
+                        dateObj.year, dateObj.monthValue
+                    )
+
+                    if (statusResponse.code == "C2001") {
+                        val dayStatus = statusResponse.data?.dates?.find { it.day == dateObj.dayOfMonth }
+                        val serverThumbnailUrl = dayStatus?.thumbnailUrl
+
+                        val foundIndex = data.viewUrls?.indexOf(serverThumbnailUrl) ?: 0
+                        typicalImageIndex = if (foundIndex != -1) foundIndex else 0
+                    }
+
+                    revealAfterTypicalImageLoaded()
+                } else {
+                    Toast.makeText(requireContext(), "데이터를 불러올 수 없습니다", Toast.LENGTH_SHORT).show()
+                    hideLoadingSkeleton()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "조회 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                hideLoadingSkeleton()
+            }
+        }
+    }
+
+    private fun revealAfterTypicalImageLoaded() {
+        val typicalUrl = imageItems.getOrNull(typicalImageIndex)?.uri
+
+        if (typicalUrl.isNullOrBlank()) {
+            hideLoadingSkeleton()
+            return
+        }
+
+        Glide.with(this)
+            .load(typicalUrl)
+            .listener(object : RequestListener<Drawable> {
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any?,
+                    target: Target<Drawable>,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    if (isAdded) hideLoadingSkeleton()
+                    return false
+                }
+
+                override fun onResourceReady(
+                    resource: Drawable,
+                    model: Any,
+                    target: Target<Drawable>?,
+                    dataSource: DataSource,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    if (isAdded) hideLoadingSkeleton()
+                    return false
+                }
+            })
+            .preload()
+    }
+
+    private fun showLoadingSkeleton() {
+        binding.tvDateCapsule.text = ""
+        binding.tvDateCapsule.setBackgroundResource(R.drawable.bg_skeleton_text_light)
+
+        binding.clPhotoEmpty.visibility = View.GONE
+        binding.vpPhotoSlider.visibility = View.GONE
+        binding.clPhotoLoadingSkeleton.visibility = View.VISIBLE
+
+        binding.clDiaryContent.visibility = View.GONE
+        binding.clDiaryLoadingSkeleton.visibility = View.VISIBLE
+    }
+
+    private fun hideLoadingSkeleton() {
+        binding.tvDateCapsule.text = selectedDate
+        binding.tvDateCapsule.setBackgroundResource(R.drawable.bg_date_capsule2)
+
+        binding.clPhotoLoadingSkeleton.visibility = View.GONE
+        binding.clDiaryLoadingSkeleton.visibility = View.GONE
+        binding.clDiaryContent.visibility = View.VISIBLE
+
+        updatePhotoState()
     }
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener {
-            // ✅ Activity면 finish(), Fragment면 popBackStack()
-            if (activity != null) {
-                requireActivity().onBackPressedDispatcher.onBackPressed()
-            }
+            goBack()
         }
 
         binding.btnEdit.setOnClickListener {
@@ -182,42 +310,84 @@ class EntryDetailFragment : Fragment() {
             binding.vpPhotoSlider.setCurrentItem(imageItems.size, true)
         }
 
+        binding.btnDelete.setOnClickListener {
+            showDeleteRecordDialog()
+        }
+
         binding.btnCancel.setOnClickListener {
             imageItems.clear()
             imageItems.addAll(originalImageItems.map { it.copy() })
             binding.etDiary.setText(originalContent)
             setEmojiByType(originalEmojiType)
+            currentEmojiType = originalEmojiType
 
             setEditMode(false)
         }
 
         binding.btnComplete.setOnClickListener {
             if (imageItems.isEmpty()) {
-                showDeleteConfirmDialog()
+                showDeleteRecordDialog()
             } else {
                 updateDay4Cut()
             }
         }
     }
 
+    private fun showDeleteRecordDialog() {
+        val dialogBinding = DialogExit2Binding.inflate(layoutInflater)
+        val builder = MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogBinding.root)
+        val dialog = builder.create()
+
+        dialog.setCanceledOnTouchOutside(true)
+
+        dialogBinding.tvMessage.text = "삭제한 네컷 기록은 다시 복구할 수 없어요."
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnExit.setOnClickListener {
+            dialog.dismiss()
+            deleteDay4Cut()
+        }
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.show()
+    }
+
     private fun setEditMode(isEditing: Boolean) {
         this.isEditMode = isEditing
 
         binding.btnEdit.visibility = if (isEditing) View.GONE else View.VISIBLE
+        binding.btnDelete.visibility = if (isEditing) View.GONE else View.VISIBLE
         binding.btnCancel.visibility = if (isEditing) View.VISIBLE else View.GONE
         binding.btnComplete.visibility = if (isEditing) View.VISIBLE else View.GONE
         binding.tvTextCount.visibility = if (isEditing) View.VISIBLE else View.GONE
 
-        // ✅ EditText 활성화/비활성화
         binding.etDiary.isEnabled = isEditing
         binding.etDiary.isFocusable = isEditing
         binding.etDiary.isFocusableInTouchMode = isEditing
 
-        // 편집 모드에 따라 어댑터 재생성 (추가 버튼 노출 여부 때문)
+        binding.etDiary.hint = if (isEditing) diaryHintText else null
+
+        binding.ivMoodDisplay.visibility = if (isEditing) View.GONE else View.VISIBLE
+        binding.ivMoodEditIcon.visibility = if (isEditing) View.VISIBLE else View.GONE
+        binding.llMoodContainer.visibility = if (isEditing) View.VISIBLE else View.GONE
+
+        if (isEditing) {
+            currentEmojiType = originalEmojiType
+            updateMoodSelectionUI()
+        }
+
         updatePhotoState()
     }
 
     private fun launchPhotoPicker() {
+        if (imageItems.size >= 3) {
+            Toast.makeText(requireContext(), "사진은 최대 3장까지 추가할 수 있어요.", Toast.LENGTH_SHORT).show()
+            return
+        }
         pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
     }
 
@@ -240,7 +410,9 @@ class EntryDetailFragment : Fragment() {
 
                 transform.addTransformer { page, position ->
                     val r = 1 - abs(position)
-                    page.scaleY = 0.85f + r * 0.15f
+                    val scale = 0.85f + r * 0.15f
+                    page.scaleX = scale
+                    page.scaleY = scale
 
                     val photoCard = page.findViewById<MaterialCardView>(R.id.cv_photo_card)
                     val addCard = page.findViewById<MaterialCardView>(R.id.cv_add_card)
@@ -253,15 +425,14 @@ class EntryDetailFragment : Fragment() {
                     }
 
                     val addIcon = page.findViewById<ImageView>(R.id.iv_add_icon)
-
-                    if (addIcon != null && addCard != null) {
-                        if (position > 0) {
-                            val cardWidth = if (addCard.width > 0) addCard.width.toFloat() else 1000f
-                            val moveDistance = (cardWidth / 2f) - (addIcon.width / 2f) - 20f
-                            addIcon.translationX = -position * moveDistance
-                        } else {
-                            addIcon.translationX = 0f
-                        }
+                    if (addIcon != null && addCard != null && addCard.width > 0) {
+                        val density = page.resources.displayMetrics.density
+                        val peekCenterX = 20f * density
+                        val cardCenterX = addCard.width / 2f
+                        val clampedPosition = position.coerceIn(0f, 1f)
+                        addIcon.translationX = clampedPosition * (peekCenterX - cardCenterX)
+                    } else {
+                        addIcon?.translationX = 0f
                     }
                 }
                 setPageTransformer(transform)
@@ -293,14 +464,49 @@ class EntryDetailFragment : Fragment() {
             else -> null
         }
         if (emojiRes != null) {
-            binding.ivMood1.setImageResource(emojiRes)
+            binding.ivMoodDisplay.setImageResource(emojiRes)
         } else {
-            binding.ivMood1.setImageDrawable(null)
+            binding.ivMoodDisplay.setImageDrawable(null)
+        }
+    }
+
+    private var currentEmojiType: String? = null
+
+    private val moodOrder = listOf("CALM", "HAPPY", "TIRED", "ANGRY", "SAD")
+
+    private fun moodSelectViews(): List<ImageView> = listOf(
+        binding.ivMoodSelect1,
+        binding.ivMoodSelect2,
+        binding.ivMoodSelect3,
+        binding.ivMoodSelect4,
+        binding.ivMoodSelect5
+    )
+
+    private fun setupMoodSelection() {
+        moodSelectViews().forEachIndexed { index, imageView ->
+            imageView.setOnClickListener {
+                val clickedType = moodOrder[index]
+                currentEmojiType = if (currentEmojiType == clickedType) null else clickedType
+                updateMoodSelectionUI()
+            }
+        }
+    }
+
+    private fun updateMoodSelectionUI() {
+        val selectedIndex = moodOrder.indexOf(currentEmojiType)
+        moodSelectViews().forEachIndexed { index, imageView ->
+            if (index == selectedIndex) {
+                imageView.setBackgroundResource(R.drawable.bg_mood_selected)
+                imageView.alpha = 1.0f
+            } else {
+                imageView.background = null
+                imageView.alpha = 0.4f
+            }
         }
     }
 
     private fun getCurrentEmojiType(): String? {
-        return originalEmojiType
+        return if (isEditMode) currentEmojiType else originalEmojiType
     }
 
     private fun compressImage(uri: Uri): File? {
@@ -311,7 +517,6 @@ class EntryDetailFragment : Fragment() {
             inputStream.close()
 
             if (originalBitmap == null) {
-                Log.e("EntryDetail", "❌ Failed to decode bitmap from URI: $uri")
                 return null
             }
 
@@ -332,18 +537,12 @@ class EntryDetailFragment : Fragment() {
             }
             resizedBitmap.recycle()
 
-            Log.d("EntryDetail", "✅ Image compressed: ${tempFile.length() / 1024}KB")
-
             tempFile
         } catch (e: Exception) {
-            Log.e("EntryDetail", "❌ Image compression failed", e)
             null
         }
     }
 
-    /**
-     * ✅ 서버 URL에서 이미지 다운로드 후 압축
-     */
     private suspend fun downloadAndCompressImage(url: String): File? {
         return withContext(Dispatchers.IO) {
             try {
@@ -355,7 +554,6 @@ class EntryDetailFragment : Fragment() {
                 inputStream.close()
 
                 if (originalBitmap == null) {
-                    Log.e("EntryDetail", "❌ Failed to decode bitmap from URL: $url")
                     return@withContext null
                 }
 
@@ -373,11 +571,8 @@ class EntryDetailFragment : Fragment() {
                 originalBitmap.recycle()
                 resizedBitmap.recycle()
 
-                Log.d("EntryDetail", "✅ Image downloaded and compressed: ${tempFile.length() / 1024}KB")
-
                 tempFile
             } catch (e: Exception) {
-                Log.e("EntryDetail", "❌ Image download failed", e)
                 null
             }
         }
@@ -401,7 +596,6 @@ class EntryDetailFragment : Fragment() {
                 else -> bitmap
             }
         } catch (e: Exception) {
-            Log.e("EntryDetail", "Failed to read EXIF", e)
             bitmap
         }
     }
@@ -434,28 +628,17 @@ class EntryDetailFragment : Fragment() {
     private fun updateDay4Cut() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                Log.d("EntryDetail", "")
-                Log.d("EntryDetail", "🔄 UPDATE PROCESS STARTED")
-                Log.d("EntryDetail", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
                 val fileParts = mutableListOf<MultipartBody.Part>()
 
                 for ((index, item) in imageItems.withIndex()) {
-                    Log.d("EntryDetail", "📤 Processing image ${index + 1}/${imageItems.size}")
-
                     val compressedFile = if (item.isNew) {
-                        // ✅ 새 이미지: URI에서 압축
-                        Log.d("EntryDetail", "   ├─ New image (local URI)")
                         val uri = Uri.parse(item.uri)
                         compressImage(uri)
                     } else {
-                        // ✅ 기존 이미지: URL에서 다운로드 후 압축
-                        Log.d("EntryDetail", "   ├─ Existing image (server URL)")
                         downloadAndCompressImage(item.uri)
                     }
 
                     if (compressedFile == null) {
-                        Log.e("EntryDetail", "❌ Image ${index + 1} compression failed")
                         throw Exception("이미지 ${index + 1} 압축 실패")
                     }
 
@@ -464,15 +647,10 @@ class EntryDetailFragment : Fragment() {
                     fileParts.add(part)
                 }
 
-                Log.d("EntryDetail", "📤 Uploading ${fileParts.size} images via /media/upload/bulk")
-
                 val uploadResponse = withContext(Dispatchers.IO) {
                     RetrofitClient.mediaService.uploadMediaBulk(fileParts)
                 }
 
-                Log.d("EntryDetail", "📨 Upload response: code=${uploadResponse.code}")
-
-                // ✅ C2001 또는 C2011 모두 성공
                 if (uploadResponse.code != "C2001" && uploadResponse.code != "C2011") {
                     throw Exception("이미지 업로드 실패: ${uploadResponse.message}")
                 }
@@ -486,8 +664,6 @@ class EntryDetailFragment : Fragment() {
                     )
                 }
 
-                Log.d("EntryDetail", "📊 Uploaded fileIds: ${uploadedFiles.map { it.mediaId }}")
-
                 val request = UpdateDay4CutRequest(
                     date = apiDate!!,
                     content = binding.etDiary.text.toString().ifBlank { null },
@@ -495,21 +671,11 @@ class EntryDetailFragment : Fragment() {
                     images = images
                 )
 
-                Log.d("EntryDetail", "📝 Updating Day4Cut...")
-                Log.d("EntryDetail", "Request: $request")
-
                 val updateResponse = withContext(Dispatchers.IO) {
                     RetrofitClient.day4CutService.updateDay4Cut(request)
                 }
 
-                Log.d("EntryDetail", "📨 Update response: code=${updateResponse.code}")
-
-                // ✅ isSuccess 제거
                 if (updateResponse.code == "C2001") {
-                    Log.d("EntryDetail", "")
-                    Log.d("EntryDetail", "🎉 DAY4CUT UPDATED SUCCESSFULLY")
-                    Log.d("EntryDetail", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
                     withContext(Dispatchers.Main) {
                         requireContext().cacheDir.listFiles()?.filter {
                             it.name.startsWith("compressed_")
@@ -520,6 +686,8 @@ class EntryDetailFragment : Fragment() {
                         originalImageItems.clear()
                         originalImageItems.addAll(imageItems.map { it.copy() })
                         originalContent = binding.etDiary.text.toString()
+                        originalEmojiType = currentEmojiType
+                        setEmojiByType(originalEmojiType)
 
                         setEditMode(false)
                     }
@@ -528,7 +696,6 @@ class EntryDetailFragment : Fragment() {
                 }
 
             } catch (e: Exception) {
-                Log.e("EntryDetail", "💥 UPDATE FAILED", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(requireContext(), "수정 실패: ${e.message}", Toast.LENGTH_LONG).show()
 
@@ -540,41 +707,22 @@ class EntryDetailFragment : Fragment() {
         }
     }
 
-    private fun showDeleteConfirmDialog() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("기록 삭제")
-            .setMessage("모든 사진을 삭제하면 이 날짜의 기록이 모두 삭제됩니다. 계속하시겠습니까?")
-            .setPositiveButton("삭제") { _, _ ->
-                deleteDay4Cut()
-            }
-            .setNegativeButton("취소", null)
-            .show()
-    }
-
     private fun deleteDay4Cut() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                Log.d("EntryDetail", "🗑️ Deleting Day4Cut for date: $apiDate")
-
                 val response = withContext(Dispatchers.IO) {
                     RetrofitClient.day4CutService.deleteDay4Cut(apiDate!!)
                 }
 
-                Log.d("EntryDetail", "📨 Delete response: code=${response.code}")
-
-                // ✅ isSuccess 제거
                 if (response.code == "C2001") {
-                    Log.d("EntryDetail", "✅ Day4Cut deleted successfully")
-
                     withContext(Dispatchers.Main) {
                         Toast.makeText(requireContext(), "기록이 삭제되었습니다", Toast.LENGTH_SHORT).show()
-                        (requireActivity() as? MainActivity)?.changeFragment(CalendarChildFragment())
+                        (requireActivity() as? MainActivity)?.changeFragment(CalendarMainFragment())
                     }
                 } else {
                     throw Exception("삭제 실패: ${response.message}")
                 }
             } catch (e: Exception) {
-                Log.e("EntryDetail", "💥 DELETE FAILED", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(requireContext(), "삭제 실패: ${e.message}", Toast.LENGTH_LONG).show()
                 }
@@ -618,6 +766,7 @@ class EntryDetailFragment : Fragment() {
 
         private val TYPE_PHOTO = 0
         private val TYPE_ADD = 1
+        private val MAX_PHOTO_COUNT = 3
 
         inner class PhotoViewHolder(val binding: ItemPhotoSlider2Binding) : RecyclerView.ViewHolder(binding.root)
         inner class AddViewHolder(val binding: ItemPhotoAddBinding) : RecyclerView.ViewHolder(binding.root)
@@ -637,13 +786,12 @@ class EntryDetailFragment : Fragment() {
                 val photoHolder = holder as PhotoViewHolder
                 val item = items[position]
 
-                // ✅ 편집 모드일 때만 삭제/썸네일 버튼 표시
                 if (isEditMode) {
                     photoHolder.binding.ivDelete.visibility = View.VISIBLE
                     photoHolder.binding.ivTypical.visibility = View.VISIBLE
                 } else {
                     photoHolder.binding.ivDelete.visibility = View.GONE
-                    photoHolder.binding.ivTypical.visibility = View.GONE  // ✅ 읽기 모드에서 숨김
+                    photoHolder.binding.ivTypical.visibility = View.GONE
                 }
 
                 val isTypical = position == typicalImageIndex
@@ -651,10 +799,7 @@ class EntryDetailFragment : Fragment() {
                     if (isTypical) R.drawable.ic_typical_on else R.drawable.ic_typical_off
                 )
 
-                photoHolder.binding.ivPhoto.load(item.uri) {
-                    crossfade(true)
-                    error(R.drawable.img_ex_photo)
-                }
+                photoHolder.binding.ivPhoto.loadWithSkeleton(item.uri)
 
                 photoHolder.binding.ivTypical.setOnClickListener {
                     if (isEditMode) {
@@ -663,7 +808,6 @@ class EntryDetailFragment : Fragment() {
 
                         if (oldIndex != newIndex) {
                             typicalImageIndex = newIndex
-                            // 전체를 갱신하지 말고, 이전 대표와 현재 대표 사진의 아이콘만 갱신
                             notifyItemChanged(oldIndex)
                             notifyItemChanged(newIndex)
                         }
@@ -681,12 +825,14 @@ class EntryDetailFragment : Fragment() {
             }
         }
 
+        private fun hasAddPage(): Boolean = isEditMode && items.size < MAX_PHOTO_COUNT
+
         override fun getItemCount(): Int {
-            return if (isEditMode) items.size + 1 else items.size
+            return if (hasAddPage()) items.size + 1 else items.size
         }
 
         override fun getItemViewType(position: Int): Int {
-            return if (isEditMode && position == items.size) TYPE_ADD else TYPE_PHOTO
+            return if (hasAddPage() && position == items.size) TYPE_ADD else TYPE_PHOTO
         }
     }
 }

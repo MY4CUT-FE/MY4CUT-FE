@@ -25,12 +25,17 @@ class MemberAdapter : RecyclerView.Adapter<MemberAdapter.MemberViewHolder>() {
             .inflate(R.layout.item_member_icon, parent, false)
 
         view.layoutParams = FlexboxLayoutManager.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
+            0,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
-            val horizontalMargin = (6 * parent.context.resources.displayMetrics.density).toInt()
-            val verticalMargin = (6 * parent.context.resources.displayMetrics.density).toInt()
-            setMargins(horizontalMargin, verticalMargin, horizontalMargin, verticalMargin)
+            flexBasisPercent = 0.2f
+            flexGrow = 0f
+            flexShrink = 0f
+
+            val verticalMargin =
+                (6 * parent.context.resources.displayMetrics.density).toInt()
+
+            setMargins(0, verticalMargin, 0, verticalMargin)
         }
 
         return MemberViewHolder(view)
@@ -43,16 +48,17 @@ class MemberAdapter : RecyclerView.Adapter<MemberAdapter.MemberViewHolder>() {
     override fun getItemCount(): Int = items.size
 
     class MemberViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val imageView = itemView as ImageView
+        private val imageView =
+            itemView.findViewById<ImageView>(R.id.ivMemberProfile)
 
         fun bind(item: MemberUiModel) {
             if (item.profileImageUrl.isNullOrBlank()) {
-                imageView.setImageResource(R.drawable.ic_profile_cat)
+                imageView.setImageResource(R.drawable.img_profile_default)
             } else {
                 Glide.with(imageView)
                     .load(item.profileImageUrl)
-                    .placeholder(R.drawable.ic_profile_cat)
-                    .error(R.drawable.ic_profile_cat)
+                    .placeholder(R.drawable.img_profile_default)
+                    .error(R.drawable.img_profile_default)
                     .circleCrop()
                     .into(imageView)
             }

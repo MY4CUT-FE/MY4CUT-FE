@@ -23,7 +23,7 @@ interface UserService {
         @Body request: NicknameRequest
     ): Call<BaseResponse<UserMeResponse>>
 
-    /** ✅ 프로필 이미지 변경 (multipart/form-data로 파일 업로드) */
+    /** 프로필 이미지 변경 (multipart/form-data로 파일 업로드) */
     @Multipart
     @PATCH("users/me/image")
     suspend fun updateProfileImageMultipart(

@@ -19,7 +19,7 @@ import com.umc.mobile.my4cut.data.auth.model.SignUpRequest
 import com.umc.mobile.my4cut.data.auth.model.TokenResult
 import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.FragmentSignUpStep3Binding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.signup.AuthViewModel
 import retrofit2.Call
 import retrofit2.Callback
@@ -71,8 +71,19 @@ class SignUpStep3Fragment : Fragment() {
                 return@setOnClickListener
             }
 
+            val token = viewModel.verificationToken
+            if (token.isNullOrEmpty()) {
+                Toast.makeText(
+                    requireContext(),
+                    "이메일 인증이 필요합니다. 이전 화면으로 돌아가 인증을 완료해주세요.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+
             val request = SignUpRequest(
                 email = emailStr,
+                verificationToken = token,
                 password = passwordStr,
                 nickname = nickname
             )

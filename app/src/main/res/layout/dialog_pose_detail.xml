@@ -17,39 +17,61 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <TextView
+        android:id="@+id/tv_dialog_pose_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/suit_extrabold"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/iv_dialog_close"
+        app:layout_constraintHorizontal_bias="0" />
+
+    <ImageView
+        android:id="@+id/iv_dialog_star"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_marginStart="6dp"
+        android:contentDescription="즐겨찾기"
+        android:src="@drawable/ic_star_off"
+        app:layout_constraintStart_toEndOf="@id/tv_dialog_pose_name"
+        app:layout_constraintTop_toTopOf="@id/tv_dialog_pose_name"
+        app:layout_constraintBottom_toBottomOf="@id/tv_dialog_pose_name" />
+
+    <ImageView
+        android:id="@+id/iv_dialog_people_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:src="@drawable/pose_member"
+        app:layout_constraintTop_toBottomOf="@id/tv_dialog_pose_name"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_dialog_people_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:fontFamily="@font/suit_regular"
+        android:textColor="#8A8A8A"
+        android:textSize="12sp"
+        app:layout_constraintStart_toEndOf="@id/iv_dialog_people_icon"
+        app:layout_constraintTop_toTopOf="@id/iv_dialog_people_icon"
+        app:layout_constraintBottom_toBottomOf="@id/iv_dialog_people_icon" />
+
     <ImageView
         android:id="@+id/iv_dialog_pose"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:scaleType="centerCrop"
-        android:layout_marginTop="7dp"
+        android:layout_marginTop="20dp"
         app:layout_constraintDimensionRatio="169:237"
-        app:layout_constraintTop_toBottomOf="@id/iv_dialog_close"
+        app:layout_constraintTop_toBottomOf="@id/iv_dialog_people_icon"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <TextView
-        android:id="@+id/tv_dialog_pose_name"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:fontFamily="@font/suit_regular"
-        android:textColor="@color/black"
-        android:textSize="14sp"
-        app:layout_constraintTop_toBottomOf="@id/iv_dialog_pose"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/iv_dialog_star"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
-    <ImageView
-        android:id="@+id/iv_dialog_star"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
-        android:layout_marginStart="8dp"
-        android:contentDescription="즐겨찾기"
-        android:src="@drawable/ic_star_off"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/tv_dialog_pose_name"
-        app:layout_constraintBottom_toBottomOf="@id/tv_dialog_pose_name" />
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

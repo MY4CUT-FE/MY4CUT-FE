@@ -1,10 +1,8 @@
-package com.umc.mobile.my4cut.network
+package com.umc.mobile.my4cut.data.network
 
 import android.content.Context
-import android.content.Intent
-import android.os.Looper
 import android.util.Log
-import android.widget.Toast
+import com.umc.mobile.my4cut.BuildConfig
 import com.umc.mobile.my4cut.data.album.remote.AlbumService
 import com.umc.mobile.my4cut.data.album.remote.ImageService
 import com.umc.mobile.my4cut.data.auth.local.TokenManager
@@ -18,8 +16,8 @@ import com.umc.mobile.my4cut.data.workspace.remote.WorkspaceService
 import com.umc.mobile.my4cut.data.invitation.remote.WorkspaceInvitationService
 import com.umc.mobile.my4cut.data.media.remote.MediaService
 import com.umc.mobile.my4cut.data.notification.remote.NotificationService
+import com.umc.mobile.my4cut.data.tutorial.remote.TutorialService
 import com.umc.mobile.my4cut.data.workspace.remote.WorkspaceMemberService
-import com.umc.mobile.my4cut.ui.intro.IntroActivity
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -36,8 +34,9 @@ object RetrofitClient {
         Log.d("RetrofitClient", "✅ Context initialized")
     }
 
+    // 요청/응답 전체(Authorization 헤더, 개인정보 포함)를 로그로 남기므로, release 빌드에서는 끔
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
     }
 
     /* ------------------ 인증 없는 Client ------------------ */
@@ -63,7 +62,7 @@ object RetrofitClient {
         }
 
         val token = TokenManager.getAccessToken(appContext)
-        Log.d("RetrofitClient", "🔑 Token from Interceptor: '$token'")
+        if (BuildConfig.DEBUG) Log.d("RetrofitClient", "🔑 Token from Interceptor: '$token'")
 
         val newRequest = if (!token.isNullOrEmpty()) {
             originalRequest.newBuilder()
@@ -79,22 +78,22 @@ object RetrofitClient {
         val response = chain.proceed(newRequest)
         Log.d("RetrofitClient", "📥 Response Code: ${response.code}")
 
-        // ✅ 401 에러 시 토큰 갱신 시도
+        // 401 에러 시 토큰 갱신 시도
         if (response.code == 401) {
             Log.d("RetrofitClient", "🔄 Token expired, attempting refresh...")
 
             val refreshToken = TokenManager.getRefreshToken(appContext)
-            Log.d("RetrofitClient", "🔑 Refresh Token: '$refreshToken'")
+            if (BuildConfig.DEBUG) Log.d("RetrofitClient", "🔑 Refresh Token: '$refreshToken'")
 
             if (!refreshToken.isNullOrEmpty()) {
                 val refreshResponse = try {
                     Log.d("RetrofitClient", "📤 Calling refresh API with Authorization header")
 
-                    // ✅ Bearer 추가하여 호출
+                    // Bearer 추가하여 호출
                     val result = authServiceNoAuth.refresh("Bearer $refreshToken").execute()
 
                     Log.d("RetrofitClient", "📥 Refresh Response Code: ${result.code()}")
-                    Log.d("RetrofitClient", "📥 Refresh Response Body: ${result.body()}")
+                    if (BuildConfig.DEBUG) Log.d("RetrofitClient", "📥 Refresh Response Body: ${result.body()}")
 
                     result
                 } catch (e: Exception) {
@@ -104,7 +103,7 @@ object RetrofitClient {
 
                 if (refreshResponse?.isSuccessful == true) {
                     val newTokens = refreshResponse.body()?.data
-                    Log.d("RetrofitClient", "📦 New Tokens: $newTokens")
+                    if (BuildConfig.DEBUG) Log.d("RetrofitClient", "📦 New Tokens: $newTokens")
 
                     if (newTokens != null) {
                         // 새 토큰 저장
@@ -166,5 +165,5 @@ object RetrofitClient {
     val notificationService: NotificationService = authRetrofit.create(NotificationService::class.java)
     val mediaService: MediaService = authRetrofit.create(MediaService::class.java)
 
-
+    val tutorialService: TutorialService = authRetrofit.create(TutorialService::class.java)
 }

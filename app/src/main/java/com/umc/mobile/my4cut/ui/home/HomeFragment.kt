@@ -16,7 +16,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.res.ResourcesCompat
@@ -24,16 +23,15 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import coil.load
+import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.day4cut.model.Day4CutDetailResponse
 import com.umc.mobile.my4cut.databinding.FragmentHomeBinding
 import com.umc.mobile.my4cut.databinding.ItemCalendarDayBinding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
-import com.umc.mobile.my4cut.ui.pose.PoseRecommendActivity
 import com.umc.mobile.my4cut.ui.myalbum.CalendarPickerActivity
 import com.umc.mobile.my4cut.ui.myalbum.EntryDetailFragment
-import com.umc.mobile.my4cut.ui.record.EntryRegisterActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -56,6 +54,17 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private var selectedDate: LocalDate = LocalDate.now()
+
+    // loadCalendarData()와 loadDay4CutData()는 서로 독립적인 코루틴이라,
+    // 당겨서 새로고침 스피너는 "둘 다 끝났을 때"만 멈춰야 함 → 카운터로 동기화
+    private var pendingLoadCount = 0
+
+    private fun markLoadFinished() {
+        if (pendingLoadCount > 0) pendingLoadCount--
+        if (pendingLoadCount <= 0) {
+            _binding?.swipeRefresh?.isRefreshing = false
+        }
+    }
 
     // 푸시 알림이 도착하면 홈 알림 아이콘을 즉시 ON으로 변경
     private val notificationReceiver = object : BroadcastReceiver() {
@@ -118,6 +127,23 @@ class HomeFragment : Fragment() {
         updateNotificationIcon()
         // HomeFragment가 살아있는 동안 푸시 수신 이벤트를 감지
         registerNotificationReceiver()
+
+        // 당겨서 새로고침
+        binding.swipeRefresh.setOnRefreshListener {
+            refreshCalendarData()
+        }
+
+        // 홈 화면 최초 진입 시 1회만 표시되는 튜토리얼 (마이페이지 아이콘 / 포즈 추천 / 네컷 기록 카드 안내)
+        binding.root.post {
+            val safeBinding = _binding ?: return@post
+            (activity as? MainActivity)?.showHomeTutorialIfNeeded(
+                mypageBadge = safeBinding.vMypageBadge,
+                poseCard = safeBinding.clPoseRecommend,
+                recordCard = safeBinding.cvContentBox,
+                recordCharacter = safeBinding.ivEmptyChar,
+                contentScrollView = safeBinding.nsvHome
+            )
+        }
     }
 
     private fun setupDateBanner() {
@@ -135,6 +161,8 @@ class HomeFragment : Fragment() {
 
     // ✅ 캘린더 데이터 로드 (API) - suspend 함수로 변경
     private fun loadCalendarData() {
+        pendingLoadCount++
+
         val year = selectedDate.year
         val month = selectedDate.monthValue
 
@@ -174,6 +202,10 @@ class HomeFragment : Fragment() {
                 withContext(Dispatchers.Main) {
                     Log.e("HomeFragment", "❌ Network error", e)
                 }
+            } finally {
+                withContext(Dispatchers.Main) {
+                    markLoadFinished()
+                }
             }
         }
     }
@@ -203,6 +235,8 @@ class HomeFragment : Fragment() {
 
     // ✅ 특정 날짜의 하루네컷 데이터 로드 (API) - suspend 함수로 변경
     private fun loadDay4CutData(date: LocalDate) {
+        pendingLoadCount++
+
         val dateString = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
         showLoadingState()
 
@@ -244,6 +278,10 @@ class HomeFragment : Fragment() {
                         Toast.makeText(requireContext(), "네트워크 오류", Toast.LENGTH_SHORT).show()
                         showEmptyState()
                     }
+                }
+            } finally {
+                withContext(Dispatchers.Main) {
+                    markLoadFinished()
                 }
             }
         }
@@ -426,7 +464,7 @@ class HomeFragment : Fragment() {
         }
 
         binding.clPoseRecommend.setOnClickListener {
-            startActivity(Intent(requireContext(), PoseRecommendActivity::class.java))
+            (activity as? com.umc.mobile.my4cut.MainActivity)?.selectPoseTab()
         }
 
         binding.ivNotification.setOnClickListener {

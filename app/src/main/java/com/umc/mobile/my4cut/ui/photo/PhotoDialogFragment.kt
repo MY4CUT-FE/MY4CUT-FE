@@ -1,13 +1,15 @@
 package com.umc.mobile.my4cut.ui.photo
 
+import android.app.Dialog
 import android.app.DownloadManager
 import android.content.Context
 import android.graphics.Color
+import android.graphics.RectF
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Environment
 import android.webkit.URLUtil
 import android.widget.Toast
-
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
@@ -15,19 +17,34 @@ import android.widget.TextView
 import android.widget.EditText
 import android.widget.Button
 import android.util.Log
+import android.util.TypedValue
+import android.graphics.drawable.Drawable
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.widget.FrameLayout
+
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.appcompat.app.AlertDialog
-import com.umc.mobile.my4cut.R
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import com.umc.mobile.my4cut.network.RetrofitClient
+import androidx.core.graphics.toColorInt
+
+import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.data.photo.model.CommentCreateRequest
 import com.umc.mobile.my4cut.data.photo.model.CommentDto
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
+import com.umc.mobile.my4cut.data.auth.local.TokenManager
+import com.umc.mobile.my4cut.data.tutorial.TutorialManager
+import com.umc.mobile.my4cut.data.tutorial.model.TutorialType
+import com.umc.mobile.my4cut.ui.tutorial.TutorialDimView
+
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -35,9 +52,14 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import androidx.core.graphics.toColorInt
+
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class PhotoDialogFragment : DialogFragment() {
+
+    private var retouchDetailTutorialView: View? = null
+    private var retouchDetailTutorialDialog: Dialog? = null
 
     private lateinit var ivClose: ImageView
     private lateinit var ivDelete: ImageView
@@ -53,9 +75,9 @@ class PhotoDialogFragment : DialogFragment() {
     private lateinit var rvChatList: RecyclerView
     private lateinit var ivToggleComment: ImageView
     private lateinit var ivToggleCommentTouchArea: View
-    private lateinit var tvConfirm: TextView
-
     private lateinit var etComment: EditText
+    private lateinit var tvEmptyComments: TextView
+    private lateinit var ivChat: ImageView
 
     // 전달받을 값
     private var workspaceId: Long = -1L
@@ -63,6 +85,9 @@ class PhotoDialogFragment : DialogFragment() {
     private var uploaderId: Long? = null
     private var myUserId: Long? = null
     private var myNickname: String? = null
+
+    // info 버튼으로 시작한 튜토리얼 다시보기인지 여부
+    private var isTutorialReplay = false
 
     /** 내 정보 조회해서 userId 가져오기 */
     private fun loadMyInfo() {
@@ -97,6 +122,8 @@ class PhotoDialogFragment : DialogFragment() {
 
     /** 댓글 삭제 API 연결 */
     fun deleteComment(commentId: Long) {
+        if (isTutorialReplay) return
+
         if (workspaceId == -1L || photoId == -1L) {
             Log.e("PhotoDialog", "workspaceId 또는 photoId가 없음")
             return
@@ -174,6 +201,11 @@ class PhotoDialogFragment : DialogFragment() {
         photoId = arguments?.getLong("photoId") ?: -1L
         myUserId = arguments?.getLong("myUserId")
         uploaderId = arguments?.getLong("uploaderId")
+
+        isTutorialReplay =
+            arguments?.getBoolean(ARG_TUTORIAL_REPLAY, false)
+                ?: false
+
         Log.d("PhotoDialog", "arguments 전달값 -> uploaderId=$uploaderId, photoId=$photoId, workspaceId=$workspaceId")
         uploaderNickname = arguments?.getString("uploaderNickname")
         uploaderProfileUrl = arguments?.getString("uploaderProfileUrl")
@@ -184,9 +216,69 @@ class PhotoDialogFragment : DialogFragment() {
         bindUploaderInfo()
         initRecyclerView()
         initListeners()
-        loadMyInfo()   // 내 userId API로 조회 후 댓글/삭제버튼 반영
+
+        if (isTutorialReplay) {
+            setupTutorialDetailData()
+        } else {
+            loadMyInfo()
+        }
 
         return view
+    }
+
+    private fun setupTutorialDetailData() {
+        myUserId = TUTORIAL_USER_ID
+        myNickname = "포토리"
+
+        // 튜토리얼에서는 내가 올린 사진으로 설정해서
+        // 삭제 버튼도 함께 설명할 수 있게 함
+        uploaderId = TUTORIAL_USER_ID
+        uploaderNickname = "포토리"
+
+        tvUserName.text = "포토리"
+        tvDate.text = "2100/01/01 00:00"
+
+        ivProfile.setImageResource(
+            R.drawable.img_profile_default
+        )
+
+        // 실제 URL 대신 로컬 튜토리얼 이미지
+        ivMainPhoto.background = null
+        ivMainPhoto.scaleType =
+            ImageView.ScaleType.CENTER_CROP
+
+        ivMainPhoto.setImageResource(
+            R.drawable.img_tutorial_photo_sample
+        )
+
+        updateDeleteButtonVisibility()
+
+        updateComments(emptyList())
+
+        // 튜토리얼에서는 댓글 영역을 닫힌 상태로 시작
+        isCommentExpanded = false
+
+        rvChatList.visibility = View.GONE
+        tvEmptyComments.visibility = View.GONE
+        etComment.visibility = View.GONE
+        ivSend.visibility = View.GONE
+
+        ivToggleComment.setImageResource(
+            R.drawable.ic_space_up
+        )
+
+        // 모든 View가 배치된 다음 DETAIL 튜토리얼 강제 표시
+        view?.post {
+            showRetouchDetailTutorial()
+        }
+    }
+
+    override fun onDestroyView() {
+        retouchDetailTutorialDialog?.dismiss()
+        retouchDetailTutorialDialog = null
+        retouchDetailTutorialView = null
+
+        super.onDestroyView()
     }
 
     private fun initViews(view: View) {
@@ -202,12 +294,13 @@ class PhotoDialogFragment : DialogFragment() {
         tvUserName = view.findViewById(R.id.tvUserName)
         tvDate = view.findViewById(R.id.tvDate)
         tvChat = view.findViewById(R.id.tvChat)
-        tvConfirm = view.findViewById(R.id.mainText)
+        tvEmptyComments = view.findViewById(R.id.tvEmptyComments)
 
         rvChatList = view.findViewById(R.id.rvChatList)
+        ivChat = view.findViewById(R.id.ivChat)
         ivToggleComment = view.findViewById(R.id.ivToggleComment)
         ivToggleCommentTouchArea = view.findViewById(R.id.ivToggleCommentTouchArea)
-        etComment = view.findViewById(R.id.text)
+        etComment = view.findViewById(R.id.etText)
         etComment.setHintTextColor("#8F8F8F".toColorInt())
         etComment.setTextColor("#1A1A1A".toColorInt())
 
@@ -216,36 +309,167 @@ class PhotoDialogFragment : DialogFragment() {
         ivSend.visibility = View.VISIBLE
     }
 
+    private fun showSkeleton() {
+        tvUserName.text = ""
+        tvUserName.layoutParams = tvUserName.layoutParams.apply {
+            width = dpToPx(70)
+            height = dpToPx(12)
+        }
+        tvUserName.setBackgroundResource(
+            R.drawable.bg_skeleton_text_light
+        )
+
+        tvDate.text = ""
+        tvDate.layoutParams = tvDate.layoutParams.apply {
+            width = dpToPx(110)
+            height = dpToPx(10)
+        }
+        tvDate.setBackgroundResource(
+            R.drawable.bg_skeleton_text_light
+        )
+
+        tvChat.text = ""
+        tvChat.layoutParams = tvChat.layoutParams.apply {
+            width = dpToPx(64)
+            height = dpToPx(12)
+        }
+        tvChat.setBackgroundResource(
+            R.drawable.bg_skeleton_text_light
+        )
+
+        ivProfile.setImageResource(R.drawable.img_profile_default)
+
+        ivMainPhoto.setBackgroundResource(
+            R.drawable.bg_skeleton_img
+        )
+        ivMainPhoto.setImageResource(
+            R.drawable.ic_skeleton_img
+        )
+        ivMainPhoto.scaleType = ImageView.ScaleType.CENTER
+    }
+
+    private fun showCommentSkeleton() {
+        tvChat.text = ""
+
+        tvChat.layoutParams = tvChat.layoutParams.apply {
+            width = dpToPx(64)
+            height = dpToPx(12)
+        }
+
+        tvChat.setBackgroundResource(
+            R.drawable.bg_skeleton_text_light
+        )
+    }
+
+    private fun showCommentResult(commentCount: Int) {
+        tvChat.background = null
+
+        tvChat.layoutParams = tvChat.layoutParams.apply {
+            width = ViewGroup.LayoutParams.WRAP_CONTENT
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+
+        tvChat.text = "댓글  $commentCount"
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            dp.toFloat(),
+            resources.displayMetrics
+        ).toInt()
+    }
+
     private fun bindUploaderInfo() {
-        // 닉네임 표시
-        tvUserName.text = uploaderNickname ?: ""
+        // 닉네임과 날짜는 즉시 실제 데이터 표시
+        tvUserName.background = null
+        tvDate.background = null
 
-        // 시간 포맷
-        tvDate.text = createdAt?.let { formatAbsoluteDateTime(it) } ?: ""
+        tvUserName.layoutParams = tvUserName.layoutParams.apply {
+            width = ViewGroup.LayoutParams.WRAP_CONTENT
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
+        }
 
-        // 프로필 이미지 표시 (없으면 기본 이미지)
+        tvDate.layoutParams = tvDate.layoutParams.apply {
+            width = ViewGroup.LayoutParams.WRAP_CONTENT
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+
+        tvUserName.text = uploaderNickname.orEmpty()
+        tvDate.text = createdAt
+            ?.let { formatAbsoluteDateTime(it) }
+            .orEmpty()
+
+        // 프로필도 기존 방식 유지
         if (!uploaderProfileUrl.isNullOrEmpty()) {
             Glide.with(this)
                 .load(uploaderProfileUrl)
-                .placeholder(R.drawable.ic_profile_cat)
-                .error(R.drawable.ic_profile_cat)
+                .placeholder(R.drawable.img_profile_default)
+                .error(R.drawable.img_profile_default)
                 .circleCrop()
                 .into(ivProfile)
         } else {
-            ivProfile.setImageResource(R.drawable.ic_profile_cat)
+            ivProfile.setImageResource(R.drawable.img_profile_default)
         }
 
-        // 메인 사진 표시
+        // 메인 사진만 로딩 스켈레톤 적용
+        ivMainPhoto.setBackgroundResource(
+            R.drawable.bg_skeleton_img
+        )
+        ivMainPhoto.setImageResource(
+            R.drawable.ic_skeleton_img
+        )
+        ivMainPhoto.scaleType = ImageView.ScaleType.CENTER
+
         if (!photoUrl.isNullOrEmpty()) {
             Glide.with(this)
                 .load(photoUrl)
-                .placeholder(R.drawable.image1)
-                .error(R.drawable.image1)
+                .placeholder(R.drawable.ic_skeleton_img)
+                .error(R.drawable.ic_skeleton_img)
+                .listener(object : RequestListener<Drawable> {
+
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        ivMainPhoto.setBackgroundResource(
+                            R.drawable.bg_skeleton_img
+                        )
+                        ivMainPhoto.scaleType =
+                            ImageView.ScaleType.CENTER
+
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: Drawable,
+                        model: Any,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        ivMainPhoto.background = null
+                        ivMainPhoto.scaleType =
+                            ImageView.ScaleType.CENTER_CROP
+
+                        return false
+                    }
+                })
                 .into(ivMainPhoto)
         }
 
-        // 디버그 로그
-        Log.d("PhotoDialog", "bindUploaderInfo -> uploaderId=$uploaderId myUserId=$myUserId uploaderNickname=$uploaderNickname profileUrl=$uploaderProfileUrl createdAt=$createdAt photoUrl=$photoUrl")
+        Log.d(
+            "PhotoDialog",
+            "bindUploaderInfo -> uploaderId=$uploaderId " +
+                    "myUserId=$myUserId " +
+                    "uploaderNickname=$uploaderNickname " +
+                    "profileUrl=$uploaderProfileUrl " +
+                    "createdAt=$createdAt " +
+                    "photoUrl=$photoUrl"
+        )
+
         updateDeleteButtonVisibility()
     }
 
@@ -343,16 +567,26 @@ class PhotoDialogFragment : DialogFragment() {
             isCommentExpanded = !isCommentExpanded
 
             if (isCommentExpanded) {
-                rvChatList.visibility = View.VISIBLE
+                val hasComments = commentAdapter.itemCount > 0
+
+                rvChatList.visibility =
+                    if (hasComments) View.VISIBLE else View.GONE
+
+                tvEmptyComments.visibility =
+                    if (hasComments) View.GONE else View.VISIBLE
+
                 etComment.visibility = View.VISIBLE
                 ivSend.visibility = View.VISIBLE
-                ivToggleComment.setImageResource(R.drawable.ic_down)
+                ivToggleComment.setImageResource(R.drawable.ic_arrow_down)
             } else {
                 rvChatList.visibility = View.GONE
+                tvEmptyComments.visibility = View.GONE
                 etComment.visibility = View.GONE
                 ivSend.visibility = View.GONE
-                ivToggleComment.setImageResource(R.drawable.ic_up)
+                ivToggleComment.setImageResource(R.drawable.ic_space_up)
             }
+
+            updateDialogSize()
         }
 
         ivToggleComment.setOnClickListener {
@@ -399,6 +633,8 @@ class PhotoDialogFragment : DialogFragment() {
 
     /** 사진 삭제 API 연결 */
     private fun deletePhoto() {
+        if (isTutorialReplay) return
+
         if (workspaceId == -1L || photoId == -1L) {
             Log.e("PhotoDialog", "workspaceId 또는 photoId가 없음")
             return
@@ -427,6 +663,8 @@ class PhotoDialogFragment : DialogFragment() {
 
     /** 댓글 작성 API 연결 */
     private fun sendComment() {
+        if (isTutorialReplay) return
+
         val content = etComment.text.toString().trim()
         if (content.isEmpty()) return
 
@@ -454,6 +692,8 @@ class PhotoDialogFragment : DialogFragment() {
     }
 
     private fun downloadPhoto() {
+        if (isTutorialReplay) return
+
         val url = photoUrl
         if (url.isNullOrBlank()) {
             Toast.makeText(requireContext(), "다운로드할 사진이 없어요.", Toast.LENGTH_SHORT).show()
@@ -497,29 +737,41 @@ class PhotoDialogFragment : DialogFragment() {
     }
 
     private fun loadComments() {
+        showCommentSkeleton()
+
         if (workspaceId == -1L || photoId == -1L) {
-            Log.e("PhotoDialog", "workspaceId 또는 photoId가 없음")
+            showCommentResult(0)
+
+            tvChat.post {
+                checkRetouchDetailTutorial()
+            }
+
+            Log.e(
+                "PhotoDialog",
+                "workspaceId 또는 photoId가 없음"
+            )
             return
         }
 
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.workspacePhotoService
-                    .getComments(workspaceId, photoId)
+                val response =
+                    RetrofitClient.workspacePhotoService
+                        .getComments(workspaceId, photoId)
 
-                Log.d("PhotoDialog", "댓글 API 응답 code=${response.code}, message=${response.message}")
-                Log.d("PhotoDialog", "댓글 raw data=${response.data}")
+                Log.d(
+                    "PhotoDialog",
+                    "댓글 API 응답 code=${response.code}, " +
+                            "message=${response.message}"
+                )
 
-                val list: List<CommentDto> = response.data ?: emptyList()
+                val list: List<CommentDto> =
+                    response.data ?: emptyList()
 
-                // CommentData로 변환
                 val mapped = list.map { dto ->
-                    // 작성자 여부 판단 (서버 dto에 userId 필드가 있다고 가정)
-                    val isMine = myUserId != null && dto.userId?.toLong() == myUserId
-                    Log.d(
-                        "PhotoDialog",
-                        "댓글 매핑 -> commentId=${dto.id}, userId=${dto.userId}, myUserId=$myUserId, isMine=$isMine"
-                    )
+                    val isMine =
+                        myUserId != null &&
+                                dto.userId?.toLong() == myUserId
 
                     CommentData(
                         commentId = dto.id,
@@ -532,11 +784,23 @@ class PhotoDialogFragment : DialogFragment() {
                 }
 
                 updateComments(mapped)
-                Log.d("PhotoDialog", "댓글 로드 성공: ${mapped.size}")
-                Log.d("PhotoDialog", "현재 로그인 사용자 myUserId=$myUserId, 댓글 개수=${mapped.size}")
 
+                Log.d(
+                    "PhotoDialog",
+                    "댓글 로드 성공: ${mapped.size}"
+                )
             } catch (e: Exception) {
-                Log.e("PhotoDialog", "댓글 목록 조회 실패", e)
+                showCommentResult(0)
+
+                tvChat.post {
+                    checkRetouchDetailTutorial()
+                }
+
+                Log.e(
+                    "PhotoDialog",
+                    "댓글 목록 조회 실패",
+                    e
+                )
             }
         }
     }
@@ -544,7 +808,21 @@ class PhotoDialogFragment : DialogFragment() {
     /** 댓글 목록 갱신 */
     fun updateComments(list: List<CommentData>) {
         commentAdapter.updateData(list)
-        tvChat.text = "댓글  ${list.size}"
+        showCommentResult(list.size)
+
+        tvChat.post {
+            checkRetouchDetailTutorial()
+        }
+
+        if (isCommentExpanded && list.isEmpty()) {
+            rvChatList.visibility = View.GONE
+            tvEmptyComments.visibility = View.VISIBLE
+        } else {
+            rvChatList.visibility =
+                if (isCommentExpanded) View.VISIBLE else View.GONE
+
+            tvEmptyComments.visibility = View.GONE
+        }
 
         // 마지막 댓글로 자동 스크롤
         if (list.isNotEmpty()) {
@@ -557,12 +835,36 @@ class PhotoDialogFragment : DialogFragment() {
         etComment.requestFocus()
     }
 
+    private fun updateDialogSize() {
+        val window = dialog?.window ?: return
+
+        val width =
+            (resources.displayMetrics.widthPixels * 0.9).toInt()
+
+        val heightRatio =
+            if (isCommentExpanded) {
+                0.85
+            } else {
+                0.75
+            }
+
+        val height =
+            (resources.displayMetrics.heightPixels * heightRatio).toInt()
+
+        window.setLayout(
+            width,
+            height
+        )
+    }
+
     override fun onStart() {
         super.onStart()
-        dialog?.window?.setLayout(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            (resources.displayMetrics.heightPixels * 0.85).toInt(),
+
+        dialog?.window?.setBackgroundDrawable(
+            ColorDrawable(Color.TRANSPARENT)
         )
+
+        updateDialogSize()
     }
 
     companion object {
@@ -570,6 +872,11 @@ class PhotoDialogFragment : DialogFragment() {
         const val BUNDLE_KEY_DELETED_PHOTO_ID = "bundle_key_deleted_photo_id"
 
         private const val ARG_PHOTO_URL = "photoUrl"
+
+        private const val ARG_TUTORIAL_REPLAY =
+            "arg_tutorial_replay"
+
+        private const val TUTORIAL_USER_ID = -100L
 
         fun newInstance(
             workspaceId: Long,
@@ -579,7 +886,8 @@ class PhotoDialogFragment : DialogFragment() {
             uploaderNickname: String,
             uploaderProfileUrl: String?,
             createdAt: String,
-            myUserId: Long
+            myUserId: Long,
+            isTutorialReplay: Boolean = false
         ): PhotoDialogFragment {
             return PhotoDialogFragment().apply {
                 arguments = Bundle().apply {
@@ -591,8 +899,453 @@ class PhotoDialogFragment : DialogFragment() {
                     putString("uploaderProfileUrl", uploaderProfileUrl)
                     putString("createdAt", createdAt)
                     putLong("myUserId", myUserId)
+                    putBoolean(ARG_TUTORIAL_REPLAY, isTutorialReplay)
                 }
             }
         }
+    }
+
+    private fun checkRetouchDetailTutorial() {
+        if (isTutorialReplay) {
+            showRetouchDetailTutorial()
+            return
+        }
+
+        val userId =
+            TokenManager.getUserId(requireContext())
+                ?: return
+
+        viewLifecycleOwner.lifecycleScope.launch {
+
+            val photoCompleted =
+                TutorialManager.isCompleted(
+                    requireContext(),
+                    userId,
+                    TutorialType.RETOUCH_PHOTO
+                )
+
+            if (photoCompleted != true) {
+                return@launch
+            }
+
+            val detailCompleted =
+                TutorialManager.isCompleted(
+                    requireContext(),
+                    userId,
+                    TutorialType.RETOUCH_DETAIL
+                )
+
+            if (detailCompleted == false) {
+                showRetouchDetailTutorial()
+            }
+        }
+    }
+
+    private fun completeRetouchDetailTutorial() {
+        val userId =
+            TokenManager.getUserId(requireContext())
+                ?: return
+
+        hideRetouchDetailTutorial()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                RetrofitClient.tutorialService
+                    .completeTutorial(
+                        TutorialType.RETOUCH_DETAIL
+                    )
+
+                TutorialManager.setCompleted(
+                    requireContext(),
+                    userId,
+                    TutorialType.RETOUCH_DETAIL
+                )
+
+            } catch (e: Exception) {
+                Log.e(
+                    "Tutorial",
+                    "RETOUCH_DETAIL 튜토리얼 완료 처리 실패",
+                    e
+                )
+            }
+        }
+    }
+
+    private fun showRetouchDetailTutorial() {
+        if (retouchDetailTutorialDialog != null) return
+
+        val overlay =
+            layoutInflater.inflate(
+                R.layout.view_tutorial_detail,
+                null,
+                false
+            )
+
+        val tutorialDialog =
+            Dialog(requireContext()).apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+                setContentView(overlay)
+
+                window?.apply {
+                    setBackgroundDrawable(
+                        ColorDrawable(Color.TRANSPARENT)
+                    )
+
+                    setLayout(
+                        WindowManager.LayoutParams.MATCH_PARENT,
+                        WindowManager.LayoutParams.MATCH_PARENT
+                    )
+
+                    clearFlags(
+                        WindowManager.LayoutParams.FLAG_DIM_BEHIND
+                    )
+                }
+
+                setCancelable(false)
+            }
+
+        retouchDetailTutorialView = overlay
+        retouchDetailTutorialDialog = tutorialDialog
+
+        if (isTutorialReplay) {
+
+            overlay.findViewById<View>(
+                R.id.ll_tutorial_close
+            ).visibility = View.GONE
+
+            overlay.setOnClickListener {
+                finishTutorialReplay()
+            }
+
+        } else {
+
+            overlay.findViewById<View>(
+                R.id.ll_tutorial_close
+            ).setOnClickListener {
+                completeRetouchDetailTutorial()
+            }
+        }
+
+        tutorialDialog.setOnShowListener {
+            tutorialDialog.window?.setLayout(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT
+            )
+
+            overlay.post {
+                setupRetouchDetailTutorial()
+            }
+        }
+
+        tutorialDialog.show()
+    }
+
+    private fun hideRetouchDetailTutorial() {
+        retouchDetailTutorialDialog?.dismiss()
+        retouchDetailTutorialDialog = null
+        retouchDetailTutorialView = null
+    }
+
+    private fun finishTutorialReplay() {
+        hideRetouchDetailTutorial()
+
+        // dismiss 전에 FragmentManager를 먼저 저장해야 함
+        val fragmentManager = parentFragmentManager
+
+        dismissAllowingStateLoss()
+
+        fragmentManager.popBackStack(
+            "RetouchTutorial",
+            androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
+        )
+    }
+
+    private fun tutorialDp(
+        value: Float
+    ): Float {
+        return value *
+                resources.displayMetrics.density
+    }
+
+    private fun getTutorialRect(
+        target: View,
+        overlay: View
+    ): RectF {
+
+        val targetLocation = IntArray(2)
+        val overlayLocation = IntArray(2)
+
+        target.getLocationOnScreen(
+            targetLocation
+        )
+
+        overlay.getLocationOnScreen(
+            overlayLocation
+        )
+
+        val left =
+            targetLocation[0] -
+                    overlayLocation[0]
+
+        val top =
+            targetLocation[1] -
+                    overlayLocation[1]
+
+        return RectF(
+            left.toFloat(),
+            top.toFloat(),
+            left + target.width.toFloat(),
+            top + target.height.toFloat()
+        )
+    }
+
+    private fun positionTutorialView(
+        view: View,
+        x: Float,
+        y: Float
+    ) {
+        view.x = x
+        view.y = y
+    }
+
+    private fun positionTutorialHighlight(
+        view: View,
+        rect: RectF
+    ) {
+        val params =
+            view.layoutParams as
+                    FrameLayout.LayoutParams
+
+        params.width =
+            rect.width().toInt()
+
+        params.height =
+            rect.height().toInt()
+
+        view.layoutParams = params
+
+        view.x = rect.left
+        view.y = rect.top
+
+        view.visibility = View.VISIBLE
+    }
+
+    private fun setupRetouchDetailTutorial() {
+        val overlay =
+            retouchDetailTutorialView ?: return
+
+        val dimView =
+            overlay.findViewById<TutorialDimView>(
+                R.id.tutorial_dim_view
+            )
+
+        if (
+            ivSaveTouchArea.width == 0 ||
+            tvChat.width == 0 ||
+            ivChat.width == 0
+        ) {
+            overlay.post {
+                setupRetouchDetailTutorial()
+            }
+            return
+        }
+
+        val baseSaveRect =
+            getTutorialRect(
+                ivSaveTouchArea,
+                overlay
+            )
+
+        val saveRect = RectF(
+            baseSaveRect.left + tutorialDp(6f),
+            baseSaveRect.top + tutorialDp(6f),
+            baseSaveRect.right - tutorialDp(6f),
+            baseSaveRect.bottom - tutorialDp(6f)
+        )
+
+        val deleteRect =
+            if (
+                ivDeleteTouchArea.visibility == View.VISIBLE &&
+                ivDeleteTouchArea.width > 0
+            ) {
+                val baseDeleteRect =
+                    getTutorialRect(
+                        ivDeleteTouchArea,
+                        overlay
+                    )
+
+                RectF(
+                    baseDeleteRect.left + tutorialDp(6f),
+                    baseDeleteRect.top + tutorialDp(6f),
+                    baseDeleteRect.right - tutorialDp(6f),
+                    baseDeleteRect.bottom - tutorialDp(6f)
+                )
+            } else {
+                null
+            }
+
+        dimView.clearHighlights()
+
+        dimView.addHighlight(
+            saveRect,
+            saveRect.height() / 2f
+        )
+
+        deleteRect?.let {
+            dimView.addHighlight(
+                it,
+                it.height() / 2f
+            )
+        }
+
+        positionTutorialHighlight(
+            overlay.findViewById(
+                R.id.v_highlight_save
+            ),
+            saveRect
+        )
+
+        val deleteHighlight =
+            overlay.findViewById<View>(
+                R.id.v_highlight_delete
+            )
+
+        if (deleteRect != null) {
+            positionTutorialHighlight(
+                deleteHighlight,
+                deleteRect
+            )
+        } else {
+            deleteHighlight.visibility = View.GONE
+        }
+
+        setupRetouchDetailPositions(
+            overlay,
+            saveRect,
+            deleteRect
+        )
+
+        setupRetouchDetailTexts(
+            overlay
+        )
+    }
+
+    private fun setupRetouchDetailPositions(
+        overlay: View,
+        saveRect: RectF,
+        deleteRect: RectF?
+    ) {
+        val saveText =
+            overlay.findViewById<TextView>(
+                R.id.tv_tutorial_save
+            )
+
+        val saveArrow =
+            overlay.findViewById<ImageView>(
+                R.id.iv_arrow_save
+            )
+
+        val deleteText =
+            overlay.findViewById<TextView>(
+                R.id.tv_tutorial_delete
+            )
+
+        val deleteArrow =
+            overlay.findViewById<ImageView>(
+                R.id.iv_arrow_delete
+            )
+
+        // 다운로드 설명
+        positionTutorialView(
+            saveText,
+            saveRect.centerX() -
+                    saveText.width / 2f -
+                    tutorialDp(100f),
+            saveRect.top -
+                    saveText.height -
+                    tutorialDp(49f)
+        )
+
+        positionTutorialView(
+            saveArrow,
+            saveRect.centerX() -
+                    saveArrow.width / 2f,
+            saveRect.top -
+                    saveArrow.height -
+                    tutorialDp(2f)
+        )
+
+        // 삭제 설명
+        if (deleteRect != null) {
+            deleteText.visibility = View.VISIBLE
+            deleteArrow.visibility = View.VISIBLE
+
+            positionTutorialView(
+                deleteText,
+                deleteRect.centerX() -
+                        deleteText.width / 2f -
+                        tutorialDp(103f),
+                deleteRect.bottom +
+                        tutorialDp(23f)
+            )
+
+            positionTutorialView(
+                deleteArrow,
+                deleteRect.centerX() -
+                        deleteArrow.width / 2f,
+                deleteRect.bottom +
+                        tutorialDp(4f)
+            )
+        } else {
+            deleteText.visibility = View.GONE
+            deleteArrow.visibility = View.GONE
+        }
+    }
+
+    private fun setupRetouchDetailTexts(
+        overlay: View
+    ) {
+        setRetouchDetailText(
+            overlay.findViewById(
+                R.id.tv_tutorial_save
+            ),
+            "친구가 올린 사진을 다운로드 받아\n이어서 보정할 수 있어요.",
+            "이어서 보정"
+        )
+
+        setRetouchDetailText(
+            overlay.findViewById(
+                R.id.tv_tutorial_delete
+            ),
+            "내가 올린 사진은 언제든 삭제할 수 있어요.",
+            "언제든 삭제"
+        )
+    }
+
+    private fun setRetouchDetailText(
+        textView: TextView,
+        text: String,
+        vararg highlights: String
+    ) {
+        val spannable =
+            SpannableString(text)
+
+        highlights.forEach { highlight ->
+            val start =
+                text.indexOf(highlight)
+
+            if (start >= 0) {
+                spannable.setSpan(
+                    ForegroundColorSpan(
+                        Color.parseColor("#FF7E67")
+                    ),
+                    start,
+                    start + highlight.length,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+        }
+
+        textView.text = spannable
     }
 }

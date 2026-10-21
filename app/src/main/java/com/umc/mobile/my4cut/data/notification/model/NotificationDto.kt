@@ -6,6 +6,7 @@ data class NotificationDto(
     val message: String?,
     val isRead: Boolean,
     val referenceId: Long?,
+    val mediaId: Long?,        // 댓글/미디어 알림에서 해당 사진 ID
     val senderId: Long?,
     val senderNickname: String?,
     val senderProfileImageUrl: String?,

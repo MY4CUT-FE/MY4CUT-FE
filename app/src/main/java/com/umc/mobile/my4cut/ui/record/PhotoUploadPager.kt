@@ -59,16 +59,16 @@ import kotlin.math.absoluteValue
 
 private val CoralColor = Color(0xFFFF7E67)
 
-/**
- * 네컷 업로드 페이저
- * - 사진 없음: EmptyCard(page 0) + AddCard(page 1) → 우측에 + 카드뷰 peek
- * - 사진 있음: PhotoCards + AddCard(마지막) + 인디케이터 내부 오버레이
- */
+private const val MAX_PHOTO_COUNT = 3
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PhotoUploadPager(
     photos: List<Uri>,
     onAddPhotoClick: () -> Unit,
+    thumbnailIndex: Int = 0,
+    onThumbnailClick: (Int) -> Unit = {},
+    onDeleteClick: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -76,22 +76,25 @@ fun PhotoUploadPager(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // 사진 없음: EmptyCard + AddCard 2페이지 (우측 peek)
-        // 사진 있음: PhotoCards + AddCard (photos.size + 1)
-        val pageCount = if (photos.isEmpty()) 2 else photos.size + 1
+        // 사진 있음(최대치 미만): PhotoCards + AddCard (photos.size + 1)
+        // 사진이 최대치(3장)를 다 채우면 추가 슬롯 페이지 자체가 없어야 함
+        val pageCount = when {
+            photos.isEmpty() -> 2
+            photos.size >= MAX_PHOTO_COUNT -> photos.size
+            else -> photos.size + 1
+        }
         val pagerState = rememberPagerState(pageCount = { pageCount })
 
         // Box: 인디케이터를 카드뷰 내부 하단에 오버레이
         Box {
             HorizontalPager(
                 state = pagerState,
-                // 60dp: 양옆 카드뷰가 더 많이 peek되어 슬라이더블 느낌 강조
                 contentPadding = PaddingValues(horizontal = 60.dp),
                 pageSpacing = 12.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(370.dp)
             ) { page ->
-                // 비중앙 카드 85% 축소, 중앙 카드 100% 원본 크기
                 val pageOffset = ((pagerState.currentPage - page) +
                         pagerState.currentPageOffsetFraction).absoluteValue
                 val scale = lerp(
@@ -125,9 +128,12 @@ fun PhotoUploadPager(
                     page < photos.size -> PhotoCard(
                         uri = photos[page],
                         isCurrent = isCurrent,
+                        isThumbnail = page == thumbnailIndex,
+                        onDeleteClick = { onDeleteClick(page) },
+                        onThumbnailClick = { onThumbnailClick(page) },
                         modifier = scaledModifier
                     )
-                    // [사진 있음] 마지막 페이지 → + 추가 슬롯 (사진 추가 직접 연결)
+                    // [사진 있음, 최대치 미만] 마지막 페이지 → + 추가 슬롯 (사진 추가 직접 연결)
                     else -> AddPhotoCard(
                         onClick = onAddPhotoClick,
                         pageOffset = pageOffset,
@@ -136,10 +142,12 @@ fun PhotoUploadPager(
                 }
             }
 
-            // 인디케이터: 사진이 있을 때만 카드뷰 내부 하단 정중앙 오버레이
-            if (photos.isNotEmpty()) {
+            // 인디케이터: 업로드된 사진 개수만큼만 점을 표시한다("+추가" 슬롯은 점에 포함하지 않음).
+            // 사진이 2장 이상일 때만 보여주고, 1장일 때는 표시하지 않는다.
+            if (photos.size >= 2) {
                 PhotoPageIndicator(
                     currentPage = pagerState.currentPage,
+                    pageCount = photos.size,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 14.dp)
@@ -215,7 +223,14 @@ private fun EmptyPhotoCard(
 // ─── 사진 카드 ─────────────────────────────────────────────────────────────────
 
 @Composable
-private fun PhotoCard(uri: Uri, isCurrent: Boolean, modifier: Modifier = Modifier) {
+private fun PhotoCard(
+    uri: Uri,
+    isCurrent: Boolean,
+    isThumbnail: Boolean,
+    onDeleteClick: () -> Unit,
+    onThumbnailClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
 
     val bitmap by produceState<ImageBitmap?>(initialValue = null, key1 = uri) {
@@ -248,6 +263,34 @@ private fun PhotoCard(uri: Uri, isCurrent: Boolean, modifier: Modifier = Modifie
                 modifier = Modifier.fillMaxSize()
             )
         }
+
+        // 삭제 아이콘 (우측 상단) - 마이앨범 네컷수정하기 화면과 동일한 아이콘/위치/크기
+        Image(
+            painter = painterResource(R.drawable.ic_delete),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 8.dp, end = 8.dp)
+                .size(26.dp)
+                .background(Color.White, CircleShape)
+                .border(1.dp, Color(0xFFD1D1D1), CircleShape)
+                .clickable { onDeleteClick() }
+                .padding(5.dp)
+        )
+
+        // 썸네일(대표) 아이콘 (우측 하단) - 마이앨범 네컷수정하기 화면과 동일한 아이콘/위치/크기
+        Image(
+            painter = painterResource(if (isThumbnail) R.drawable.ic_typical_on else R.drawable.ic_typical_off),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 8.dp, end = 8.dp)
+                .size(26.dp)
+                .background(Color.White, CircleShape)
+                .border(1.dp, Color(0xFFD1D1D1), CircleShape)
+                .clickable { onThumbnailClick() }
+                .padding(5.dp)
+        )
     }
 }
 
@@ -300,16 +343,18 @@ private fun AddPhotoCard(
 // ─── 페이지 인디케이터 ─────────────────────────────────────────────────────────
 
 /**
- * 최대 등록 장수(3장)에 맞춘 3개 점 인디케이터
+ * 업로드된 사진 개수(pageCount)만큼만 점이 생성되는 인디케이터 ("+추가" 슬롯은 점에 포함하지 않음)
  * - currentPage에 맞춰 해당 인덱스의 점이 활성화되어 스와이프 시 함께 움직임
+ * - "+추가" 슬롯 페이지로 넘어가면(현재 사진 개수를 벗어나면) 마지막 사진의 점이 활성 상태로 유지됨
+ *   (예: 사진 2장 → 점 2개, 사진 3장(최대치) → 점 3개, 사진 1장 → 표시 안 함)
  */
 @Composable
 private fun PhotoPageIndicator(
     currentPage: Int,
+    pageCount: Int,
     modifier: Modifier = Modifier
 ) {
-    val maxPhotoCount = 3
-    val activeIndex = currentPage.coerceIn(0, maxPhotoCount - 1)
+    val activeIndex = currentPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
 
     Box(
         modifier = modifier
@@ -320,7 +365,7 @@ private fun PhotoPageIndicator(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            repeat(maxPhotoCount) { index ->
+            repeat(pageCount) { index ->
                 Box(
                     modifier = Modifier
                         .size(6.dp)

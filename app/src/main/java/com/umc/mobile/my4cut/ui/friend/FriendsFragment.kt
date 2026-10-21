@@ -13,9 +13,6 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.FileOutputStream
 
-import FriendUiItem
-import FriendsAdapter
-import FriendsMode
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
@@ -24,13 +21,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import android.util.Log
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.FragmentFriendsBinding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 
 class FriendsFragment : Fragment(R.layout.fragment_friends) {
 
@@ -42,6 +38,8 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
     private val selectedFriendIds = mutableSetOf<Long>()
     // 전체 친구 데이터(상태)
     private val allFriends = mutableListOf<Friend>()
+    // info 버튼으로 실행한 튜토리얼 모드
+    private var isTutorialMode = false
 
     // ㄱㄴㄷ 인덱스
     private val indexChars = listOf(
@@ -62,16 +60,21 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
         setupAddFriendResultListener()
     }
 
-    // 최초 친구 데이터 초기화(API 연동)
     private fun initFriends() {
-        // 더미 데이터 사용 중단
-        allFriends.clear()
+        if (isTutorialMode) {
+            showTutorialData()
+            return
+        }
+
+        friendsAdapter.showSkeleton()
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response = RetrofitClient.friendService.getFriends()
                 val friends = response.data ?: return@launch
                 Log.d("FRIEND_API", "response size = ${friends.size}")
+
+                allFriends.clear()
 
                 allFriends.addAll(
                     friends.map {
@@ -95,18 +98,57 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
         }
     }
 
+    fun showTutorialData() {
+        isTutorialMode = true
+
+        allFriends.clear()
+        selectedFriendIds.clear()
+
+        friendsMode = FriendsMode.NORMAL
+
+        friendsAdapter.hideSkeleton()
+        friendsAdapter.submitList(emptyList())
+
+        binding.layoutEmptyFriends.visibility = View.VISIBLE
+        binding.rvFriends.visibility = View.GONE
+        binding.layoutIndexScroller.visibility = View.GONE
+
+        updateHeaderUi()
+    }
+
     // allFriends에서 UI 리스트 생성 및 어댑터에 반영
     private fun submitFriends() {
+        val isEmpty = allFriends.isEmpty()
+
+        friendsAdapter.hideSkeleton()
+
+        binding.layoutEmptyFriends.visibility =
+            if (isEmpty) View.VISIBLE else View.GONE
+
+        binding.rvFriends.visibility =
+            if (isEmpty) View.GONE else View.VISIBLE
+
+        binding.layoutIndexScroller.visibility =
+            if (isEmpty) View.GONE else View.VISIBLE
+
+        if (isEmpty) {
+            friendsAdapter.submitList(emptyList())
+            return
+        }
+
         val favorites = allFriends.filter { it.isFavorite }
         val normalFriends = allFriends.filter { !it.isFavorite }
+
         val uiItems = buildList<FriendUiItem> {
             if (favorites.isNotEmpty()) {
                 add(FriendUiItem.Header("즐겨찾기"))
                 favorites.forEach { add(FriendUiItem.Item(it)) }
             }
+
             add(FriendUiItem.Header("친구 목록"))
             normalFriends.forEach { add(FriendUiItem.Item(it)) }
         }
+
         friendsAdapter.submitList(uiItems)
     }
 
@@ -229,14 +271,14 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
     private fun updateHeaderUi() {
         when (friendsMode) {
             FriendsMode.NORMAL -> {
-                // 기본: 추가/편집 보이기
                 binding.tvFriendsAdd.visibility = View.VISIBLE
                 binding.tvFriendsEdit.visibility = View.VISIBLE
                 binding.tvFriendsEdit.text = "편집"
                 binding.tvFriendsSelectClear.visibility = View.GONE
                 binding.tvFriendsDelete.visibility = View.GONE
+
                 binding.tvFriendsEdit.setTextColor(
-                    ContextCompat.getColor(requireContext(), R.color.black)
+                    Color.parseColor("#1A1A1A")
                 )
             }
 
@@ -270,14 +312,14 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
     }
 
     private fun updateEditHeaderState() {
-        val disabledColor = ContextCompat.getColor(requireContext(), R.color.text_disabled)
+        val editColor = Color.parseColor("#B2B2B2")
 
         // 완료 버튼 항상 비활성 색
-        binding.tvFriendsEdit.setTextColor(disabledColor)
+        binding.tvFriendsEdit.setTextColor(editColor)
 
         // 나머지 편집 액션들은 항상 비활성 색
-        binding.tvFriendsSelectClear?.setTextColor(disabledColor)
-        binding.tvFriendsDelete?.setTextColor(disabledColor)
+        binding.tvFriendsSelectClear?.setTextColor(editColor)
+        binding.tvFriendsDelete?.setTextColor(editColor)
     }
 
     private fun onFavoriteToggled(friend: Friend) {
@@ -320,8 +362,10 @@ class FriendsFragment : Fragment(R.layout.fragment_friends) {
             val nickname =
                 bundle.getString(AddFriendDialogFragment.KEY_FRIEND_NICKNAME) ?: return@setFragmentResultListener
 
-            // 서버에서 최신 친구 목록 다시 불러오기
-            initFriends()
+            if (!isTutorialMode) {
+                // 서버에서 최신 친구 목록 다시 불러오기
+                initFriends()
+            }
         }
     }
     /** 프로필 이미지 업로드 (압축 후 업로드) */

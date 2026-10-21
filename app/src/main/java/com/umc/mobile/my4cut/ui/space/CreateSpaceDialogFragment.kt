@@ -1,7 +1,7 @@
 package com.umc.mobile.my4cut.ui.space
 
-import FriendUiItem
-import FriendsAdapter
+import com.umc.mobile.my4cut.ui.friend.FriendUiItem
+import com.umc.mobile.my4cut.ui.friend.FriendsAdapter
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
@@ -11,22 +11,22 @@ import android.view.LayoutInflater
 import android.view.TouchDelegate
 import android.view.View
 import android.view.ViewGroup
-import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.umc.mobile.my4cut.ui.friend.Friend
 import com.umc.mobile.my4cut.R
-import com.umc.mobile.my4cut.databinding.DialogCreateSpaceBinding
-import com.umc.mobile.my4cut.databinding.PopupFriendListBinding
+import com.umc.mobile.my4cut.databinding.DialogSpaceCreateBinding
 
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.umc.mobile.my4cut.data.workspace.model.WorkspaceCreateRequestDto
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.data.invitation.model.WorkspaceInviteRequestDto
-import com.umc.mobile.my4cut.data.auth.local.TokenManager
+import com.umc.mobile.my4cut.ui.friend.FriendsMode
 import com.umc.mobile.my4cut.ui.space.model.CreateSpaceResult
+import java.text.Collator
+import java.util.Locale
 
 class CreateSpaceDialogFragment : DialogFragment() {
 
@@ -36,10 +36,9 @@ class CreateSpaceDialogFragment : DialogFragment() {
         onConfirmListener = listener
     }
 
-    private var _binding: DialogCreateSpaceBinding? = null
+    private var _binding: DialogSpaceCreateBinding? = null
     private val binding get() = _binding!!
 
-    private var popupWindow: PopupWindow? = null
     private lateinit var friendsAdapter: FriendsAdapter
 
     /** 선택된 친구 (요약용) */
@@ -57,7 +56,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
         savedInstanceState: Bundle?
     ): View {
         dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        _binding = DialogCreateSpaceBinding.inflate(inflater, container, false)
+        _binding = DialogSpaceCreateBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -66,13 +65,20 @@ class CreateSpaceDialogFragment : DialogFragment() {
 
         binding.layoutFriendSelect.setBackgroundResource(R.drawable.bg_dropdown_closed)
 
-        // 드롭다운 클릭
+        setupFriendList()
+
         binding.layoutFriendSelect.setOnClickListener {
-            if (popupWindow?.isShowing == true) {
-                popupWindow?.dismiss()
-            } else {
-                showFriendPopup()
-            }
+            hideKeyboard()
+
+            val isOpen = binding.layoutFriendList.visibility == View.VISIBLE
+
+            binding.layoutFriendList.visibility =
+                if (isOpen) View.INVISIBLE else View.VISIBLE
+
+            binding.layoutFriendSelect.setBackgroundResource(
+                if (isOpen) R.drawable.bg_dropdown_closed
+                else R.drawable.bg_dropdown_open
+            )
         }
 
         // 클릭 영역 확장
@@ -118,7 +124,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
         }
 
         // X 버튼 → 다이얼로그 닫기
-        binding.ivClose.setOnClickListener {
+        binding.layoutClose.setOnClickListener {
             dismiss()
         }
 
@@ -146,7 +152,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
                     val currentCount = myWorkspaceResponse.data?.size ?: 0
 
                     if (currentCount >= 4) {
-                        Toast.makeText(requireContext(), "최대 스페이스 개수를 넘어섰어요", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "최대 스페이스 개수를 넘어섰어요.", Toast.LENGTH_SHORT).show()
                         return@launch
                     }
 
@@ -172,7 +178,7 @@ class CreateSpaceDialogFragment : DialogFragment() {
                             )
                         )
 
-                        Toast.makeText(requireContext(), "초대가 전송되었습니다", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "초대를 전송했어요.", Toast.LENGTH_SHORT).show()
                     }
 
                     // 기존 콜백 유지 (UI 갱신용)
@@ -186,9 +192,44 @@ class CreateSpaceDialogFragment : DialogFragment() {
 
                     dismiss()
 
+                } catch (e: retrofit2.HttpException) {
+                    Log.e("CreateSpace", "스페이스 생성 또는 초대 실패", e)
+
+                    val errorBody = e.response()?.errorBody()?.string()
+
+                    when {
+                        errorBody?.contains("\"code\":\"W4003\"") == true ||
+                                errorBody?.contains("\"code\": \"W4003\"") == true -> {
+                            Toast.makeText(
+                                requireContext(),
+                                "한 번에 최대 9명까지만 초대할 수 있어요.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        e.code() == 400 -> {
+                            Toast.makeText(
+                                requireContext(),
+                                "스페이스 이름은 영어, 한글, 숫자만 가능하며 15자까지 입력할 수 있어요.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        else -> {
+                            Toast.makeText(
+                                requireContext(),
+                                "스페이스 생성 또는 초대에 실패했습니다. 다시 시도해 주세요.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
                 } catch (e: Exception) {
                     Log.e("CreateSpace", "스페이스 생성 또는 초대 실패", e)
-                    Toast.makeText(requireContext(), "스페이스 생성 또는 초대에 실패했습니다", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "스페이스 생성 또는 초대 실패에 실패했습니다. 다시 시도해 주세요.",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -217,8 +258,19 @@ class CreateSpaceDialogFragment : DialogFragment() {
     }
 
     private fun buildFriendUiItems(): List<FriendUiItem> {
-        val favorites = friendList.filter { it.isFavorite }
-        val normals = friendList.filter { !it.isFavorite }
+        val collator = Collator.getInstance(Locale.KOREAN)
+
+        val favorites = friendList
+            .filter { it.isFavorite }
+            .sortedWith { a, b ->
+                collator.compare(a.nickname, b.nickname)
+            }
+
+        val normals = friendList
+            .filter { !it.isFavorite }
+            .sortedWith { a, b ->
+                collator.compare(a.nickname, b.nickname)
+            }
 
         return buildList {
             favorites.forEach { add(FriendUiItem.Item(it)) }
@@ -240,7 +292,6 @@ class CreateSpaceDialogFragment : DialogFragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        popupWindow?.dismiss()
         _binding = null
     }
 
@@ -252,95 +303,53 @@ class CreateSpaceDialogFragment : DialogFragment() {
         friendsAdapter.submitList(buildFriendUiItems())
     }
 
-    private fun showFriendPopup() {
-        val popupBinding = PopupFriendListBinding.inflate(layoutInflater)
-
-        popupBinding.root.setBackgroundResource(R.drawable.bg_dropdown_popup)
-
-        // 상단 박스: 열림 상태 배경
-        binding.layoutFriendSelect.setBackgroundResource(
-            R.drawable.bg_dropdown_open
-        )
-
-        popupBinding.rvFriends.setPadding(
-            0,
-            popupBinding.rvFriends.paddingTop,
-            0,
-            popupBinding.rvFriends.paddingBottom
-        )
-        popupBinding.rvFriends.clipToPadding = false
-
+    private fun setupFriendList() {
         friendsAdapter = FriendsAdapter(
             getMode = { FriendsMode.NORMAL },
-            isSelected = { id: Long -> selectedFriendIds.contains(id) },
+
+            isSelected = { id: Long ->
+                selectedFriendIds.contains(id)
+            },
+
             onFriendClick = { friend ->
                 val id = friend.friendId
-                Log.d("FriendSelect", "clicked friendId=$id, nickname=${friend.nickname}")
 
                 if (selectedFriendIds.contains(id)) {
                     selectedFriendIds.remove(id)
                     selectedFriends.removeAll { it.friendId == id }
-                    Log.d("FriendSelect", "removed friendId=$id")
                 } else {
                     selectedFriendIds.add(id)
                     selectedFriends.add(friend)
-                    Log.d("FriendSelect", "added friendId=$id")
                 }
-
-                Log.d("FriendSelect", "selectedFriendIds=$selectedFriendIds")
-                Log.d("FriendSelect", "selectedFriends=${selectedFriends.map { it.nickname }}")
 
                 updateFriendSummary()
                 submitDialogFriends()
             },
+
             onFavoriteClick = { friend ->
                 friend.isFavorite = !friend.isFavorite
                 submitDialogFriends()
             },
+
             hideFavoriteDivider = true,
             enableSelectionGray = true
         )
 
-        popupBinding.rvFriends.apply {
+        binding.rvInviteFriends.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = friendsAdapter
+            isNestedScrollingEnabled = true
         }
-
-        // 드롭다운 최소/최대 높이 제한
-        val maxHeightDp = 240
-        val minHeightDp = 50
-        val density = resources.displayMetrics.density
-        val maxHeightPx = (maxHeightDp * density).toInt()
-        val minHeightPx = (minHeightDp * density).toInt()
-
-        // RecyclerView 높이 제한 (최대 높이까지, 내용이 적으면 최소 높이 유지)
-        popupBinding.root.minimumHeight = minHeightPx
-        val params = popupBinding.rvFriends.layoutParams
-        params.height = maxHeightPx
-        popupBinding.rvFriends.layoutParams = params
-        popupBinding.rvFriends.isNestedScrollingEnabled = true
-
-        popupWindow = PopupWindow(
-            popupBinding.root,
-            binding.layoutFriendSelect.width,
-            maxHeightPx,
-            true
-        ).apply {
-            isOutsideTouchable = true
-            isFocusable = true
-            elevation = 0f
-
-            setOnDismissListener {
-                // 닫히면 다시 기본 배경
-                binding.layoutFriendSelect.setBackgroundResource(
-                    R.drawable.bg_dropdown_closed
-                )
-            }
-        }
-
-        popupWindow?.showAsDropDown(binding.layoutFriendSelect, 0, -1)
 
         submitDialogFriends()
     }
 
+    private fun hideKeyboard() {
+        val imm = requireContext()
+            .getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                as android.view.inputmethod.InputMethodManager
+
+        imm.hideSoftInputFromWindow(binding.etSpaceName.windowToken, 0)
+        binding.etSpaceName.clearFocus()
+    }
 }

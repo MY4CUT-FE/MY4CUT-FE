@@ -1,6 +1,5 @@
 package com.umc.mobile.my4cut.ui.myalbum
 
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -13,15 +12,9 @@ import com.umc.mobile.my4cut.databinding.DialogChangeBinding
 import com.umc.mobile.my4cut.databinding.FragmentAlbumBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.umc.mobile.my4cut.data.album.model.AlbumNameRequest
-import com.umc.mobile.my4cut.data.album.model.AlbumRequest
 import com.umc.mobile.my4cut.data.album.model.AlbumResponse
-import com.umc.mobile.my4cut.data.auth.local.TokenManager
-import com.umc.mobile.my4cut.data.base.BaseResponse
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 class AlbumFragment : Fragment() {
     lateinit var binding: FragmentAlbumBinding
@@ -34,7 +27,6 @@ class AlbumFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         binding = FragmentAlbumBinding.inflate(inflater, container, false)
-
         return binding.root
     }
 
@@ -44,15 +36,27 @@ class AlbumFragment : Fragment() {
         setupRecyclerView()
         fetchAlbumList()
 
-        // 상세 화면에서 수정/삭제/추가 작업이 있었다는 신호를 받으면 새로고침
         parentFragmentManager.setFragmentResultListener("album_changed", viewLifecycleOwner) { _, _ ->
             fetchAlbumList()
         }
 
-        binding.btnCreateAlbum.setOnClickListener { showCreateDialog() }
+        binding.cvCreateAlbum.setOnClickListener { showCreateDialog() }
+
+        binding.swipeRefresh.setOnRefreshListener {
+            fetchAlbumList()
+        }
     }
 
-    // 앨범을 눌렀을 때, 상세 프래그먼트에 전달해주는 내용
+    override fun onResume() {
+        super.onResume()
+        fetchAlbumList()
+    }
+
+    fun refresh() {
+        if (!isAdded) return
+        fetchAlbumList()
+    }
+
     private fun setupRecyclerView() {
         albumAdapter = AlbumRVAdapter(albumList) { selected ->
             navigateToDetail(selected.id, selected.name)
@@ -61,7 +65,6 @@ class AlbumFragment : Fragment() {
         binding.rvAlbums.adapter = albumAdapter
     }
 
-    // [GET] 앨범 목록 조회
     private fun fetchAlbumList() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -69,20 +72,24 @@ class AlbumFragment : Fragment() {
                 albumList.clear()
                 response.data?.let { albumList.addAll(it) }
                 albumAdapter.notifyDataSetChanged()
+
+                val emptyVisibility = if (albumList.isEmpty()) View.VISIBLE else View.GONE
+                binding.ivEmptyState.visibility = emptyVisibility
+                binding.tvEmptyState.visibility = emptyVisibility
             } catch (e: Exception) {
                 Log.e("API_ERROR", "목록 조회 실패: ${e.message}")
+            } finally {
+                binding.swipeRefresh.isRefreshing = false
             }
         }
     }
 
-    // [POST] 앨범 생성
     private fun createNewAlbum(name: String) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response = RetrofitClient.albumService.createAlbum(AlbumNameRequest(name))
                 val newAlbum = response.data
                 if (newAlbum != null) {
-                    // 상세 화면으로 이동 (ID와 이름 전달)
                     navigateToDetail(newAlbum.id, newAlbum.name)
                 }
             } catch (e: Exception) {
@@ -104,20 +111,15 @@ class AlbumFragment : Fragment() {
 
             if (name.isNotEmpty()) {
                 createNewAlbum(name)
-
                 dialog.dismiss()
             }
         }
 
         dialogBinding.ivClose.setOnClickListener { dialog.dismiss() }
-
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
         dialog.show()
     }
 
-
-    // 앨범 생성 모달에서 다음 버튼을 눌렀을 때 전달해주는 내용
     private fun navigateToDetail(albumId: Int, title: String) {
         val fragment = AlbumDetailFragment().apply {
             arguments = Bundle().apply {

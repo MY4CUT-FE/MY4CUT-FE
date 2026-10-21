@@ -5,12 +5,23 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.umc.mobile.my4cut.databinding.ItemFriendPopupBinding
+import java.text.Collator
+import java.util.Locale
 
 class FriendPopupAdapter(
-    private val friends: List<Friend>,
+    friends: List<Friend>,
     private val selectedFriendIds: MutableSet<Long>,
     private val onClick: (Friend) -> Unit
 ) : RecyclerView.Adapter<FriendPopupAdapter.FriendViewHolder>() {
+
+    private val koreanCollator = Collator.getInstance(Locale.KOREAN)
+
+    private val friends = friends.sortedWith(
+        compareByDescending<Friend> { it.isFavorite }
+            .thenComparator { a, b ->
+                koreanCollator.compare(a.nickname, b.nickname)
+            }
+    )
 
     inner class FriendViewHolder(
         val binding: ItemFriendPopupBinding

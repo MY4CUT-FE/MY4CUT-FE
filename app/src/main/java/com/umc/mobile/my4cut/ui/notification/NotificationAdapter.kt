@@ -10,7 +10,8 @@ class NotificationAdapter(
     private val items: MutableList<NotificationData>,
     private val onAcceptClick: (NotificationData) -> Unit,
     private val onDeclineClick: (NotificationData) -> Unit,
-    private val onDeleteClick: (NotificationData) -> Unit
+    private val onDeleteClick: (NotificationData) -> Unit,
+    private val onItemClick: (NotificationData) -> Unit
 ) : RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
 
     inner class ViewHolder(private val binding: ItemNotificationBinding) :
@@ -47,6 +48,9 @@ class NotificationAdapter(
             }
             binding.btnDecline.setOnClickListener {
                 onDeclineClick(item)
+            }
+            binding.root.setOnClickListener {
+                onItemClick(item)
             }
         }
     }

@@ -19,6 +19,16 @@ class LinedEditText @JvmOverloads constructor(
         isAntiAlias = true
     }
 
+    // minLines만큼의 높이가 항상 확보되도록 강제 (XML의 minLines 값과 맞춰야 함)
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        val minLines = 3
+        val requiredHeight = paddingTop + paddingBottom + (lineHeight * minLines)
+        if (measuredHeight < requiredHeight) {
+            setMeasuredDimension(measuredWidth, requiredHeight)
+        }
+    }
+
     override fun onDraw(canvas: Canvas) {
         val r = Rect()
         val descent = paint.descent().toInt()

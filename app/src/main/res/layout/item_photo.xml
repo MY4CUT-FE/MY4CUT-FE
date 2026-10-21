@@ -17,11 +17,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:adjustViewBounds="true"
+            android:background="@drawable/bg_skeleton_img"
+            android:contentDescription="@null"
             android:scaleType="fitCenter"
-            android:src="@drawable/image1"
-            app:layout_constraintTop_toTopOf="parent"
+            android:src="@drawable/ic_skeleton_img"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent" />
 
         <LinearLayout
             android:id="@+id/layoutFinal"
@@ -44,11 +46,10 @@
 
         <ImageView
             android:id="@+id/ivUserIcon"
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:layout_marginStart="4dp"
+            android:layout_width="15dp"
+            android:layout_height="15dp"
             android:layout_marginTop="8dp"
-            android:src="@drawable/ic_profile_cat"
+            android:src="@drawable/img_profile_default"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/ivPhoto" />
 
@@ -60,7 +61,7 @@
             android:fontFamily="@font/suit_regular"
             android:text="에블린"
             android:textColor="#1A1A1A"
-            android:textSize="10sp"
+            android:textSize="13sp"
             app:layout_constraintBottom_toBottomOf="@id/ivUserIcon"
             app:layout_constraintStart_toEndOf="@id/ivUserIcon"
             app:layout_constraintTop_toTopOf="@id/ivUserIcon" />
@@ -69,25 +70,28 @@
             android:id="@+id/tvDateTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:fontFamily="@font/suit_regular"
             android:text="2025/11/04 20:45"
             android:textColor="#1A1A1A"
             android:textSize="10sp"
-            app:layout_constraintBottom_toBottomOf="@id/tvUserName"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/tvUserName" />
+            app:layout_constraintTop_toBottomOf="@id/layoutComment" />
 
         <LinearLayout
+            android:id="@+id/layoutComment"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
             android:gravity="center_vertical"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvDateTime">
+            app:layout_constraintTop_toTopOf="@id/tvUserName"
+            app:layout_constraintBottom_toBottomOf="@id/tvUserName">
 
             <ImageView
+                android:id="@+id/ivComment"
                 android:layout_width="9dp"
                 android:layout_height="7dp"
+                android:layout_marginEnd="2dp"
                 android:src="@drawable/ic_comment"
                 app:tint="#999999" />
 
@@ -99,7 +103,7 @@
                 android:fontFamily="@font/suit_regular"
                 android:text="2"
                 android:textColor="#1A1A1A"
-                android:textSize="10sp" />
+                android:textSize="11sp" />
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

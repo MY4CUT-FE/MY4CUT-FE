@@ -26,7 +26,6 @@ class PoseAdapter(
             binding.tvPoseName.visibility = View.INVISIBLE
             binding.viewPoseNameSkeleton.visibility = View.VISIBLE
 
-            // ✅ Glide로 서버 이미지 로드
             Glide.with(binding.ivPoseImage.context)
                 .load(item.imageUrl)
                 .placeholder(R.drawable.img_pose_loading)
@@ -62,12 +61,12 @@ class PoseAdapter(
             // 즐겨찾기 상태
             updateBookmarkIcon(item.isFavorite)
 
-            // ✅ 별 클릭 시 콜백 호출
+            // 별 클릭 시 콜백 호출
             binding.ivStar.setOnClickListener {
                 onBookmarkClick(item, position)
             }
 
-            // ✅ 이미지 클릭 시 상세 모달 표시
+            // 이미지 클릭 시 상세 모달 표시
             binding.ivPoseImage.setOnClickListener {
                 onItemClick(item, position)
             }

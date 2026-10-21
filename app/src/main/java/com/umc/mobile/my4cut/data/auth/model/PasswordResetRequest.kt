@@ -4,6 +4,6 @@ import com.google.gson.annotations.SerializedName
 
 data class PasswordResetRequest(
     @SerializedName("email") val email: String,
-    @SerializedName("code") val code: String,
+    @SerializedName("verificationToken") val verificationToken: String,
     @SerializedName("newPassword") val newPassword: String
 )

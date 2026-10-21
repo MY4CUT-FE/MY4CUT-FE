@@ -7,7 +7,7 @@
     android:layout_height="190dp"
     android:layout_marginEnd="20dp"
     app:cardBackgroundColor="#FCECE7"
-    app:cardCornerRadius="23dp"
+    app:cardCornerRadius="20dp"
     app:cardUseCompatPadding="false"
     app:cardPreventCornerOverlap="true"
     app:cardElevation="2dp"
@@ -77,8 +77,8 @@
 
             <ImageView
                 android:id="@+id/ivRecentActivityIcon"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
                 android:src="@drawable/ic_space_time" />
 
             <TextView
@@ -117,7 +117,7 @@
                     android:background="@drawable/bg_member_profile_border"
                     android:padding="1dp"
                     android:layout_gravity="start|center_vertical"
-                    android:src="@drawable/ic_profile_cat" />
+                    android:src="@drawable/img_profile_default" />
 
                 <ImageView
                     android:id="@+id/ivMember2"
@@ -127,7 +127,7 @@
                     android:padding="1dp"
                     android:layout_gravity="start|center_vertical"
                     android:layout_marginStart="28dp"
-                    android:src="@drawable/ic_profile_cat" />
+                    android:src="@drawable/img_profile_default" />
 
                 <ImageView
                     android:id="@+id/ivMember3"
@@ -137,12 +137,12 @@
                     android:padding="1dp"
                     android:layout_gravity="start|center_vertical"
                     android:layout_marginStart="56dp"
-                    android:src="@drawable/ic_profile_cat" />
+                    android:src="@drawable/img_profile_default" />
 
                 <TextView
                     android:id="@+id/tvExtraMemberCount"
-                    android:layout_width="37dp"
-                    android:layout_height="37dp"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:layout_gravity="start|center_vertical"
                     android:layout_marginStart="84dp"
                     android:background="@drawable/bg_extra_member_count"
@@ -150,7 +150,7 @@
                     android:gravity="center"
                     android:text="+1"
                     android:textColor="#A9ADB3"
-                    android:textSize="13sp"
+                    android:textSize="11sp"
                     android:visibility="gone" />
             </FrameLayout>
 

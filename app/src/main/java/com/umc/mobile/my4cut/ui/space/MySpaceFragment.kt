@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.FragmentMySpaceBinding
-import com.umc.mobile.my4cut.network.RetrofitClient
+import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.space.model.Space
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -33,11 +33,15 @@ class MySpaceFragment : Fragment() {
     private lateinit var mySpaceAdapter: MySpaceAdapter
     private var currentPage = 0
 
+    private var isTutorialMode = false
+
     private val refreshHandler = Handler(Looper.getMainLooper())
     private val refreshRunnable = object : Runnable {
         override fun run() {
-            loadSpacesFromApi()
-            refreshHandler.postDelayed(this, 30_000)
+            if (!isTutorialMode) {
+                loadSpacesFromApi()
+                refreshHandler.postDelayed(this, 30_000)
+            }
         }
     }
 
@@ -56,12 +60,29 @@ class MySpaceFragment : Fragment() {
         setupRecyclerView()
         setupAddButton()
         setupFragmentResultListener()
+
+        binding.swipeRefresh.setOnRefreshListener {
+            if (isTutorialMode) {
+                binding.swipeRefresh.isRefreshing = false
+                return@setOnRefreshListener
+            }
+
+            loadSpacesFromApi()
+        }
     }
 
     override fun onStart() {
         super.onStart()
-        loadSpacesFromApi()
-        refreshHandler.postDelayed(refreshRunnable, 30_000)
+
+        if (!isTutorialMode) {
+            mySpaceAdapter.showSkeleton()
+            loadSpacesFromApi()
+
+            refreshHandler.postDelayed(
+                refreshRunnable,
+                30_000
+            )
+        }
     }
 
     override fun onStop() {
@@ -88,7 +109,18 @@ class MySpaceFragment : Fragment() {
             )
             overScrollMode = View.OVER_SCROLL_NEVER
 
-            PagerSnapHelper().attachToRecyclerView(this)
+            val snapHelper = object : PagerSnapHelper() {
+                override fun findTargetSnapPosition(
+                    layoutManager: RecyclerView.LayoutManager,
+                    velocityX: Int,
+                    velocityY: Int
+                ): Int {
+                    val position = super.findTargetSnapPosition(layoutManager, velocityX * 3, velocityY)
+                    return position
+                }
+            }
+
+            snapHelper.attachToRecyclerView(this)
 
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
@@ -113,11 +145,11 @@ class MySpaceFragment : Fragment() {
     }
 
     private fun setupAddButton() {
-        binding.tvAddSpace.setOnClickListener {
+        binding.layoutAddSpace.setOnClickListener {
             if (spaces.size >= MAX_SPACE_COUNT) {
                 Toast.makeText(
                     requireContext(),
-                    "스페이스는 최대 4개까지 생성할 수 있어요",
+                    "스페이스는 최대 4개까지 생성할 수 있어요.",
                     Toast.LENGTH_SHORT
                 ).show()
                 return@setOnClickListener
@@ -138,18 +170,29 @@ class MySpaceFragment : Fragment() {
     }
 
     private fun loadSpacesFromApi() {
-        lifecycleScope.launch {
-            try {
-                val response = RetrofitClient.workspaceService.getMyWorkspaces()
+        if (isTutorialMode) return
 
-                if (response.data == null) {
-                    android.util.Log.e("SPACE_API", "response.data is null")
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response =
+                    RetrofitClient.workspaceService.getMyWorkspaces()
+
+                val data = response.data
+
+                if (data == null) {
+                    mySpaceAdapter.hideSkeleton()
+
+                    android.util.Log.e(
+                        "SPACE_API",
+                        "response.data is null"
+                    )
                     return@launch
                 }
 
                 spaces.clear()
+
                 spaces.addAll(
-                    response.data.map {
+                    data.map {
                         Space(
                             id = it.id,
                             name = it.name,
@@ -157,21 +200,89 @@ class MySpaceFragment : Fragment() {
                             maxMember = 10,
                             createdAt = parseIsoToMillis(it.createdAt),
                             expiredAt = parseIsoToMillis(it.expiresAt),
-                            memberProfileImageUrls = it.memberProfiles.orEmpty(),
-                            recentActivityType = it.recentActivityType,
-                            recentActivityUserNickname = it.recentActivityUserNickname,
-                            recentActivityAt = it.recentActivityAt
+                            memberProfileImageUrls =
+                                it.memberProfiles.orEmpty(),
+                            recentActivityType =
+                                it.recentActivityType,
+                            recentActivityUserNickname =
+                                it.recentActivityUserNickname,
+                            recentActivityAt =
+                                it.recentActivityAt
                         )
                     }
                 )
 
+                // empty state
+                val isEmpty = spaces.isEmpty()
+
+                binding.tvEmptyMySpace.visibility =
+                    if (isEmpty) View.VISIBLE else View.GONE
+
+                binding.rvMySpaces.visibility =
+                    if (isEmpty) View.GONE else View.VISIBLE
+
+                binding.layoutSpaceIndicator.visibility =
+                    if (isEmpty) View.GONE else View.VISIBLE
+
                 currentPage = 0
-                mySpaceAdapter.submitList(spaces.take(MAX_SPACE_COUNT))
+
+                mySpaceAdapter.submitList(
+                    spaces.take(MAX_SPACE_COUNT)
+                )
+
+                binding.rvMySpaces.scrollToPosition(0)
                 updateIndicator()
+
             } catch (e: Exception) {
-                android.util.Log.e("SPACE_API", "API 호출 실패", e)
+                mySpaceAdapter.hideSkeleton()
+
+                android.util.Log.e(
+                    "SPACE_API",
+                    "API 호출 실패",
+                    e
+                )
+            } finally {
+                binding.swipeRefresh.isRefreshing = false
             }
         }
+    }
+
+    fun showTutorialData() {
+        isTutorialMode = true
+
+        refreshHandler.removeCallbacks(refreshRunnable)
+
+        spaces.clear()
+
+        val now = System.currentTimeMillis()
+
+        spaces.add(
+            Space(
+                id = TUTORIAL_SPACE_ID,
+                name = "포토리의 스페이스",
+                currentMember = 1,
+                maxMember = 10,
+                createdAt = now,
+                expiredAt = now + (7L * 24 * 60 * 60 * 1000),
+                memberProfileImageUrls = emptyList(),
+                recentActivityType = null,
+                recentActivityUserNickname = null,
+                recentActivityAt = null
+            )
+        )
+
+        binding.tvEmptyMySpace.visibility = View.GONE
+        binding.rvMySpaces.visibility = View.VISIBLE
+        binding.layoutSpaceIndicator.visibility = View.VISIBLE
+
+        currentPage = 0
+
+        mySpaceAdapter.hideSkeleton()
+        mySpaceAdapter.submitList(spaces.toList())
+
+        binding.rvMySpaces.scrollToPosition(0)
+
+        updateIndicator()
     }
 
     private fun updateIndicator() {
@@ -206,12 +317,22 @@ class MySpaceFragment : Fragment() {
     }
 
     private fun moveToSpaceDetail(space: Space) {
+
+        val fragment =
+            if (isTutorialMode) {
+                SpaceFragment.newTutorialInstance()
+            } else {
+                SpaceFragment.newInstance(
+                    spaceId = space.id
+                )
+            }
+
         requireActivity()
             .supportFragmentManager
             .beginTransaction()
             .replace(
                 R.id.fcv_main,
-                SpaceFragment.newInstance(spaceId = space.id)
+                fragment
             )
             .addToBackStack("SpaceFragment")
             .commit()
@@ -234,5 +355,7 @@ class MySpaceFragment : Fragment() {
 
     companion object {
         private const val MAX_SPACE_COUNT = 4
+
+        private const val TUTORIAL_SPACE_ID = -100L
     }
 }

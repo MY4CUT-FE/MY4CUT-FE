@@ -12,6 +12,10 @@ data class WorkspaceInfoResponseDto(
     val memberProfiles: List<String>?,
     val pendingInvitationUserIds: List<Long>?,
     val alreadyInvitedFriendIds: List<Long>,
+
+    // 스페이스 초대 사용자 정보
+    val invitationUsers: List<WorkspaceInvitationUserResponseDto>? = null,
+
     val recentActivityType: String?,
     val recentActivityUserNickname: String?,
     val recentActivityAt: String?
