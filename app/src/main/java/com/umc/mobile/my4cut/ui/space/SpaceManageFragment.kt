@@ -6,16 +6,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.data.friend.model.FriendRequestCreateDto
 import com.umc.mobile.my4cut.data.network.RetrofitClient
+import com.umc.mobile.my4cut.databinding.DialogExitBinding
 import com.umc.mobile.my4cut.databinding.FragmentSpaceManageBinding
 import com.umc.mobile.my4cut.ui.friend.AddFriendDialogFragment
-import com.umc.mobile.my4cut.ui.space.SpaceManageMemberAdapter
 import com.umc.mobile.my4cut.ui.space.model.SpaceManageMemberStatus
 import com.umc.mobile.my4cut.ui.space.model.SpaceManageMemberUiModel
 import kotlinx.coroutines.launch
@@ -28,6 +28,7 @@ class SpaceManageFragment : Fragment() {
 
     private var spaceId: Long = -1L
     private var spaceName: String = "1104 네컷"
+    private var memberCount: Int? = null
 
     private lateinit var memberAdapter: SpaceManageMemberAdapter
     private lateinit var pendingAdapter: SpaceManageMemberAdapter
@@ -81,11 +82,7 @@ class SpaceManageFragment : Fragment() {
         }
 
         binding.btnExit.setOnClickListener {
-            Toast.makeText(
-                requireContext(),
-                "스페이스 나가기 기능은 추후 연결할 예정이에요.",
-                Toast.LENGTH_SHORT
-            ).show()
+            showExitDialog()
         }
     }
 
@@ -170,6 +167,9 @@ class SpaceManageFragment : Fragment() {
                 // 스페이스 이름
                 spaceName = data.name
                 binding.tvSpaceName.text = spaceName
+
+                // 스페이스 참여 인원
+                memberCount = data.memberCount
 
                 val myUserId = getCurrentUserId()
 
@@ -409,6 +409,86 @@ class SpaceManageFragment : Fragment() {
             } else {
                 R.drawable.ic_arrow_down
             }
+        )
+    }
+
+    private fun showExitDialog() {
+
+        val count = memberCount
+
+        if (spaceId <= 0L || count == null || count < 1) {
+            Toast.makeText(
+                requireContext(),
+                "스페이스 정보를 확인할 수 없어요.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        val dialogBinding = DialogExitBinding.inflate(layoutInflater)
+
+        dialogBinding.tvTitle.text = "정말 나가시겠어요?"
+
+        dialogBinding.tvMessage.text = if (count == 1) {
+            "마지막 멤버가 나가면 스페이스가 삭제되어 복구할 수 없어요."
+        } else {
+            "다시 초대받기 전까지 스페이스를 이용할 수 없어요."
+        }
+
+        dialogBinding.btnExit.text = "나가기"
+
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogBinding.root)
+            .create()
+
+        dialog.setCanceledOnTouchOutside(true)
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnExit.setOnClickListener {
+
+            dialogBinding.btnExit.isEnabled = false
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    RetrofitClient.workspaceMemberService
+                        .leaveWorkspace(spaceId)
+
+                    dialog.dismiss()
+
+                    Toast.makeText(
+                        requireContext(),
+                        "스페이스에서 나갔어요.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    // 스페이스 관리 화면과 상세 화면을 모두 닫기
+                    if (isAdded) {
+                        parentFragmentManager.popBackStack()
+                        parentFragmentManager.popBackStack()
+                    }
+
+                } catch (e: Exception) {
+
+                    Log.e("SpaceManageFragment", "나가기 API 실패", e)
+
+                    dialogBinding.btnExit.isEnabled = true
+
+                    Toast.makeText(
+                        requireContext(),
+                        "스페이스 나가기에 실패했어요.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+
+        dialog.show()
+
+        dialog.window?.setBackgroundDrawableResource(
+            android.R.color.transparent
         )
     }
 
