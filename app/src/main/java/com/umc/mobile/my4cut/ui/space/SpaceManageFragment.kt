@@ -69,6 +69,10 @@ class SpaceManageFragment : Fragment() {
         setupSectionToggle()
 
         loadSpaceInfo()
+
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            loadSpaceInfo()
+        }
     }
 
     // =========================
@@ -138,6 +142,9 @@ class SpaceManageFragment : Fragment() {
 
         if (spaceId <= 0L) {
             Log.e("SpaceManageFragment", "Invalid spaceId: $spaceId")
+            if (_binding != null) {
+                binding.swipeRefreshLayout.isRefreshing = false
+            }
             return
         }
 
@@ -255,6 +262,8 @@ class SpaceManageFragment : Fragment() {
                     "스페이스 정보를 불러오는 중 오류가 발생했어요.",
                     Toast.LENGTH_SHORT
                 ).show()
+            } finally {
+                _binding?.swipeRefreshLayout?.isRefreshing = false
             }
         }
     }
