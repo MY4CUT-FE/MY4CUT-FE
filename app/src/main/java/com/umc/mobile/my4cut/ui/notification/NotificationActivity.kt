@@ -34,6 +34,10 @@ class NotificationActivity : AppCompatActivity() {
 
         initClickListener()
         setupRecyclerView()
+
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            setupRecyclerView()
+        }
     }
 
     private fun initClickListener() {
@@ -393,6 +397,8 @@ class NotificationActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("NotificationAPI", "error=" + e.message, e)
                 Toast.makeText(this@NotificationActivity, "네트워크 연결 상태를 확인해주세요.", Toast.LENGTH_SHORT).show()
+            } finally {
+                binding.swipeRefreshLayout.isRefreshing = false
             }
         }
     }

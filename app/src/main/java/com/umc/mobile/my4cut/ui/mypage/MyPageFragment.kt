@@ -205,7 +205,7 @@ class MyPageFragment : Fragment() {
         val spannable = SpannableStringBuilder(fullText)
         spannable.setSpan(ForegroundColorSpan(Color.parseColor("#FF7E67")), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
-        val boldTypeface = ResourcesCompat.getFont(requireContext(), R.font.suit_bold)
+        val boldTypeface = ResourcesCompat.getFont(requireContext(), R.font.suit_extrabold)
         if (boldTypeface != null) {
             spannable.setSpan(CustomTypefaceSpan(boldTypeface), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         }

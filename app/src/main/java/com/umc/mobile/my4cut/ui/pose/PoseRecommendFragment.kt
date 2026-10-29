@@ -1,6 +1,7 @@
 package com.umc.mobile.my4cut.ui.pose
 
 import android.app.Dialog
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.PorterDuff
@@ -11,8 +12,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.PopupWindow
 import android.widget.Toast
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import com.bumptech.glide.Glide
@@ -42,6 +46,7 @@ class PoseRecommendFragment : Fragment() {
     // 현재 선택된 필터 상태
     private var currentTabPosition = 0 // 0:전체, 1:1인, 2:2인, 3:3인, 4:4인
     private var isFavoriteFilterOn = false // false:기본순, true:즐겨찾기순
+    private var currentKeyword = "" // 검색어 (네컷 이름)
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -101,6 +106,40 @@ class PoseRecommendFragment : Fragment() {
         binding.btnFilter.setOnClickListener { view ->
             showFilterPopup(view)
         }
+
+        // 5. 검색창 - 서버 재요청 없이 받아 둔 목록에서 입력할 때마다 바로 거름
+        binding.etSearch.doAfterTextChanged { text ->
+            currentKeyword = text?.toString()?.trim().orEmpty()
+            showFilteredPoses()
+        }
+
+        binding.etSearch.setOnEditorActionListener { textView, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(textView.windowToken, 0)
+                textView.clearFocus()
+                true
+            } else {
+                false
+            }
+        }
+    }
+
+    // 화면에 보여줄 목록 구성 (즐겨찾기순 정렬 + 검색어 필터)
+    private fun showFilteredPoses() {
+
+        val sortedList = if (isFavoriteFilterOn) {
+            allPoseList.sortedByDescending { it.isFavorite }
+        } else {
+            allPoseList
+        }
+
+        val displayList = if (currentKeyword.isEmpty()) {
+            sortedList
+        } else {
+            sortedList.filter { it.title.contains(currentKeyword, ignoreCase = true) }
+        }
+        poseAdapter.updateData(displayList)
     }
 
     // 포즈 상세 모달
@@ -174,18 +213,7 @@ class PoseRecommendFragment : Fragment() {
                             Log.d("PoseRecommend", "✅ Loaded ${poseList.size} poses")
                             allPoseList.clear()
                             allPoseList.addAll(poseList)
-
-                            // 서버가 sort=bookmark 파라미터를 받고도 실제로는 정렬해주지 않아서(백엔드
-                            // 미구현 확인됨), 화면에 보여줄 때만 클라이언트에서 정렬한다. allPoseList
-                            // 자체의 순서/인덱스는 서버가 준 그대로 유지하고, 즐겨찾기 등록/해제는 position이
-                            // 아니라 poseId로 allPoseList에서 찾아 갱신하므로(아래 addBookmark/removeBookmark
-                            // 참고) 화면 정렬 순서와 무관하게 항상 정확한 포즈가 갱신된다.
-                            val displayList = if (sort == "bookmark") {
-                                allPoseList.sortedByDescending { it.isFavorite }
-                            } else {
-                                allPoseList
-                            }
-                            poseAdapter.updateData(displayList)
+                            showFilteredPoses()
                         } else {
                             Log.e("PoseRecommend", "❌ Data is null")
                             Toast.makeText(requireContext(), "데이터를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
@@ -215,13 +243,11 @@ class PoseRecommendFragment : Fragment() {
         }
     }
 
-    // "즐겨찾기순" 표시를 위해 클라이언트에서 정렬을 하다 보니, 어댑터가 넘기는 position은 화면에 보이는
-    // 순서일 뿐 allPoseList의 실제 인덱스와 다를 수 있다. 그래서 allPoseList는 항상 poseId로 찾아 갱신한다.
     private fun setLocalFavorite(poseId: Int, isFavorite: Boolean) {
         allPoseList.find { it.poseId == poseId }?.isFavorite = isFavorite
     }
 
-    // 즐겨찾기 등록 (서버가 단일 소스 오브 트루스 - 화면은 낙관적으로 먼저 바꾸고, 실패하면 되돌림)
+    // 즐겨찾기 등록
     private fun addBookmark(poseId: Int, position: Int, onResult: ((Boolean) -> Unit)? = null) {
         Log.d("PoseRecommend", "📤 Adding bookmark for poseId: $poseId")
 
@@ -260,7 +286,7 @@ class PoseRecommendFragment : Fragment() {
             })
     }
 
-    // 즐겨찾기 해제 (서버가 단일 소스 오브 트루스 - 화면은 낙관적으로 먼저 바꾸고, 실패하면 되돌림)
+    // 즐겨찾기 해제
     private fun removeBookmark(poseId: Int, position: Int, onResult: ((Boolean) -> Unit)? = null) {
         Log.d("PoseRecommend", "📤 Removing bookmark for poseId: $poseId")
 
