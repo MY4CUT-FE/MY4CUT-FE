@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<!-- 작은 화면/에러 메시지 표시 시 겹침 방지를 위해 ScrollView로 감쌈 -->
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/gray_50">
+    android:background="@color/gray_50"
+    android:fillViewport="true">
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
 
     <!-- [수정] 뒤로가기 버튼 삭제 -->
 
@@ -178,7 +184,7 @@
             android:padding="8dp"
             android:text="회원가입"
             android:textColor="@color/gray_700"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:fontFamily="@font/suit_regular" />
 
         <View
@@ -194,7 +200,7 @@
             android:padding="8dp"
             android:text="비밀번호 찾기"
             android:textColor="@color/gray_700"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:fontFamily="@font/suit_regular" />
     </LinearLayout>
 
@@ -203,13 +209,17 @@
         android:id="@+id/tv_divider"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
         android:layout_marginBottom="8dp"
         android:text="- SOCIAL LOGIN -"
         android:textColor="@color/gray_500"
-        android:textSize="12sp"
+        android:textSize="11sp"
         android:fontFamily="@font/suit_regular"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_constraintVertical_bias="1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ll_auth_links"
         app:layout_constraintBottom_toTopOf="@id/btn_kakao_login" />
 
     <!-- 카카오 로그인 버튼: 화면 최하단으로 이동 -->
@@ -222,6 +232,9 @@
         android:scaleType="fitCenter"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_divider"
         app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>
