@@ -37,6 +37,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -86,14 +87,17 @@ fun PhotoUploadPager(
         val pagerState = rememberPagerState(pageCount = { pageCount })
 
         // Box: 인디케이터를 카드뷰 내부 하단에 오버레이
-        Box {
+        // 카드 높이를 카드 너비(전체 너비 - contentPadding 좌우 40dp) 기준 5:7 비율로 계산해 화면 크기와 무관하게 비율 유지
+        BoxWithConstraints {
+            val cardHeight = (maxWidth - 80.dp) * 7f / 5f
+
             HorizontalPager(
                 state = pagerState,
-                contentPadding = PaddingValues(horizontal = 60.dp),
-                pageSpacing = 12.dp,
+                contentPadding = PaddingValues(horizontal = 40.dp),
+                pageSpacing = 8.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(370.dp)
+                    .height(cardHeight)
             ) { page ->
                 val pageOffset = ((pagerState.currentPage - page) +
                         pagerState.currentPageOffsetFraction).absoluteValue
@@ -103,12 +107,15 @@ fun PhotoUploadPager(
                     fraction = 1f - pageOffset.coerceIn(0f, 1f)
                 )
                 val isCurrent = pagerState.currentPage == page
+                // 옆 카드는 메인 카드 쪽 가장자리를 기준으로 축소 → 축소로 인해 미리보기 노출 폭이 줄어들지 않도록 함
+                val isRightSide = page > pagerState.currentPage + pagerState.currentPageOffsetFraction
 
                 val scaledModifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
                         scaleX = scale
                         scaleY = scale
+                        transformOrigin = TransformOrigin(if (isRightSide) 0f else 1f, 0.5f)
                     }
 
                 when {
@@ -175,7 +182,7 @@ private fun EmptyPhotoCard(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(20.dp)
+                .padding(12.dp)
                 .dashedBorder(
                     width = 1.5.dp,
                     color = Color(0xFFD0D0D0),
@@ -184,6 +191,7 @@ private fun EmptyPhotoCard(
             contentAlignment = Alignment.Center
         ) {
             Column(
+                modifier = Modifier.padding(horizontal = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -321,8 +329,9 @@ private fun AddPhotoCard(
             // BoxWithConstraints로 카드 실제 너비를 측정하여 offset 계산
             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                 val cardWidth = maxWidth
-                // contentPadding(60dp) - pageSpacing/2(6dp) = 54dp: peek시 보이는 너비
-                val peekWidth = 54.dp
+                // contentPadding(40dp) - pageSpacing(8dp) = 32dp: peek시 화면에 보이는 너비
+                // 카드가 0.85배 축소된 상태이므로 카드 내부 좌표 기준으로 환산
+                val peekWidth = 32.dp / 0.85f
                 // pageOffset=0(중앙): 이동 없음 / pageOffset=1(완전 peek): 아이콘을 peek 영역 중앙으로 이동
                 val translationX = -(cardWidth / 2 - peekWidth / 2) * pageOffset.coerceIn(0f, 1f)
 
