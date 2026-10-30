@@ -15,7 +15,7 @@ object KeyHashUtil {
                 PackageManager.GET_SIGNATURES
             )
 
-            for (signature in packageInfo.signatures) {
+            for (signature in packageInfo.signatures.orEmpty()) {
                 val md = MessageDigest.getInstance("SHA")
                 md.update(signature.toByteArray())
                 val keyHash = Base64.encodeToString(md.digest(), Base64.NO_WRAP)
