@@ -39,6 +39,7 @@ import com.umc.mobile.my4cut.data.tutorial.model.TutorialType
 import com.umc.mobile.my4cut.databinding.ActivityEntryRegister2Binding
 import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.record.PhotoUploadPager
+import com.umc.mobile.my4cut.util.applySystemBarInsets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -96,6 +97,7 @@ class EntryRegisterActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityEntryRegister2Binding.inflate(layoutInflater)
         setContentView(binding.root)
+        applySystemBarInsets()
 
         binding.cvPhotoPager.apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)

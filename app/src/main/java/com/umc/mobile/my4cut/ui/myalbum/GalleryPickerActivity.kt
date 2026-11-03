@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.ActivityGalleryPickerBinding
 import com.umc.mobile.my4cut.data.network.RetrofitClient
+import com.umc.mobile.my4cut.util.applySystemBarInsets
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -27,6 +28,7 @@ class GalleryPickerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityGalleryPickerBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applySystemBarInsets()
 
         adapter = GalleryPickerAdapter(
             maxSelectable = MAX_SELECTABLE,

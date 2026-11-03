@@ -7,6 +7,7 @@ import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.databinding.ActivitySignUpBinding
 // [수정] Step1 삭제, Step2 import
 import com.umc.mobile.my4cut.ui.signup.fragment.SignUpStep2Fragment
+import com.umc.mobile.my4cut.util.applySystemBarInsets
 
 class SignUpActivity : AppCompatActivity() {
 
@@ -17,6 +18,7 @@ class SignUpActivity : AppCompatActivity() {
 
         binding = ActivitySignUpBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applySystemBarInsets()
 
         // 초기 화면 -> 이메일 입력 화면
         if (savedInstanceState == null) {
