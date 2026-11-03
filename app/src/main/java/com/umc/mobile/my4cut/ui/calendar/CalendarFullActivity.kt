@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.umc.mobile.my4cut.databinding.ActivityCalendarFullBinding
+import com.umc.mobile.my4cut.util.applySystemBarInsets
 import java.time.LocalDate
 
 class CalendarFullActivity : AppCompatActivity() {
@@ -16,6 +17,7 @@ class CalendarFullActivity : AppCompatActivity() {
 
         binding = ActivityCalendarFullBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applySystemBarInsets()
 
         // 상단 [네컷 업로드] 버튼 숨기기
         binding.myCalendar.setHeaderVisible(false)

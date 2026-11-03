@@ -19,6 +19,7 @@ import com.umc.mobile.my4cut.data.user.model.NicknameRequest
 import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 import com.umc.mobile.my4cut.databinding.ActivityEditProfileBinding
 import com.umc.mobile.my4cut.data.network.RetrofitClient
+import com.umc.mobile.my4cut.util.applySystemBarInsets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -52,6 +53,7 @@ class EditProfileActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityEditProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applySystemBarInsets()
 
         initView()
         initClickListener()

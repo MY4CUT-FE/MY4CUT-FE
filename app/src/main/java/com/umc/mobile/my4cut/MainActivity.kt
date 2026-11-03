@@ -35,6 +35,7 @@ import com.umc.mobile.my4cut.ui.myalbum.EntryDetailFragment
 import com.umc.mobile.my4cut.ui.mypage.MyPageFragment
 import com.umc.mobile.my4cut.ui.photo.PhotoDialogFragment
 import com.umc.mobile.my4cut.ui.retouch.RetouchFragment
+import com.umc.mobile.my4cut.util.applySystemBarInsets
 import kotlinx.coroutines.launch
 
 private object HomeTutorialLayout {
@@ -62,6 +63,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applySystemBarInsets()
 
         // 바텀 네비게이션 초기화 및 리스너 설정
         initBottomNavigation(savedInstanceState)

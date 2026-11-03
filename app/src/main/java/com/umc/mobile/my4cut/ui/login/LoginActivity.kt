@@ -32,6 +32,7 @@ import com.umc.mobile.my4cut.data.user.model.UserMeResponse
 import com.umc.mobile.my4cut.databinding.ActivityLoginBinding
 import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.signup.SignUpActivity
+import com.umc.mobile.my4cut.util.applySystemBarInsets
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,6 +58,7 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applySystemBarInsets()
 
         initClickListener()
         initTextWatchers()
