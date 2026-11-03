@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 스플래시 아이콘은 원형으로 잘리므로, 로고 전체가 보이도록 바깥 여백을 둠 -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/splash_logo"
+    android:inset="40dp" />

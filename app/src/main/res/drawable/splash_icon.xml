@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 스플래시 아이콘 (Android 7 이하 대체용). adaptive-icon 미지원 버전 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/splash_logo_inset" />
+</layer-list>
