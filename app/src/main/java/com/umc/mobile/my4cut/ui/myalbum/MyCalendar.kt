@@ -30,9 +30,6 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
-import android.view.GestureDetector
-import android.view.MotionEvent
-import androidx.core.view.GestureDetectorCompat
 
 class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
     context: Context,
@@ -47,30 +44,43 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
     private var currentMonth = YearMonth.now()
 
     private var onDateSelectedListener: ((String) -> Unit)? = null
+    private var onMonthChangedListener: ((YearMonth) -> Unit)? = null
 
     // 데이터가 있는 날짜들을 저장할 세트 (중복 방지 및 빠른 검색을 위해 Set 권장)
     private var datesWithDataMap = mutableMapOf<LocalDate, CalendarData>()
 
     private var currentDayLayoutRes = R.layout.calendar_day_layout
 
-    // 외부(Fragment 등)에서 데이터를 설정할 수 있는 함수
+    // 기존 호출부 호환용: 전달된 데이터로 전체 날짜 맵을 갱신합니다.
     fun setDatesWithData(dataList: List<CalendarData>) {
         datesWithDataMap.clear()
         dataList.forEach { data ->
             datesWithDataMap[data.date] = data
         }
+        refreshVisibleMonths()
+    }
 
-        if (binding.mcCustom.isComputingLayout.not()) {
-            // 1. 현재 화면에 보이는 월(Month) 정보를 가져옵니다.
+    // 특정 월의 데이터만 교체합니다. 다른 월의 dot 데이터는 유지합니다.
+    fun setDatesWithData(dataList: List<CalendarData>, yearMonth: YearMonth) {
+        datesWithDataMap.keys.removeAll { YearMonth.from(it) == yearMonth }
+        dataList.forEach { data ->
+            datesWithDataMap[data.date] = data
+        }
+        refreshVisibleMonths()
+    }
+
+    fun setOnMonthChangedListener(listener: (YearMonth) -> Unit) {
+        onMonthChangedListener = listener
+    }
+
+    private fun refreshVisibleMonths() {
+        binding.mcCustom.post {
             val visibleMonth = binding.mcCustom.findFirstVisibleMonth()
-
             if (visibleMonth != null) {
-                // 2. 전체가 아닌 현재 보이는 달만 갱신합니다.
                 binding.mcCustom.notifyMonthChanged(visibleMonth.yearMonth)
                 binding.mcCustom.notifyMonthChanged(visibleMonth.yearMonth.minusMonths(1))
                 binding.mcCustom.notifyMonthChanged(visibleMonth.yearMonth.plusMonths(1))
             } else {
-                // 보이는 달을 찾지 못한 초기 상태일 때만 전체 갱신
                 binding.mcCustom.notifyCalendarChanged()
             }
         }
@@ -133,40 +143,6 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
                 }
             }
 
-            val gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
-                override fun onDown(e: MotionEvent): Boolean = true
-
-                override fun onFling(
-                    e1: MotionEvent?,
-                    e2: MotionEvent,
-                    velocityX: Float,
-                    velocityY: Float
-                ): Boolean {
-                    val diffX = e2.x - (e1?.x ?: return false)
-                    if (kotlin.math.abs(diffX) > 50) {
-                        if (diffX > 0) {
-                            // 오른쪽 스와이프 → 이전 달
-                            currentMonth = currentMonth.minusMonths(1)
-                        } else {
-                            // 왼쪽 스와이프 → 다음 달 (오늘이 속한 달 이후로는 이동 불가)
-                            val nextMonth = currentMonth.plusMonths(1)
-                            if (nextMonth.isAfter(YearMonth.now())) {
-                                return true
-                            }
-                            currentMonth = nextMonth
-                        }
-                        mcCustom.smoothScrollToMonth(currentMonth)
-                        updateYearMonthText()
-                        return true
-                    }
-                    return false
-                }
-            })
-
-            binding.mcCustom.setOnTouchListener { _, event ->
-                gestureDetector.onTouchEvent(event)
-                event.action == MotionEvent.ACTION_MOVE
-            }
 
             val today = LocalDate.now()
             selectedDate = today
@@ -191,8 +167,14 @@ class MyCalendar @JvmOverloads constructor( // 날짜 선택 캘린더
             }
             // 달력 스크롤 시
             mcCustom.monthScrollListener = { month ->
-                currentMonth = month.yearMonth
+                val newMonth = month.yearMonth
+                val monthChanged = currentMonth != newMonth
+                currentMonth = newMonth
                 updateYearMonthText()
+
+                if (monthChanged) {
+                    onMonthChangedListener?.invoke(newMonth)
+                }
             }
 
             // 일~토 텍스트가 표시되는 상단 뷰

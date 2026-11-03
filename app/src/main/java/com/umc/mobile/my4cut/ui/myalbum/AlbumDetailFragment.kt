@@ -179,6 +179,8 @@ class AlbumDetailFragment : Fragment() {
     private fun fetchAlbumDetail() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
+                Log.d("ALBUM_DEBUG", "현재 앨범 ID: $albumId")
+
                 val response = RetrofitClient.albumService.getAlbumDetail(albumId)
                 if (response.code == "A2003") { // 서버 응답 코드 확인
                     updateUI(response.data?.mediaList)
@@ -195,7 +197,7 @@ class AlbumDetailFragment : Fragment() {
             try {
                 val multipartFiles = withContext(Dispatchers.IO) {
                     viewUrls.mapNotNull { url ->
-                        downloadAndCompressImage(url)?.let { file ->
+                        downloadOriginalImage(url)?.let { file ->
                             MultipartBody.Part.createFormData(
                                 "files",
                                 file.name,
@@ -207,9 +209,12 @@ class AlbumDetailFragment : Fragment() {
 
                 if (multipartFiles.isEmpty()) return@launch
 
-                val uploadResponse = RetrofitClient.imageService.uploadImagesMedia(multipartFiles)
+                val uploadResponse =
+                    RetrofitClient.imageService.uploadImagesMedia(multipartFiles)
+
                 if (uploadResponse.isSuccessful) {
-                    val uploadedMediaIds = uploadResponse.body()?.data?.map { it.mediaId }
+                    val uploadedMediaIds =
+                        uploadResponse.body()?.data?.map { it.mediaId }
 
                     if (!uploadedMediaIds.isNullOrEmpty()) {
                         val addRes = RetrofitClient.albumService.addPhotosToAlbum(
@@ -221,10 +226,55 @@ class AlbumDetailFragment : Fragment() {
                             fetchAlbumDetail()
                         }
                     }
+                } else {
+                    Log.e(
+                        "API_ERROR",
+                        "이미지 업로드 실패: ${uploadResponse.code()}"
+                    )
                 }
             } catch (e: Exception) {
-                Log.e("API_ERROR", "앨범에 사진 추가 중 오류: ${e.message}")
+                Log.e("API_ERROR", "앨범에 사진 추가 중 오류: ${e.message}", e)
             }
+        }
+    }
+
+    // 서버에서 이미지를 다운로드하고 재압축 없이 원본 바이트 그대로 저장
+    private fun downloadOriginalImage(url: String): File? {
+        return try {
+            val client = OkHttpClient()
+            val request = Request.Builder()
+                .url(url)
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    Log.e("API_ERROR", "이미지 다운로드 실패: ${response.code}")
+                    return null
+                }
+
+                val body = response.body ?: return null
+
+                val tempFile = File(
+                    requireContext().cacheDir,
+                    "day4cut_${System.currentTimeMillis()}.jpg"
+                )
+
+                body.byteStream().use { input ->
+                    FileOutputStream(tempFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                Log.d(
+                    "ImageQuality",
+                    "재압축 없이 다운로드 완료: ${tempFile.length() / 1024} KB"
+                )
+
+                tempFile
+            }
+        } catch (e: Exception) {
+            Log.e("API_ERROR", "이미지 다운로드 실패: ${e.message}", e)
+            null
         }
     }
 
