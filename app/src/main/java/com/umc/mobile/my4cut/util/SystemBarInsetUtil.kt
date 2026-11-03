@@ -1,6 +1,7 @@
 package com.umc.mobile.my4cut.util
 
 import android.app.Activity
+import android.os.Build
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -18,6 +19,17 @@ fun Activity.applySystemBarInsets() {
     WindowCompat.getInsetsController(window, window.decorView).apply {
         isAppearanceLightStatusBars = true
         isAppearanceLightNavigationBars = true
+    }
+
+    // 하단 내비게이션 바를 라이트/다크 모드 상관없이 흰색으로 고정
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        window.isNavigationBarContrastEnforced = false
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM
+    ) {
+        @Suppress("DEPRECATION")
+        window.navigationBarColor = ContextCompat.getColor(this, R.color.white)
     }
 
     ViewCompat.setOnApplyWindowInsetsListener(content) { v, insets ->
