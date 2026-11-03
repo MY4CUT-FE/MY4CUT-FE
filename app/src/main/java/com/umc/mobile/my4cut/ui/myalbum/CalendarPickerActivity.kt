@@ -91,12 +91,13 @@ class CalendarPickerActivity : AppCompatActivity() {
         binding.vMinicalBadge.visibility = View.VISIBLE
 
         fun boundsOf(target: View): Rect {
+            // 루트에 시스템 바 패딩이 들어가 오버레이가 그만큼 안쪽에서 시작하므로, 패딩을 빼서 오버레이 기준 좌표로 맞춤
             val rootLocation = IntArray(2)
             binding.root.getLocationInWindow(rootLocation)
             val loc = IntArray(2)
             target.getLocationInWindow(loc)
-            val left = loc[0] - rootLocation[0]
-            val top = loc[1] - rootLocation[1]
+            val left = loc[0] - rootLocation[0] - binding.root.paddingLeft
+            val top = loc[1] - rootLocation[1] - binding.root.paddingTop
             return Rect(left, top, left + target.width, top + target.height)
         }
 

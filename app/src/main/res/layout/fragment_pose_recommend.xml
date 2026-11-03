@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFCFC">
+    android:background="#FFFFFF">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/cl_header"
@@ -93,7 +93,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
-        android:background="#FFFCFC"
+        android:background="#FFFFFF"
         app:tabIndicatorColor="#FF7E67"
         app:tabIndicatorHeight="2dp"
         app:tabMode="fixed"
