@@ -447,7 +447,8 @@ class EntryDetailFragment : Fragment() {
         binding.etDiary.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val length = s?.length ?: 0
+                // 엔터(줄바꿈)는 글자 수에서 제외
+                val length = s?.count { it != '\n' && it != '\r' } ?: 0
                 binding.tvTextCount.text = "$length/100"
             }
             override fun afterTextChanged(s: Editable?) {}
