@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.umc.mobile.my4cut.databinding.ActivityCalendarPickerBinding
 import com.umc.mobile.my4cut.ui.record.EntryRegisterActivity
+import com.umc.mobile.my4cut.util.applySystemBarInsets
 import java.time.LocalDate
 
 class CalendarPickerActivity : AppCompatActivity() {
@@ -18,6 +19,7 @@ class CalendarPickerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityCalendarPickerBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applySystemBarInsets()
 
         binding.myCalendar.setHeaderVisible(false) // 상단 메뉴 숨김
 

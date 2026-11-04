@@ -23,6 +23,7 @@ import com.umc.mobile.my4cut.data.base.BaseResponse
 import com.umc.mobile.my4cut.databinding.ActivityForgotPasswordBinding
 import com.umc.mobile.my4cut.databinding.DialogChangePasswordBinding
 import com.umc.mobile.my4cut.data.network.RetrofitClient
+import com.umc.mobile.my4cut.util.applySystemBarInsets
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -41,6 +42,7 @@ class ForgotPasswordActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityForgotPasswordBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applySystemBarInsets()
         initClickListeners()
     }
 

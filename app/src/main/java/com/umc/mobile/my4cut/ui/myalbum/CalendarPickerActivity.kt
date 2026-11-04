@@ -20,13 +20,16 @@ import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.data.tutorial.TutorialManager
 import com.umc.mobile.my4cut.data.tutorial.model.TutorialType
 import com.umc.mobile.my4cut.databinding.ActivityCalendarPicker2Binding
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
 private object DateSelectTutorialLayout {
     const val TEXT_GAP_X_DP = 12
-    const val TEXT_OFFSET_Y_DP = 8
+    const val TEXT_OFFSET_Y_DP = 0
     const val ARROW_OFFSET_X_DP = -20
     const val ARROW_GAP_Y_DP = 2
     const val ARROW_ROTATION = 0f
@@ -39,6 +42,8 @@ class CalendarPickerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityCalendarPicker2Binding
     private var currentSelectedDateStr: String = ""
     private val registeredDates = mutableSetOf<LocalDate>()
+    private var calendarStatusJob: Job? = null
+    private var requestedMonth: YearMonth? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,6 +67,10 @@ class CalendarPickerActivity : AppCompatActivity() {
 
         binding.myCalendar.setOnDateSelectedListener { dateText ->
             currentSelectedDateStr = dateText
+        }
+
+        binding.myCalendar.setOnMonthChangedListener { yearMonth ->
+            setupCalendar(yearMonth.year, yearMonth.monthValue)
         }
 
         setupCalendar(year, month)
@@ -91,13 +100,21 @@ class CalendarPickerActivity : AppCompatActivity() {
         binding.vMinicalBadge.visibility = View.VISIBLE
 
         fun boundsOf(target: View): Rect {
-            val rootLocation = IntArray(2)
-            binding.root.getLocationInWindow(rootLocation)
-            val loc = IntArray(2)
-            target.getLocationInWindow(loc)
-            val left = loc[0] - rootLocation[0]
-            val top = loc[1] - rootLocation[1]
-            return Rect(left, top, left + target.width, top + target.height)
+            val overlayLocation = IntArray(2)
+            overlay.root.getLocationInWindow(overlayLocation)
+
+            val targetLocation = IntArray(2)
+            target.getLocationInWindow(targetLocation)
+
+            val left = targetLocation[0] - overlayLocation[0]
+            val top = targetLocation[1] - overlayLocation[1]
+
+            return Rect(
+                left,
+                top,
+                left + target.width,
+                top + target.height
+            )
         }
 
         fun positionOverlay() {
@@ -185,14 +202,23 @@ class CalendarPickerActivity : AppCompatActivity() {
         (dp * resources.displayMetrics.density).toInt()
 
     private fun setupCalendar(year: Int, month: Int) {
-        lifecycleScope.launch {
+        val targetMonth = YearMonth.of(year, month)
+        if (requestedMonth == targetMonth && calendarStatusJob?.isActive == true) return
+
+        requestedMonth = targetMonth
+        calendarStatusJob?.cancel()
+
+        calendarStatusJob = lifecycleScope.launch {
+            registeredDates.clear()
+
             try {
                 val response = RetrofitClient.day4CutService.getCalendarStatus(year, month)
 
-                if (response.code == "C2001") {
-                    registeredDates.clear()
+                // 요청 도중 더 최신 월 요청이 시작됐다면 이전 응답은 반영하지 않습니다.
+                if (requestedMonth != targetMonth) return@launch
 
-                    val calendarDataList = response.data?.dates?.map { item ->
+                val calendarDataList = if (response.code == "C2001") {
+                    response.data?.dates?.map { item ->
                         val date = LocalDate.of(year, month, item.day)
                         registeredDates.add(date)
 
@@ -202,15 +228,18 @@ class CalendarPickerActivity : AppCompatActivity() {
                             memo = ""
                         )
                     } ?: emptyList()
-
-                    binding.myCalendar.setDatesWithData(calendarDataList)
                 } else {
-                    registeredDates.clear()
-                    binding.myCalendar.setDatesWithData(emptyList())
+                    emptyList()
                 }
+
+                binding.myCalendar.setDatesWithData(calendarDataList, targetMonth)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                registeredDates.clear()
-                binding.myCalendar.setDatesWithData(emptyList())
+                if (requestedMonth == targetMonth) {
+                    registeredDates.clear()
+                    binding.myCalendar.setDatesWithData(emptyList(), targetMonth)
+                }
             }
         }
     }

@@ -33,7 +33,7 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bnv_main"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="80dp"
 
         android:layout_marginBottom="7dp"
         android:elevation="10dp"
@@ -52,7 +52,7 @@
 
 
         app:itemPaddingTop="14dp"
-        app:itemPaddingBottom="40dp"
+        app:itemPaddingBottom="20dp"
         android:backgroundTint="@color/white"
         android:background="@color/white"
 

@@ -19,6 +19,7 @@ import com.umc.mobile.my4cut.databinding.ActivityOnboardingBinding
 import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.login.LoginActivity
 import com.umc.mobile.my4cut.ui.notification.NotificationActivity
+import com.umc.mobile.my4cut.util.applySystemBarInsets
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -114,6 +115,7 @@ class OnboardingActivity : AppCompatActivity() {
     private fun showOnboarding() {
         binding = ActivityOnboardingBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applySystemBarInsets()
 
         requestNotificationPermission()
 

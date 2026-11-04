@@ -15,6 +15,7 @@ import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.TextWatcher
 import android.text.style.ForegroundColorSpan
+import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -39,6 +40,7 @@ import com.umc.mobile.my4cut.data.tutorial.model.TutorialType
 import com.umc.mobile.my4cut.databinding.ActivityEntryRegister2Binding
 import com.umc.mobile.my4cut.data.network.RetrofitClient
 import com.umc.mobile.my4cut.ui.record.PhotoUploadPager
+import com.umc.mobile.my4cut.util.applySystemBarInsets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -96,6 +98,7 @@ class EntryRegisterActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityEntryRegister2Binding.inflate(layoutInflater)
         setContentView(binding.root)
+        applySystemBarInsets()
 
         binding.cvPhotoPager.apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -396,29 +399,16 @@ class EntryRegisterActivity : AppCompatActivity() {
 
     private fun compressImage(uri: Uri): File? {
         return try {
-            val inputStream = contentResolver.openInputStream(uri) ?: return null
+            val tempFile = File(
+                cacheDir,
+                "original_${System.currentTimeMillis()}.jpg"
+            )
 
-            val originalBitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream.close()
-
-            if (originalBitmap == null) return null
-
-            val rotatedBitmap = rotateImageIfRequired(uri, originalBitmap)
-            val resizedBitmap = resizeBitmap(rotatedBitmap, 1920)
-
-            val outputStream = ByteArrayOutputStream()
-            resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
-            val compressedBytes = outputStream.toByteArray()
-
-            val tempFile = File(cacheDir, "compressed_${System.currentTimeMillis()}.jpg")
-            FileOutputStream(tempFile).use { fos ->
-                fos.write(compressedBytes)
-            }
-
-            if (rotatedBitmap != originalBitmap) {
-                originalBitmap.recycle()
-            }
-            resizedBitmap.recycle()
+            contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(tempFile).use { output ->
+                    input.copyTo(output)
+                }
+            } ?: return null
 
             tempFile
         } catch (e: Exception) {

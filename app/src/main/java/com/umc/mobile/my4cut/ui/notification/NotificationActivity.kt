@@ -17,6 +17,7 @@ import android.view.Window
 import com.umc.mobile.my4cut.MainActivity
 import com.umc.mobile.my4cut.data.notification.model.NotificationMarkReadByIdsDto
 import com.umc.mobile.my4cut.databinding.DialogDeleteNotiAllBinding
+import com.umc.mobile.my4cut.util.applySystemBarInsets
 import retrofit2.HttpException
 
 class NotificationActivity : AppCompatActivity() {
@@ -31,6 +32,7 @@ class NotificationActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityNotificationBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applySystemBarInsets()
 
         initClickListener()
         setupRecyclerView()
