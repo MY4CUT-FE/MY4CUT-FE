@@ -213,6 +213,9 @@ class EntryRegisterActivity : AppCompatActivity() {
 
         overlay.llTutorialClose.setOnClickListener {
             overlay.root.visibility = View.GONE
+            binding.nsvContent.post {
+                binding.nsvContent.smoothScrollTo(0, 0, 500)
+            }
             lifecycleScope.launch {
                 TutorialManager.completeTutorial(this@EntryRegisterActivity, userId, TutorialType.UPLOAD_CONTENT)
             }

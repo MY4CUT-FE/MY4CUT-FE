@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import com.umc.mobile.my4cut.R
+import com.umc.mobile.my4cut.ui.theme.SuitFontFamily
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.absoluteValue
@@ -204,6 +205,7 @@ private fun EmptyPhotoCard(
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = "오늘의 네컷을\n업로드 해주세요",
+                    fontFamily = SuitFontFamily,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1A1A1A),
@@ -219,6 +221,7 @@ private fun EmptyPhotoCard(
                         withStyle(SpanStyle(color = CoralColor)) { append("1") }
                         append("개만 작성할 수 있어요.")
                     },
+                    fontFamily = SuitFontFamily,
                     fontSize = 11.sp,
                     color = Color(0xFF888888),
                     textAlign = TextAlign.Center

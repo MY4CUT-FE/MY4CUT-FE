@@ -5,6 +5,86 @@
     <style name="Base.Theme.MY4CUT" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:fontFamily">@font/suit</item>
         <item name="android:statusBarColor">@color/white</item> <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Material3 컴포넌트(TabLayout 등)가 코드에서 적용하는 글씨 스타일도 SUIT로 표시되도록 지정 -->
+        <!-- (사용자가 기기에서 설정한 시스템 폰트가 앱 텍스트에 적용되는 문제 방지) -->
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.MY4CUT.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.MY4CUT.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.MY4CUT.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.MY4CUT.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.MY4CUT.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.MY4CUT.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.MY4CUT.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.MY4CUT.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.MY4CUT.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.MY4CUT.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.MY4CUT.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.MY4CUT.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.MY4CUT.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.MY4CUT.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.MY4CUT.LabelSmall</item>
+    </style>
+
+    <!-- Material3 글씨 스타일: 크기/굵기는 Material3 기본값 그대로, 폰트만 SUIT로 교체 -->
+    <style name="TextAppearance.MY4CUT.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
+    </style>
+    <style name="TextAppearance.MY4CUT.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/suit</item>
+        <item name="android:fontFamily">@font/suit</item>
     </style>
 
     <style name="Base.Theme.My4cut" parent="Theme.Material3.Light.NoActionBar">

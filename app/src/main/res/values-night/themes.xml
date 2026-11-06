@@ -1,6 +1,24 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.MY4CUT" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- 다크모드에서도 앱 폰트(SUIT)가 적용되도록 values/themes.xml과 동일하게 지정 -->
+        <item name="android:fontFamily">@font/suit</item>
         <item name="android:statusBarColor">@color/white</item> <item name="android:windowLightStatusBar">true</item>
+
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.MY4CUT.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.MY4CUT.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.MY4CUT.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.MY4CUT.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.MY4CUT.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.MY4CUT.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.MY4CUT.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.MY4CUT.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.MY4CUT.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.MY4CUT.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.MY4CUT.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.MY4CUT.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.MY4CUT.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.MY4CUT.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.MY4CUT.LabelSmall</item>
     </style>
 </resources>
