@@ -1,6 +1,9 @@
 package com.umc.mobile.my4cut.ui.record
 
+import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -53,6 +56,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
+import androidx.exifinterface.media.ExifInterface
 import com.umc.mobile.my4cut.R
 import com.umc.mobile.my4cut.ui.theme.SuitFontFamily
 import kotlinx.coroutines.Dispatchers
@@ -247,9 +251,7 @@ private fun PhotoCard(
     val bitmap by produceState<ImageBitmap?>(initialValue = null, key1 = uri) {
         value = withContext(Dispatchers.IO) {
             try {
-                context.contentResolver.openInputStream(uri)?.use { stream ->
-                    BitmapFactory.decodeStream(stream)?.asImageBitmap()
-                }
+                decodePreviewBitmap(context, uri)?.asImageBitmap()
             } catch (e: Exception) {
                 null
             }
@@ -303,6 +305,47 @@ private fun PhotoCard(
                 .padding(5.dp)
         )
     }
+}
+
+/**
+ * 미리보기용 디코딩: EXIF 방향을 반영해 사용자가 갤러리에서 보는 방향 그대로 표시한다.
+ * 메모리 절약을 위해 긴 쪽이 약 2048px 이하가 되도록 샘플링하여 디코딩한다.
+ */
+private const val PREVIEW_MAX_SIDE = 2048
+
+private fun decodePreviewBitmap(context: Context, uri: Uri): Bitmap? {
+    val resolver = context.contentResolver
+
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+    val longSide = maxOf(bounds.outWidth, bounds.outHeight)
+    var sampleSize = 1
+    while (longSide / (sampleSize * 2) >= PREVIEW_MAX_SIDE) sampleSize *= 2
+
+    val bitmap = resolver.openInputStream(uri)?.use {
+        BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sampleSize })
+    } ?: return null
+
+    val orientation = try {
+        resolver.openInputStream(uri)?.use {
+            ExifInterface(it).getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_UNDEFINED
+            )
+        } ?: ExifInterface.ORIENTATION_UNDEFINED
+    } catch (e: Exception) {
+        ExifInterface.ORIENTATION_UNDEFINED
+    }
+
+    val degrees = when (orientation) {
+        ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+        ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+        ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+        else -> return bitmap
+    }
+
+    val matrix = Matrix().apply { postRotate(degrees) }
+    return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
 }
 
 // ─── 사진 추가 슬롯 ────────────────────────────────────────────────────────────
