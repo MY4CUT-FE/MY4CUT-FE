@@ -55,8 +55,6 @@ class HomeFragment : Fragment() {
 
     private var selectedDate: LocalDate = LocalDate.now()
 
-    // loadCalendarData()와 loadDay4CutData()는 서로 독립적인 코루틴이라,
-    // 당겨서 새로고침 스피너는 "둘 다 끝났을 때"만 멈춰야 함 → 카운터로 동기화
     private var pendingLoadCount = 0
 
     private fun markLoadFinished() {
@@ -79,7 +77,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // ✅ 캘린더 데이터 (날짜별 기록 여부)
+    // 캘린더 데이터 (날짜별 기록 여부)
     private val recordedDates = mutableSetOf<Int>() // 기록이 있는 날짜 저장
     private val thumbnailUrls = mutableMapOf<Int, String>() // 날짜별 썸네일 URL 저장
 
@@ -93,7 +91,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // ✅ 기록 등록 후 돌아올 때 갱신
+    // 기록 등록 후 돌아올 때 갱신
     private val entryRegisterLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             // 기록 등록 완료 후 화면 갱신
@@ -117,11 +115,11 @@ class HomeFragment : Fragment() {
         setupClickListeners()
         setupSwipeGesture()
 
-        // ✅ 초기 UI 설정
+        // 초기 UI 설정
         setupWeekCalendar() // 주간 캘린더 먼저 그리기
         updateContentState(selectedDate) // 날짜 표시
 
-        // ✅ API 데이터 로드
+        // API 데이터 로드
         loadCalendarData()
         loadDay4CutData(selectedDate)
         updateNotificationIcon()
@@ -159,7 +157,7 @@ class HomeFragment : Fragment() {
         binding.tvWelcomeBanner.text = spannable
     }
 
-    // ✅ 캘린더 데이터 로드 (API) - suspend 함수로 변경
+    // 캘린더 데이터 로드 (API) - suspend 함수로 변경
     private fun loadCalendarData() {
         pendingLoadCount++
 
@@ -233,7 +231,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // ✅ 특정 날짜의 하루네컷 데이터 로드 (API) - suspend 함수로 변경
+    // 특정 날짜의 하루네컷 데이터 로드 (API)
     private fun loadDay4CutData(date: LocalDate) {
         pendingLoadCount++
 
@@ -295,7 +293,7 @@ class HomeFragment : Fragment() {
         if (imageUrl != null) {
             Log.d("HomeFragment", "Loading thumbnail with Coil: ${imageUrl.take(80)}")
             binding.ivHomePhoto.load(imageUrl) {
-                crossfade(true)
+
                 placeholder(R.drawable.img_pose_loading)
                 error(R.drawable.img_ex_photo)
             }
@@ -383,7 +381,7 @@ class HomeFragment : Fragment() {
     private fun dpToPx(dp: Int): Int =
         (dp * resources.displayMetrics.density).toInt()
 
-    // ✅ 기록이 없는 경우 표시
+    //  기록이 없는 경우 표시
     private fun showEmptyState() {
         binding.clEmptyState.visibility = View.VISIBLE
         binding.llFilledState.visibility = View.GONE
@@ -426,7 +424,7 @@ class HomeFragment : Fragment() {
                 )
             }
 
-            // ✅ API에서 받은 데이터로 점 표시
+            //  API에서 받은 데이터로 점 표시
             if (recordedDates.contains(date.dayOfMonth) && date.month == selectedDate.month) {
                 dayViewBinding.vRecordDot.visibility = View.VISIBLE
             } else {
@@ -551,9 +549,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    /**
-     * ✅ 화면 복귀 시 데이터 새로고침
-     */
     override fun onResume() {
         super.onResume()
         // 다른 화면에서 돌아왔을 때 데이터 갱신

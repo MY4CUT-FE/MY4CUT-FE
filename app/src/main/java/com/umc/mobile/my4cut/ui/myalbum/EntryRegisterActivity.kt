@@ -213,6 +213,9 @@ class EntryRegisterActivity : AppCompatActivity() {
 
         overlay.llTutorialClose.setOnClickListener {
             overlay.root.visibility = View.GONE
+            binding.nsvContent.post {
+                binding.nsvContent.smoothScrollTo(0, 0, 500)
+            }
             lifecycleScope.launch {
                 TutorialManager.completeTutorial(this@EntryRegisterActivity, userId, TutorialType.UPLOAD_CONTENT)
             }
@@ -307,7 +310,7 @@ class EntryRegisterActivity : AppCompatActivity() {
                 val fileParts = mutableListOf<MultipartBody.Part>()
 
                 for ((index, uri) in selectedImageUris.withIndex()) {
-                    val compressedFile = compressImage(uri) ?: throw Exception("이미지 ${index + 1} 압축 실패")
+                    val compressedFile = withContext(Dispatchers.IO) { compressImage(uri) } ?: throw Exception("이미지 ${index + 1} 압축 실패")
 
                     val requestBody = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
                     val part = MultipartBody.Part.createFormData("files", compressedFile.name, requestBody)
@@ -397,21 +400,107 @@ class EntryRegisterActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 네컷 업로드용 이미지 처리
+     * - 5MB 이하 + EXIF 방향 정상: 원본 그대로 사용 (재인코딩 없음)
+     * - EXIF 방향이 정상이 아닌 경우: 사용자가 보는 방향 그대로 픽셀에 반영하여 저장
+     * - 5MB 초과: 긴 쪽 2560px, JPEG 90부터 품질을 단계적으로 낮춰 5MB 이하로 저장
+     */
     private fun compressImage(uri: Uri): File? {
         return try {
-            val tempFile = File(
-                cacheDir,
-                "original_${System.currentTimeMillis()}.jpg"
-            )
+            val maxBytes = 5L * 1024 * 1024
+            val maxLongSide = 2560
 
+            // 원본을 임시 파일로 복사 (파일명 중복 방지를 위해 createTempFile 사용)
+            val file = File.createTempFile("compressed_", ".jpg", cacheDir)
             contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(tempFile).use { output ->
+                FileOutputStream(file).use { output ->
                     input.copyTo(output)
                 }
             } ?: return null
 
-            tempFile
+            val originalSize = file.length()
+            val orientation = ExifInterface(file.absolutePath).getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_UNDEFINED
+            )
+            val needsRotation = orientation == ExifInterface.ORIENTATION_ROTATE_90 ||
+                orientation == ExifInterface.ORIENTATION_ROTATE_180 ||
+                orientation == ExifInterface.ORIENTATION_ROTATE_270
+            val isOversized = originalSize > maxBytes
+
+            // 5MB 이하 + 방향 정상 → 원본 그대로 업로드
+            if (!isOversized && !needsRotation) {
+                Log.d("EntryRegister", "원본 유지: ${originalSize / 1024}KB, exif=$orientation")
+                return file
+            }
+
+            // 큰 사진은 메모리 절약을 위해 샘플링하여 디코딩 (긴 쪽이 2560px 이상 유지되는 범위)
+            val sideLimit = if (isOversized) maxLongSide else Int.MAX_VALUE
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(file.absolutePath, bounds)
+            val longSide = maxOf(bounds.outWidth, bounds.outHeight)
+            var sampleSize = 1
+            while (longSide / (sampleSize * 2) >= sideLimit) sampleSize *= 2
+
+            val decodedBitmap = BitmapFactory.decodeFile(
+                file.absolutePath,
+                BitmapFactory.Options().apply { inSampleSize = sampleSize }
+            )
+            if (decodedBitmap == null) {
+                file.delete()
+                return null
+            }
+
+            // EXIF 방향을 픽셀에 반영 (사용자가 보는 방향 유지)
+            val rotatedBitmap = rotateImageIfRequired(uri, decodedBitmap)
+            var bitmap = resizeBitmap(rotatedBitmap, sideLimit)
+
+            // 5MB 이하가 될 때까지 품질을 단계적으로 낮춤 (회전만 필요한 경우 최고 품질부터 시작)
+            val qualities = if (isOversized) listOf(90, 85, 80, 75) else listOf(100, 95, 90, 85, 80, 75)
+            val outputStream = ByteArrayOutputStream()
+            var fits = false
+            var usedQuality = qualities.last()
+            while (!fits) {
+                for (quality in qualities) {
+                    outputStream.reset()
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+                    usedQuality = quality
+                    if (outputStream.size() <= maxBytes) {
+                        fits = true
+                        break
+                    }
+                }
+                if (!fits) {
+                    // 최저 품질에서도 5MB 초과 시 해상도를 단계적으로 축소
+                    val smaller = Bitmap.createScaledBitmap(
+                        bitmap,
+                        (bitmap.width * 0.85f).toInt(),
+                        (bitmap.height * 0.85f).toInt(),
+                        true
+                    )
+                    bitmap.recycle()
+                    bitmap = smaller
+                }
+            }
+
+            FileOutputStream(file).use { fos ->
+                outputStream.writeTo(fos)
+            }
+
+            Log.d(
+                "EntryRegister",
+                "압축/회전 완료: ${originalSize / 1024}KB → ${file.length() / 1024}KB, " +
+                    "exif=$orientation, ${bitmap.width}x${bitmap.height}, quality=$usedQuality"
+            )
+
+            decodedBitmap.recycle()
+            rotatedBitmap.recycle()
+            bitmap.recycle()
+
+            file
         } catch (e: Exception) {
+            Log.e("EntryRegister", "이미지 처리 실패", e)
             null
         }
     }

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.umc.mobile.my4cut.ui.theme.SuitFontFamily
 import java.time.LocalDate
 import kotlin.math.abs
 
@@ -160,12 +161,14 @@ private fun YearMonthPickerContent(
         ) {
             Text(
                 text = "날짜 선택",
+                fontFamily = SuitFontFamily,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1A1A1A)
             )
             Text(
                 text = "✕",
+                fontFamily = SuitFontFamily,
                 fontSize = 18.sp,
                 color = Color(0xFF888888),
                 modifier = Modifier
@@ -241,6 +244,7 @@ private fun YearMonthPickerContent(
         ) {
             Text(
                 text = "확인",
+                fontFamily = SuitFontFamily,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -295,6 +299,7 @@ private fun WheelColumn(
             ) {
                 Text(
                     text = items[index],
+                    fontFamily = SuitFontFamily,
                     fontSize = fontSize,
                     fontWeight = fontWeight,
                     color = textColor.copy(alpha = alpha)

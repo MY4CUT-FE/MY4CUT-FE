@@ -43,6 +43,7 @@
 
         app:itemTextAppearanceActive="@style/BottomNavTextStyle"
         app:itemTextAppearanceInactive="@style/BottomNavTextStyle"
+        app:itemTextAppearanceActiveBoldEnabled="false"
         app:itemTextColor="@color/selector_nav_item_color"
 
         app:itemIconTint="@null"

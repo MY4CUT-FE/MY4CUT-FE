@@ -14,6 +14,7 @@ import android.view.MotionEvent
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.ImageView
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.children
 import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
@@ -99,7 +100,7 @@ class MyCalendarMain @JvmOverloads constructor(
     }
 
     fun getSelectedDateApiFormat(): String? {
-        // LocalDate의 toString()은 기본적으로 "YYYY-MM-DD" 형식을 반환합니다.
+        // LocalDate의 toString()은 기본적으로 "YYYY-MM-DD" 형식을 반환
         return selectedDate?.toString()
     }
 
@@ -190,7 +191,6 @@ class MyCalendarMain @JvmOverloads constructor(
             mcCustom.dayBinder = object : MonthDayBinder<MainDayViewContainer> {
                 override fun create(view: View): MainDayViewContainer {
                     val layoutParams = view.layoutParams
-                    // [수정] 높이를 100dp로 고정 (모든 월 비율 통일)
                     layoutParams.height = dpToPx(100)
                     view.layoutParams = layoutParams
                     return MainDayViewContainer(view)
@@ -250,7 +250,8 @@ class MyCalendarMain @JvmOverloads constructor(
                     when {
                         isToday -> {
                             container.textView.setTextColor(Color.parseColor("#FE927F"))
-                            container.textView.typeface = android.graphics.Typeface.DEFAULT_BOLD
+
+                            container.textView.typeface = ResourcesCompat.getFont(container.view.context, R.font.suit_bold)
                         }
                         isFutureDate -> container.textView.setTextColor(Color.GRAY)
                         data.position == DayPosition.MonthDate -> container.textView.setTextColor(Color.BLACK)

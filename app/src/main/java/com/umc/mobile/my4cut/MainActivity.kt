@@ -19,6 +19,7 @@ import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.WindowCompat
 import androidx.core.widget.NestedScrollView
 import androidx.core.view.WindowInsetsControllerCompat
@@ -259,6 +260,8 @@ class MainActivity : AppCompatActivity() {
     // 바텀 네비게이션 텍스트 2줄 허용 및 중앙 정렬
     private fun fixBottomNavText() {
         val menuView = binding.bnvMain.getChildAt(0) as? ViewGroup ?: return
+        // 선택된 라벨에 사용자 시스템 폰트가 적용되는 기기가 있어 앱 폰트를 직접 지정
+        val labelTypeface = ResourcesCompat.getFont(this, R.font.suit_medium)
 
         for (i in 0 until menuView.childCount) {
             val item = menuView.getChildAt(i) as? ViewGroup ?: continue
@@ -270,12 +273,14 @@ class MainActivity : AppCompatActivity() {
                 setSingleLine(false)
                 maxLines = 2
                 gravity = Gravity.CENTER
+                typeface = labelTypeface
             }
 
             largeLabel?.apply {
                 setSingleLine(false)
                 maxLines = 2
                 gravity = Gravity.CENTER
+                typeface = labelTypeface
             }
         }
     }
@@ -514,6 +519,11 @@ class MainActivity : AppCompatActivity() {
             overlay.root.visibility = View.GONE
             mypageBadge.visibility = View.GONE
             binding.bnvMain.elevation = bnvOriginalElevation
+            // 2단계에서 내려간 홈 스크롤을 맨 위로 부드럽게 되돌림
+            // (오버레이 GONE으로 인한 레이아웃 갱신 이후에 실행되도록 post 사용)
+            contentScrollView.post {
+                contentScrollView.smoothScrollTo(0, 0, 500)
+            }
             lifecycleScope.launch {
                 TutorialManager.completeTutorial(this@MainActivity, userId, TutorialType.HOME)
             }
