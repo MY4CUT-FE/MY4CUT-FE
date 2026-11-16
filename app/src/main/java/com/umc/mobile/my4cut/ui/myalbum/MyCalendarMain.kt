@@ -289,7 +289,7 @@ class MyCalendarMain @JvmOverloads constructor(
     }
 
     private fun updateYearMonthText() {
-        binding.tvYearMonth.text = "${currentMonth.monthValue}월"
+        binding.tvYearMonth.text = "${currentMonth.year}년 ${currentMonth.monthValue}월"
     }
 }
 

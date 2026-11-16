@@ -69,11 +69,11 @@ class EditProfileActivity : AppCompatActivity() {
         binding.btnBack.setOnClickListener { finish() }
 
         binding.ivProfile.setOnClickListener {
-            imagePickerLauncher.launch("image/*")
+            showProfileImageBottomSheet()
         }
 
         binding.ivEditIcon.setOnClickListener {
-            imagePickerLauncher.launch("image/*")
+            showProfileImageBottomSheet()
         }
 
         binding.btnConfirm.setOnClickListener {
@@ -99,6 +99,20 @@ class EditProfileActivity : AppCompatActivity() {
                 updateNicknameOnly(nickname)
             }
         }
+    }
+
+    /**
+     * 프로필 이미지 수정 옵션 BottomSheet 표시
+     */
+    private fun showProfileImageBottomSheet() {
+        ProfileImageBottomSheet.newInstance(
+            onSelectGallery = {
+                imagePickerLauncher.launch("image/*")
+            },
+            onSelectDelete = {
+                // TODO: 프로필 이미지 삭제 API 확정 후 연결 (확인 버튼 시 서버 반영)
+            }
+        ).show(supportFragmentManager, "ProfileImageBottomSheet")
     }
 
     private fun loadMyInfo() {
