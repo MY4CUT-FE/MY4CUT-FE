@@ -37,11 +37,13 @@ class EditProfileActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityEditProfileBinding
     private var selectedImageUri: Uri? = null
+    private var isImageDeleted = false
 
     private val imagePickerLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             if (uri != null) {
                 selectedImageUri = uri
+                isImageDeleted = false
                 com.bumptech.glide.Glide.with(this)
                     .load(uri)
                     .circleCrop()
@@ -94,6 +96,11 @@ class EditProfileActivity : AppCompatActivity() {
                 updateProfileImage(selectedImageUri!!) {
                     updateNicknameOnly(nickname)
                 }
+            } else if (isImageDeleted) {
+                // 이미지 삭제 + 닉네임 함께 수정
+                deleteProfileImage {
+                    updateNicknameOnly(nickname)
+                }
             } else {
                 // 닉네임만 수정
                 updateNicknameOnly(nickname)
@@ -110,7 +117,10 @@ class EditProfileActivity : AppCompatActivity() {
                 imagePickerLauncher.launch("image/*")
             },
             onSelectDelete = {
-                // TODO: 프로필 이미지 삭제 API 확정 후 연결 (확인 버튼 시 서버 반영)
+                // 확인 버튼 시 서버 반영
+                isImageDeleted = true
+                selectedImageUri = null
+                binding.ivProfile.setImageResource(R.drawable.img_profile_default)
             }
         ).show(supportFragmentManager, "ProfileImageBottomSheet")
     }
@@ -199,6 +209,40 @@ class EditProfileActivity : AppCompatActivity() {
                 Log.e("EditProfile", "💥 Upload failed", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(this@EditProfileActivity, "업로드 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    /**
+     * 프로필 이미지 삭제 (DELETE /users/me/image)
+     */
+    private fun deleteProfileImage(onSuccess: () -> Unit) {
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.userService.deleteProfileImage()
+                }
+
+                withContext(Dispatchers.Main) {
+                    Log.d("EditProfile", "📨 Delete response code: ${response.code()}")
+
+                    if (response.isSuccessful) {
+                        Log.d("EditProfile", "✅ Profile image deleted")
+                        onSuccess()
+                    } else {
+                        Log.e("EditProfile", "Error body: ${response.errorBody()?.string()}")
+                        Toast.makeText(
+                            this@EditProfileActivity,
+                            "프로필 이미지 삭제 실패 (${response.code()})",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("EditProfile", "💥 Delete failed", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@EditProfileActivity, "삭제 실패: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
