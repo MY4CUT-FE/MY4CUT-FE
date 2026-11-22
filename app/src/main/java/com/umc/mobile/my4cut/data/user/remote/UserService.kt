@@ -6,6 +6,7 @@ import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.PATCH
@@ -29,5 +30,9 @@ interface UserService {
     suspend fun updateProfileImageMultipart(
         @Part file: MultipartBody.Part
     ): Response<BaseResponse<ProfileImageResponse>>
+
+    /** 프로필 이미지 삭제 */
+    @DELETE("users/me/image")
+    suspend fun deleteProfileImage(): Response<BaseResponse<String>>
 
 }

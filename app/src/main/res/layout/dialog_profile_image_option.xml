@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 프로필 이미지 수정 옵션 BottomSheet 레이아웃 -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_bottom_sheet_rounded"
+    android:orientation="vertical"
+    android:paddingBottom="32dp">
+
+    <!-- 상단 핸들 바 -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_bottom_sheet_handle" />
+
+    <!-- 옵션1: 갤러리에서 불러오기 -->
+    <TextView
+        android:id="@+id/tv_option_gallery"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="16dp"
+        android:background="?attr/selectableItemBackground"
+        android:fontFamily="@font/suit_regular"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:text="갤러리에서 불러오기"
+        android:textColor="@color/gray_900"
+        android:textSize="16sp" />
+
+    <!-- 옵션2: 현재 이미지 삭제 -->
+    <TextView
+        android:id="@+id/tv_option_delete"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="?attr/selectableItemBackground"
+        android:fontFamily="@font/suit_regular"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:text="현재 이미지 삭제"
+        android:textColor="@color/gray_900"
+        android:textSize="16sp" />
+
+</LinearLayout>
